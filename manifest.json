@@ -1,0 +1,18 @@
+{
+  "name": "Auditoría AAA - Validador",
+  "short_name": "Auditoría AAA",
+  "description": "Dashboard de auditoría de calidad de Inspecciones AAA - Hoja Validador",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#EFF4F7",
+  "theme_color": "#0B3D5C",
+  "orientation": "portrait-primary",
+  "lang": "es",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

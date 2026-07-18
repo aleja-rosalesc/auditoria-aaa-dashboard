@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Auditoría de Calidad — Inspecciones AAA</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B3D5C">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Auditoría AAA">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --navy: #0B3D5C;
+    --navy-2: #0E547A;
+    --teal: #17A2B8;
+    --teal-dark: #0E6E8C;
+    --success: #1F9D66;
+    --success-bg: #E5F5EE;
+    --danger: #E4572E;
+    --danger-bg: #FCEAE3;
+    --warning: #F0A93A;
+    --warning-bg: #FDF1DD;
+    --gray: #A9B7C2;
+    --bg: #EFF4F7;
+    --card: #FFFFFF;
+    --text: #142B3C;
+    --text-2: #5C7284;
+    --border: #E2E9EE;
+    --radius: 14px;
+    --shadow: 0 2px 14px rgba(11, 61, 92, 0.07);
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--bg);
+    font-family: var(--font-body);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .dashboard-container{
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 20px 22px 40px;
+  }
+
+  /* ---------- Header ---------- */
+  .dashboard-header{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 55%, var(--teal-dark) 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 26px 30px;
+    margin-bottom: 14px;
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dashboard-header::after{
+    content:"";
+    position:absolute; right:-60px; top:-60px;
+    width:220px; height:220px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
+  }
+  .header-eyebrow{
+    font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
+    color: rgba(255,255,255,0.75); margin-bottom: 6px;
+  }
+  .dashboard-header h1{
+    font-family: var(--font-display); font-size: 25px; font-weight: 700;
+    margin: 0 0 8px 0; letter-spacing: -0.2px;
+  }
+  .header-meta{ font-size: 13px; color: rgba(255,255,255,0.82); }
+  .header-meta b{ color:#fff; font-weight:600; }
+  .header-filter{ display:flex; flex-direction:column; gap:6px; position: relative; z-index:1; }
+  .header-filter label{
+    font-size: 11px; text-transform:uppercase; letter-spacing:1px;
+    color: rgba(255,255,255,0.7); font-weight:600;
+  }
+  .header-filter select{
+    padding: 10px 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12); color: #fff; font-size: 13.5px; font-weight: 500;
+    font-family: var(--font-body); min-width: 250px; cursor:pointer;
+  }
+  .header-filter select option{ background: var(--navy); color:#fff; }
+
+  /* ---------- Status bar ---------- */
+  .status-bar{
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    border: 1px solid var(--border); padding: 12px 20px; margin-bottom: 18px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    font-size: 12.8px; color: var(--text-2);
+  }
+  .status-left{ display:flex; align-items:center; gap:8px; }
+  .status-dot{ width:9px; height:9px; border-radius:50%; background: var(--gray); flex-shrink:0; }
+  .status-dot.ok{ background: var(--success); }
+  .status-dot.loading{ background: var(--warning); animation: pulse 1.2s infinite; }
+  .status-dot.error{ background: var(--danger); }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  .status-actions{ display:flex; gap:8px; }
+  .btn{
+    padding: 8px 14px; border-radius:8px; border:1px solid var(--teal-dark);
+    background: var(--teal-dark); color:#fff; font-size:12.5px; font-weight:600;
+    cursor:pointer; white-space:nowrap; font-family: var(--font-body);
+  }
+  .btn:hover{ background: var(--navy); }
+  .btn.ghost{ background:#fff; color:var(--teal-dark); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .setup-banner{
+    background: var(--warning-bg); border: 1px solid #F0D9A8; color:#7A5714;
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; font-size:13.5px; line-height:1.6;
+  }
+  .setup-banner code{ background:#fff; padding:1px 6px; border-radius:4px; font-size:12.5px; }
+  .error-banner{
+    background: var(--danger-bg); border: 1px solid #F3B7A2; color:#8A3216;
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; font-size:13.5px; line-height:1.6;
+  }
+
+  /* ---------- KPI cards ---------- */
+  .kpi-row{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 18px; }
+  .kpi-card{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border); display:flex; align-items:flex-start; gap:14px;
+  }
+  .kpi-icon{ width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .kpi-icon svg{ width:20px; height:20px; }
+  .kpi-icon.blue{ background:#E4F1F6; color:var(--teal-dark); }
+  .kpi-icon.green{ background:var(--success-bg); color:var(--success); }
+  .kpi-icon.red{ background:var(--danger-bg); color:var(--danger); }
+  .kpi-icon.amber{ background:var(--warning-bg); color:#B97A15; }
+  .kpi-label{ font-size: 12px; color: var(--text-2); font-weight:600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom:4px; }
+  .kpi-value{ font-family: var(--font-display); font-size: 26px; font-weight:700; color: var(--text); line-height:1.1; }
+  .kpi-sub{ font-size:12px; color:var(--text-2); margin-top:3px; }
+
+  /* ---------- Chart sections ---------- */
+  .chart-row{ display:grid; gap:16px; margin-bottom:16px; }
+  .chart-row.two-col{ grid-template-columns: 1fr 1fr; }
+  .chart-row.three-col{ grid-template-columns: repeat(3, 1fr); }
+  .chart-row.one-col{ grid-template-columns: 1fr; }
+  .chart-container{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px 14px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .chart-container h3{ font-size: 13.5px; font-weight:700; color: var(--text); margin: 0 0 4px 0; }
+  .chart-sub{ font-size:11.5px; color:var(--text-2); margin: 0 0 12px 0; }
+  .chart-container canvas{ max-height: 270px; }
+  .chart-container.tall canvas{ max-height: 380px; }
+
+  /* ---------- Tables ---------- */
+  .table-section{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .table-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+  .table-header h3{ font-size:14.5px; font-weight:700; margin:0; color:var(--text); }
+  .table-actions{ display:flex; gap:8px; align-items:center; }
+  #table-search{
+    padding: 8px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:13px; font-family: var(--font-body); min-width:260px; background:#F7FAFB;
+  }
+  .table-scroll{ overflow-x:auto; }
+  .data-table{ width:100%; border-collapse: collapse; font-size:12.8px; }
+  .data-table thead th{
+    text-align:left; padding: 10px 12px; border-bottom: 2px solid var(--border);
+    color: var(--text-2); font-weight:700; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.4px; white-space:nowrap; user-select:none; cursor:pointer; background:#F7FAFB;
+  }
+  .data-table thead th:hover{ color: var(--teal-dark); }
+  .data-table thead th.sorted::after{ content:" ▾"; font-size:9px; }
+  .data-table tbody td{ padding: 9px 12px; border-bottom:1px solid #F0F3F5; white-space:nowrap; }
+  .data-table tbody tr:hover{ background:#F7FBFC; }
+  .badge{ display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+  .badge.efectiva{ background:var(--success-bg); color:var(--success); }
+  .badge.no-efectiva{ background:var(--warning-bg); color:#B97A15; }
+  .badge.error{ background:var(--danger-bg); color:var(--danger); font-weight:500;}
+  .table-pagination{ display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:12px; font-size:12.5px; color:var(--text-2); }
+  .table-pagination button{
+    padding:6px 12px; border-radius:7px; border:1px solid var(--border);
+    background:#fff; cursor:pointer; font-size:12px; font-weight:600; color:var(--text);
+  }
+  .table-pagination button:disabled{ opacity:0.4; cursor:not-allowed; }
+  .summary-table tbody tr.active-row{ background: var(--success-bg); }
+  .summary-table tbody td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+  .data-table td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+
+  .dashboard-footer{ text-align:center; font-size:12px; color: var(--text-2); padding: 14px 0 4px; }
+  .dashboard-footer a{ color: var(--teal-dark); }
+
+  .hidden{ display:none !important; }
+
+  @media (max-width: 1080px){
+    .kpi-row{ grid-template-columns: repeat(2, 1fr); }
+    .chart-row.two-col, .chart-row.three-col{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px){
+    .kpi-row{ grid-template-columns: 1fr; }
+    .dashboard-header{ flex-direction:column; align-items:flex-start; }
+    .header-filter select{ min-width: 100%; }
+    .status-bar{ flex-direction:column; align-items:flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="dashboard-container">
+
+  <header class="dashboard-header">
+    <div class="header-titles">
+      <div class="header-eyebrow">Inspecciones AAA · Control de calidad</div>
+      <h1>Dashboard de Auditoría — Hoja Validador</h1>
+      <div class="header-meta" id="header-meta">Cargando datos en vivo…</div>
+    </div>
+    <div class="header-filter">
+      <label for="supervisor-select">Filtrar por supervisor</label>
+      <select id="supervisor-select" disabled>
+        <option value="ALL">Todos los supervisores</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-dot loading" id="status-dot"></span>
+      <span id="status-text">Conectando con Google Sheets…</span>
+    </div>
+    <div class="status-actions">
+      <button class="btn ghost" id="refresh-btn">↻ Actualizar ahora</button>
+      <button class="btn hidden" id="install-btn">＋ Instalar app</button>
+    </div>
+  </div>
+
+  <div class="setup-banner hidden" id="setup-banner"></div>
+  <div class="error-banner hidden" id="error-banner"></div>
+
+  <section class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Órdenes auditadas</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub" id="kpi-total-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Auditorías correctas</div>
+        <div class="kpi-value" id="kpi-correcto">—</div>
+        <div class="kpi-sub" id="kpi-correcto-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Órdenes con error</div>
+        <div class="kpi-value" id="kpi-errores">—</div>
+        <div class="kpi-sub" id="kpi-errores-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Efectividad</div>
+        <div class="kpi-value" id="kpi-efectividad">—</div>
+        <div class="kpi-sub" id="kpi-efectividad-sub">&nbsp;</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-row one-col">
+    <div class="chart-container">
+      <h3>Evolución diaria de auditorías</h3>
+      <p class="chart-sub">Órdenes correctas vs. con error (barras) y % de efectividad (línea)</p>
+      <canvas id="daily-chart" height="90"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row three-col">
+    <div class="chart-container">
+      <h3>Estado de auditoría</h3>
+      <p class="chart-sub">Correctas vs. con error</p>
+      <canvas id="estado-chart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Efectividad de la inspección</h3>
+      <p class="chart-sub">Efectiva vs. no efectiva</p>
+      <canvas id="efectividad-chart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Tipos de error detectados</h3>
+      <p class="chart-sub">Órdenes por tipo de error (pueden repetirse)</p>
+      <canvas id="error-types-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row two-col">
+    <div class="chart-container tall">
+      <h3>Ciclos con más órdenes en error</h3>
+      <p class="chart-sub">Top 15 ciclos por número de órdenes con error</p>
+      <canvas id="ciclos-chart"></canvas>
+    </div>
+    <div class="chart-container tall">
+      <h3>Inspectores con mayor tasa de error</h3>
+      <p class="chart-sub">% de error sobre el total auditado (mínimo 10 órdenes)</p>
+      <canvas id="inspectores-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row two-col">
+    <div class="chart-container tall">
+      <h3>Efectividad por supervisor</h3>
+      <p class="chart-sub">Comparativo general · el supervisor filtrado se resalta en el gráfico</p>
+      <canvas id="supervisores-chart"></canvas>
+    </div>
+    <div class="chart-container tall">
+      <h3>Principales causas de cierre</h3>
+      <p class="chart-sub">Top 10 causas registradas</p>
+      <canvas id="causas-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3>Resumen por supervisor</h3>
+      <div class="table-actions">
+        <button class="btn ghost" id="export-summary-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table summary-table" id="summary-table">
+        <thead>
+          <tr>
+            <th>Supervisor</th><th class="num">Total</th><th class="num">Correctas</th>
+            <th class="num">Con error</th><th class="num">% Error</th><th class="num">Efectivas</th><th class="num">% Efectividad</th>
+          </tr>
+        </thead>
+        <tbody id="summary-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3>Detalle de órdenes con error (<span id="detail-count">0</span>)</h3>
+      <div class="table-actions">
+        <input type="text" id="table-search" placeholder="Buscar por orden, cuenta, inspector o ciclo…">
+        <button class="btn" id="export-detail-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table" id="detail-table">
+        <thead>
+          <tr>
+            <th data-key="fecha">Fecha</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
+            <th data-key="ciclo">Ciclo</th><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th>
+            <th data-key="causa_cierre">Causa de cierre</th><th data-key="tipo_error">Tipo de error</th><th data-key="efectividad">Efectividad</th>
+          </tr>
+        </thead>
+        <tbody id="detail-tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination">
+      <button id="prev-page">‹ Anterior</button>
+      <span id="page-info">—</span>
+      <button id="next-page">Siguiente ›</button>
+    </div>
+  </section>
+
+  <footer class="dashboard-footer">
+    Fuente: hoja de Google Sheets conectada en vivo · <a id="sheet-link" href="#" target="_blank" rel="noopener">Abrir hoja de datos</a> · Uso interno de control de calidad
+  </footer>
+</div>
+
+<script>
+/* =========================================================================
+   CONFIGURACIÓN — reemplaza SHEET_ID por el ID real de tu Google Sheet
+   (la parte de la URL entre /d/ y /edit). El resto no requiere cambios.
+   ========================================================================= */
+const SHEET_ID = "1_NTcyMn3xX0MYqP40qdFc9hiAVpgOXdkfwJEEhRwL3o";
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // auto-actualización cada 5 minutos
+
+const COLORS = {
+  success: '#1F9D66', danger: '#E4572E', warning: '#F0A93A',
+  teal: '#17A2B8', primary: '#0E6E8C', primaryDark: '#0B3D5C', gray: '#C4CFD6',
+};
+
+let DATA = null;
+let currentScope = 'ALL';
+let charts = {};
+let detailSort = { key: 'fecha', dir: 'desc' };
+let detailPage = 0;
+const PAGE_SIZE = 50;
+let detailFiltered = [];
+let lastLoadedAt = null;
+
+function fmtInt(n){ return Number(n || 0).toLocaleString('es-CO'); }
+function fmtPct(n){ return String(n).replace('.', ',') + '%'; }
+function round1(n){ return Math.round(n * 10) / 10; }
+function formatDateShort(iso){ if(!iso) return '—'; const p = String(iso).split('-'); return p.length===3 ? p[2] + '/' + p[1] : iso; }
+function formatDateLong(iso){ if(!iso) return '—'; const p = String(iso).split('-'); return p.length===3 ? p[2] + '/' + p[1] + '/' + p[0] : iso; }
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+Chart.defaults.color = '#5C7284';
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+Chart.defaults.plugins.legend.labels.font = { size: 11.5 };
+
+/* ---------------------------------------------------------------------
+   1) CARGA DE DATOS EN VIVO DESDE GOOGLE SHEETS (vía JSONP, sin CORS)
+   --------------------------------------------------------------------- */
+function setStatus(state, text){
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot ' + state;
+  document.getElementById('status-text').textContent = text;
+}
+
+function showSetupBanner(){
+  const b = document.getElementById('setup-banner');
+  b.classList.remove('hidden');
+  b.innerHTML =
+    'Este panel aún no está conectado a una hoja de datos. Reemplaza <code>SHEET_ID</code> en el código ' +
+    '(cerca de la línea "CONFIGURACIÓN" al inicio del script) por el ID de tu Google Sheet, y asegúrate de compartirla como ' +
+    '<b>"Cualquier persona con el enlace: Lector"</b>.';
+  setStatus('error', 'Falta configurar la hoja de datos');
+}
+
+function showErrorBanner(msg){
+  const b = document.getElementById('error-banner');
+  b.classList.remove('hidden');
+  b.textContent = msg;
+  setStatus('error', 'Error al cargar los datos');
+}
+
+function clearBanners(){
+  document.getElementById('setup-banner').classList.add('hidden');
+  document.getElementById('error-banner').classList.add('hidden');
+}
+
+function loadData(isManualRefresh){
+  if(!SHEET_ID || SHEET_ID.indexOf('PEGA_AQUI') === 0){
+    showSetupBanner();
+    return;
+  }
+  clearBanners();
+  setStatus('loading', isManualRefresh ? 'Actualizando datos…' : 'Cargando datos…');
+  document.getElementById('refresh-btn').disabled = true;
+
+  window.google = window.google || {};
+  window.google.visualization = window.google.visualization || {};
+  window.google.visualization.Query = window.google.visualization.Query || {};
+  window.google.visualization.Query.setResponse = function(resp){
+    document.getElementById('refresh-btn').disabled = false;
+    if(!resp || resp.status === 'error'){
+      const msg = (resp && resp.errors && resp.errors[0] && resp.errors[0].message) || 'Respuesta inválida';
+      showErrorBanner('No se pudo leer la hoja (' + msg + '). Verifica que esté compartida como "Cualquier persona con el enlace: Lector" y que el SHEET_ID sea correcto.');
+      return;
+    }
+    try{
+      const rows = gvizToObjects(resp);
+      processRawRows(rows);
+      lastLoadedAt = new Date();
+      setStatus('ok', 'Conectado · última actualización: ' + lastLoadedAt.toLocaleTimeString('es-CO'));
+      document.getElementById('sheet-link').href = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit';
+    }catch(e){
+      showErrorBanner('Los datos se recibieron pero no se pudieron procesar: ' + e.message);
+    }
+  };
+
+  const script = document.createElement('script');
+  script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&gid=0&_=' + Date.now();
+  script.onerror = function(){
+    document.getElementById('refresh-btn').disabled = false;
+    showErrorBanner('No se pudo contactar la hoja de Google Sheets. Revisa tu conexión y que el enlace de la hoja sea público.');
+  };
+  script.onload = function(){ script.remove(); };
+  document.body.appendChild(script);
+}
+
+function gvizDateToISO(raw){
+  if(raw === null || raw === undefined) return '';
+  const s = String(raw);
+  const m = /Date\((\d+),\s*(\d+),\s*(\d+)/.exec(s);
+  if(m){
+    const y = m[1], mo = String(Number(m[2]) + 1).padStart(2, '0'), d = String(Number(m[3])).padStart(2, '0');
+    return y + '-' + mo + '-' + d;
+  }
+  return s.slice(0, 10);
+}
+
+function gvizToObjects(resp){
+  const cols = resp.table.cols.map(function(c){ return c.label || c.id; });
+  const dateColIdx = cols.indexOf('FECHA_FINALIZACIÓN');
+  return (resp.table.rows || []).map(function(row){
+    const obj = {};
+    cols.forEach(function(label, i){
+      const cell = row.c[i];
+      if(!cell){ obj[label] = ''; return; }
+      if(i === dateColIdx){
+        obj[label] = gvizDateToISO(cell.v);
+      } else {
+        obj[label] = (cell.f !== undefined && cell.f !== null) ? cell.f : (cell.v === null || cell.v === undefined ? '' : cell.v);
+      }
+    });
+    return obj;
+  });
+}
+
+/* ---------------------------------------------------------------------
+   2) AGREGACIÓN DE DATOS EN EL NAVEGADOR (reemplaza el cálculo Python)
+   --------------------------------------------------------------------- */
+function groupBy(arr, key){
+  const m = new Map();
+  arr.forEach(function(x){
+    const k = x[key];
+    if(!m.has(k)) m.set(k, []);
+    m.get(k).push(x);
+  });
+  return m;
+}
+
+function kpisBlock(sub){
+  const total = sub.length;
+  const correcto = sub.filter(function(r){ return r.estado === 'Correcto'; }).length;
+  const con_errores = sub.filter(function(r){ return r.estado === 'Con Errores'; }).length;
+  const efectiva = sub.filter(function(r){ return r.efectividad === 'Efectiva'; }).length;
+  const no_efectiva = sub.filter(function(r){ return r.efectividad === 'No Efectivo'; }).length;
+  return {
+    total: total, correcto: correcto, con_errores: con_errores,
+    pct_correcto: total ? round1(correcto / total * 100) : 0,
+    pct_con_errores: total ? round1(con_errores / total * 100) : 0,
+    efectiva: efectiva, no_efectiva: no_efectiva,
+    pct_efectividad: total ? round1(efectiva / total * 100) : 0,
+  };
+}
+
+function dailyBlock(sub){
+  const byDate = groupBy(sub, 'fecha');
+  const dates = Array.from(byDate.keys()).filter(Boolean).sort();
+  return dates.map(function(fecha){
+    const rows = byDate.get(fecha);
+    return {
+      fecha: fecha, total: rows.length,
+      correcto: rows.filter(function(r){ return r.estado === 'Correcto'; }).length,
+      con_errores: rows.filter(function(r){ return r.estado === 'Con Errores'; }).length,
+      efectiva: rows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length,
+      no_efectiva: rows.filter(function(r){ return r.efectividad === 'No Efectivo'; }).length,
+    };
+  });
+}
+
+const ERR_DEFS = [
+  ['err_campos', 'Campos vacíos'],
+  ['err_lectura', 'Lectura incorrecta'],
+  ['err_matriz', 'Combinación no válida en matriz'],
+  ['err_obligatoriedad', 'Obligatoriedad de lectura'],
+];
+
+function errorTypesBlock(sub){
+  const out = ERR_DEFS.map(function(d){ return { tipo: d[1], count: sub.filter(function(r){ return r[d[0]]; }).length }; });
+  out.sort(function(a, b){ return b.count - a.count; });
+  return out;
+}
+
+function topCiclosBlock(sub, n){
+  n = n || 15;
+  const by = groupBy(sub, 'ciclo');
+  let out = Array.from(by.entries()).map(function(e){
+    const rows = e[1], total = rows.length;
+    const con_errores = rows.filter(function(r){ return r.estado === 'Con Errores'; }).length;
+    return { ciclo: e[0], total: total, con_errores: con_errores, pct_error: total ? round1(con_errores / total * 100) : 0 };
+  });
+  out.sort(function(a, b){ return b.con_errores - a.con_errores; });
+  return out.slice(0, n);
+}
+
+function topInspectoresBlock(sub, n, minTotal){
+  n = n || 12; minTotal = minTotal || 10;
+  const by = groupBy(sub, 'inspector');
+  let out = Array.from(by.entries()).map(function(e){
+    const rows = e[1], total = rows.length;
+    const con_errores = rows.filter(function(r){ return r.estado === 'Con Errores'; }).length;
+    const efectiva = rows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length;
+    return {
+      inspector: e[0], total: total, con_errores: con_errores, efectiva: efectiva,
+      pct_error: total ? round1(con_errores / total * 100) : 0,
+      pct_efectividad: total ? round1(efectiva / total * 100) : 0,
+    };
+  }).filter(function(x){ return x.total >= minTotal; });
+  out.sort(function(a, b){ return b.pct_error - a.pct_error; });
+  return out.slice(0, n);
+}
+
+function supervisoresBlock(sub){
+  const by = groupBy(sub, 'supervisor');
+  let out = Array.from(by.entries()).map(function(e){
+    const rows = e[1], total = rows.length;
+    const correcto = rows.filter(function(r){ return r.estado === 'Correcto'; }).length;
+    const con_errores = rows.filter(function(r){ return r.estado === 'Con Errores'; }).length;
+    const efectiva = rows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length;
+    return {
+      supervisor: e[0], total: total, correcto: correcto, con_errores: con_errores, efectiva: efectiva,
+      pct_efectividad: total ? round1(efectiva / total * 100) : 0,
+      pct_error: total ? round1(con_errores / total * 100) : 0,
+    };
+  });
+  out.sort(function(a, b){ return b.total - a.total; });
+  return out;
+}
+
+function topCausasBlock(sub, n){
+  n = n || 10;
+  const by = groupBy(sub, 'causa_cierre');
+  let out = Array.from(by.entries()).map(function(e){ return { causa: e[0] || '(sin causa)', count: e[1].length }; });
+  out.sort(function(a, b){ return b.count - a.count; });
+  return out.slice(0, n);
+}
+
+function buildScope(sub){
+  return {
+    kpis: kpisBlock(sub), daily: dailyBlock(sub), error_types: errorTypesBlock(sub),
+    top_ciclos: topCiclosBlock(sub), top_inspectores: topInspectoresBlock(sub), top_causas: topCausasBlock(sub),
+  };
+}
+
+function processRawRows(rawRows){
+  const clean = rawRows.map(function(r){
+    return {
+      orden: r['ORDEN'], cuenta: r['CUENTA'], ciclo: r['CICLO'],
+      fecha: String(r['FECHA_FINALIZACIÓN'] || '').slice(0, 10),
+      inspector: r['INSPECTOR'], supervisor: r['SUPERVISOR'], causa_cierre: r['CAUSA_CIERRE'],
+      efectividad: r['EFECTIVIDAD'], estado: r['ESTADO_AUDITORIA'],
+      err_campos: !!String(r['ERR_CamposVacios'] || '').trim(),
+      err_lectura: !!String(r['ERR_LecturaIncorrecta'] || '').trim(),
+      err_matriz: !!String(r['ERR_MatrizCierres'] || '').trim(),
+      err_obligatoriedad: !!String(r['ERR_ObligatoriedadLectura'] || '').trim(),
+    };
+  }).filter(function(r){ return r.orden !== '' && r.orden !== undefined && r.orden !== null; });
+
+  clean.forEach(function(r){
+    const tipos = [];
+    if(r.err_campos) tipos.push('Campos vacíos');
+    if(r.err_lectura) tipos.push('Lectura incorrecta');
+    if(r.err_matriz) tipos.push('Combinación no válida en matriz');
+    if(r.err_obligatoriedad) tipos.push('Obligatoriedad de lectura');
+    r.tipo_error = tipos.join('; ');
+  });
+
+  const fechas = clean.map(function(r){ return r.fecha; }).filter(Boolean).sort();
+  const newData = {
+    meta: {
+      total_registros: clean.length,
+      fecha_min: fechas[0] || '', fecha_max: fechas[fechas.length - 1] || '',
+      total_supervisores: new Set(clean.map(function(r){ return r.supervisor; })).size,
+      total_inspectores: new Set(clean.map(function(r){ return r.inspector; })).size,
+      total_ciclos: new Set(clean.map(function(r){ return r.ciclo; })).size,
+    },
+    overall: buildScope(clean),
+    by_supervisor: {},
+    errores_detalle: clean.filter(function(r){ return r.estado === 'Con Errores'; })
+      .sort(function(a, b){ return b.fecha.localeCompare(a.fecha); })
+      .map(function(r){
+        return {
+          orden: r.orden, cuenta: r.cuenta, ciclo: r.ciclo, inspector: r.inspector, supervisor: r.supervisor,
+          causa_cierre: r.causa_cierre, fecha: r.fecha, tipo_error: r.tipo_error, efectividad: r.efectividad,
+        };
+      }),
+  };
+  newData.overall.supervisores = supervisoresBlock(clean);
+  groupBy(clean, 'supervisor').forEach(function(rows, sup){ newData.by_supervisor[sup] = buildScope(rows); });
+
+  const keepScope = (currentScope === 'ALL' || newData.by_supervisor[currentScope]) ? currentScope : 'ALL';
+  DATA = newData;
+  currentScope = keepScope;
+  populateSupervisorOptions();
+  renderAll();
+}
+
+/* ---------------------------------------------------------------------
+   3) RENDERIZADO (KPIs, gráficos y tablas)
+   --------------------------------------------------------------------- */
+function getScopeData(){ return currentScope === 'ALL' ? DATA.overall : DATA.by_supervisor[currentScope]; }
+
+function populateSupervisorOptions(){
+  const sel = document.getElementById('supervisor-select');
+  const prev = currentScope;
+  sel.innerHTML = '<option value="ALL">Todos los supervisores</option>';
+  DATA.overall.supervisores.forEach(function(s){
+    const opt = document.createElement('option');
+    opt.value = s.supervisor;
+    opt.textContent = s.supervisor + ' (' + fmtInt(s.total) + ')';
+    sel.appendChild(opt);
+  });
+  sel.value = prev;
+  sel.disabled = false;
+}
+
+function renderAll(){
+  document.getElementById('header-meta').innerHTML =
+    'Periodo <b>' + formatDateLong(DATA.meta.fecha_min) + '</b> – <b>' + formatDateLong(DATA.meta.fecha_max) + '</b> · ' +
+    '<b>' + fmtInt(DATA.meta.total_registros) + '</b> órdenes auditadas · ' +
+    '<b>' + DATA.meta.total_inspectores + '</b> inspectores · ' +
+    '<b>' + DATA.meta.total_supervisores + '</b> supervisores · ' +
+    '<b>' + DATA.meta.total_ciclos + '</b> ciclos';
+
+  const scope = getScopeData();
+  renderKPIs(scope);
+  renderDailyChart(scope);
+  renderDoughnuts(scope);
+  renderErrorTypesChart(scope);
+  renderCiclosChart(scope);
+  renderInspectoresChart(scope);
+  renderSupervisoresChart();
+  renderCausasChart(scope);
+  renderSummaryTable();
+  computeDetailFiltered();
+  renderDetailTable();
+}
+
+function renderKPIs(scope){
+  document.getElementById('kpi-total').textContent = fmtInt(scope.kpis.total);
+  document.getElementById('kpi-total-sub').textContent = currentScope === 'ALL' ? 'Todos los supervisores' : currentScope;
+  document.getElementById('kpi-correcto').textContent = fmtPct(scope.kpis.pct_correcto);
+  document.getElementById('kpi-correcto-sub').textContent = fmtInt(scope.kpis.correcto) + ' órdenes correctas';
+  document.getElementById('kpi-errores').textContent = fmtInt(scope.kpis.con_errores);
+  document.getElementById('kpi-errores-sub').textContent = fmtPct(scope.kpis.pct_con_errores) + ' del total auditado';
+  document.getElementById('kpi-efectividad').textContent = fmtPct(scope.kpis.pct_efectividad);
+  document.getElementById('kpi-efectividad-sub').textContent = fmtInt(scope.kpis.efectiva) + ' órdenes efectivas';
+}
+
+function renderDailyChart(scope){
+  const labels = scope.daily.map(function(d){ return formatDateShort(d.fecha); });
+  const correcto = scope.daily.map(function(d){ return d.correcto; });
+  const errores = scope.daily.map(function(d){ return d.con_errores; });
+  const efect = scope.daily.map(function(d){ return d.total ? Math.round(d.efectiva / d.total * 1000) / 10 : 0; });
+  if (charts.daily) charts.daily.destroy();
+  charts.daily = new Chart(document.getElementById('daily-chart'), {
+    data: {
+      labels: labels,
+      datasets: [
+        { type: 'bar', label: 'Correctas', data: correcto, backgroundColor: COLORS.success, stack: 's', borderRadius: 3, maxBarThickness: 34 },
+        { type: 'bar', label: 'Con errores', data: errores, backgroundColor: COLORS.danger, stack: 's', borderRadius: 3, maxBarThickness: 34 },
+        { type: 'line', label: '% Efectividad', data: efect, borderColor: COLORS.teal, backgroundColor: COLORS.teal, yAxisID: 'y1', tension: 0.35, pointRadius: 3, pointBackgroundColor: COLORS.teal, borderWidth: 2.5 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Órdenes auditadas' }, grid: { color: '#EEF2F5' } },
+        y1: { position: 'right', beginAtZero: true, max: 100, grid: { drawOnChartArea: false }, title: { display: true, text: '% Efectividad' } }
+      },
+      plugins: { legend: { position: 'bottom' } }
+    }
+  });
+}
+
+function renderDoughnuts(scope){
+  if (charts.estado) charts.estado.destroy();
+  charts.estado = new Chart(document.getElementById('estado-chart'), {
+    type: 'doughnut',
+    data: { labels: ['Correctas', 'Con errores'], datasets: [{ data: [scope.kpis.correcto, scope.kpis.con_errores], backgroundColor: [COLORS.success, COLORS.danger], borderWidth: 0 }] },
+    options: { plugins: { legend: { position: 'bottom' } }, cutout: '68%' }
+  });
+  if (charts.efect) charts.efect.destroy();
+  charts.efect = new Chart(document.getElementById('efectividad-chart'), {
+    type: 'doughnut',
+    data: { labels: ['Efectiva', 'No efectiva'], datasets: [{ data: [scope.kpis.efectiva, scope.kpis.no_efectiva], backgroundColor: [COLORS.teal, COLORS.warning], borderWidth: 0 }] },
+    options: { plugins: { legend: { position: 'bottom' } }, cutout: '68%' }
+  });
+}
+
+function renderErrorTypesChart(scope){
+  const items = scope.error_types;
+  if (charts.errTypes) charts.errTypes.destroy();
+  charts.errTypes = new Chart(document.getElementById('error-types-chart'), {
+    type: 'bar',
+    data: { labels: items.map(function(i){ return i.tipo; }), datasets: [{ data: items.map(function(i){ return i.count; }), backgroundColor: COLORS.danger, borderRadius: 4, maxBarThickness: 22 }] },
+    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } } }
+  });
+}
+
+function renderCiclosChart(scope){
+  const items = scope.top_ciclos;
+  if (charts.ciclos) charts.ciclos.destroy();
+  charts.ciclos = new Chart(document.getElementById('ciclos-chart'), {
+    type: 'bar',
+    data: { labels: items.map(function(i){ return i.ciclo; }), datasets: [{ label: 'Órdenes con error', data: items.map(function(i){ return i.con_errores; }), backgroundColor: COLORS.primaryDark, borderRadius: 4, maxBarThickness: 18 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ return '% error del ciclo: ' + fmtPct(items[ctx.dataIndex].pct_error); } } } },
+      scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+function renderInspectoresChart(scope){
+  const items = scope.top_inspectores;
+  if (charts.inspectores) charts.inspectores.destroy();
+  charts.inspectores = new Chart(document.getElementById('inspectores-chart'), {
+    type: 'bar',
+    data: { labels: items.map(function(i){ return i.inspector; }), datasets: [{ label: '% de error', data: items.map(function(i){ return i.pct_error; }), backgroundColor: COLORS.warning, borderRadius: 4, maxBarThickness: 18 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ const it = items[ctx.dataIndex]; return it.con_errores + ' de ' + it.total + ' órdenes'; } } } },
+      scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' }, title: { display: true, text: '% de error' } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+function renderSupervisoresChart(){
+  const items = DATA.overall.supervisores;
+  const colors = items.map(function(i){ if (currentScope === 'ALL') return COLORS.teal; return i.supervisor === currentScope ? COLORS.teal : COLORS.gray; });
+  if (charts.supervisores) charts.supervisores.destroy();
+  charts.supervisores = new Chart(document.getElementById('supervisores-chart'), {
+    type: 'bar',
+    data: { labels: items.map(function(i){ return i.supervisor; }), datasets: [{ label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: colors, borderRadius: 5, maxBarThickness: 30 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ return fmtInt(items[ctx.dataIndex].total) + ' órdenes totales'; } } } },
+      scales: { y: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } }, x: { grid: { display: false } } }
+    }
+  });
+}
+
+function renderCausasChart(scope){
+  const items = scope.top_causas;
+  if (charts.causas) charts.causas.destroy();
+  charts.causas = new Chart(document.getElementById('causas-chart'), {
+    type: 'bar',
+    data: { labels: items.map(function(i){ return i.causa; }), datasets: [{ data: items.map(function(i){ return i.count; }), backgroundColor: COLORS.primary, borderRadius: 4, maxBarThickness: 18 }] },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } } }
+  });
+}
+
+function renderSummaryTable(){
+  const tbody = document.getElementById('summary-tbody');
+  tbody.innerHTML = '';
+  DATA.overall.supervisores.forEach(function(s){
+    const tr = document.createElement('tr');
+    if (currentScope === s.supervisor) tr.className = 'active-row';
+    tr.innerHTML =
+      '<td>' + s.supervisor + '</td>' + '<td class="num">' + fmtInt(s.total) + '</td>' +
+      '<td class="num">' + fmtInt(s.correcto) + '</td>' + '<td class="num">' + fmtInt(s.con_errores) + '</td>' +
+      '<td class="num">' + fmtPct(s.pct_error) + '</td>' + '<td class="num">' + fmtInt(s.efectiva) + '</td>' +
+      '<td class="num">' + fmtPct(s.pct_efectividad) + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function computeDetailFiltered(){
+  const q = document.getElementById('table-search').value.trim().toLowerCase();
+  let rows = DATA.errores_detalle.filter(function(r){
+    if (currentScope !== 'ALL' && r.supervisor !== currentScope) return false;
+    if (!q) return true;
+    return String(r.orden).toLowerCase().indexOf(q) !== -1 ||
+           String(r.cuenta).toLowerCase().indexOf(q) !== -1 ||
+           String(r.inspector).toLowerCase().indexOf(q) !== -1 ||
+           String(r.ciclo).toLowerCase().indexOf(q) !== -1;
+  });
+  rows = rows.slice().sort(function(a, b){
+    const k = detailSort.key;
+    let va = a[k], vb = b[k];
+    if (typeof va === 'number' && typeof vb === 'number') return detailSort.dir === 'asc' ? va - vb : vb - va;
+    va = String(va); vb = String(vb);
+    if (va < vb) return detailSort.dir === 'asc' ? -1 : 1;
+    if (va > vb) return detailSort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  detailFiltered = rows;
+}
+
+function onSort(key){
+  if (detailSort.key === key) detailSort.dir = detailSort.dir === 'asc' ? 'desc' : 'asc';
+  else { detailSort.key = key; detailSort.dir = 'asc'; }
+  document.querySelectorAll('#detail-table thead th').forEach(function(th){ th.classList.toggle('sorted', th.dataset.key === key); });
+  computeDetailFiltered();
+  detailPage = 0;
+  renderDetailTable();
+}
+
+function changePage(delta){
+  const maxPage = Math.max(0, Math.ceil(detailFiltered.length / PAGE_SIZE) - 1);
+  detailPage = Math.min(maxPage, Math.max(0, detailPage + delta));
+  renderDetailTable();
+}
+
+function renderDetailTable(){
+  document.getElementById('detail-count').textContent = fmtInt(detailFiltered.length);
+  const start = detailPage * PAGE_SIZE;
+  const pageRows = detailFiltered.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('detail-tbody');
+  tbody.innerHTML = '';
+  pageRows.forEach(function(r){
+    const tr = document.createElement('tr');
+    const efBadge = r.efectividad === 'Efectiva' ? '<span class="badge efectiva">Efectiva</span>' : '<span class="badge no-efectiva">No efectiva</span>';
+    tr.innerHTML =
+      '<td>' + formatDateShort(r.fecha) + '</td>' + '<td>' + r.orden + '</td>' + '<td>' + r.cuenta + '</td>' +
+      '<td>' + r.ciclo + '</td>' + '<td>' + r.inspector + '</td>' + '<td>' + r.supervisor + '</td>' +
+      '<td>' + (r.causa_cierre || '—') + '</td>' + '<td><span class="badge error">' + (r.tipo_error || '—') + '</span></td>' + '<td>' + efBadge + '</td>';
+    tbody.appendChild(tr);
+  });
+  const total = detailFiltered.length;
+  const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+  const from = total === 0 ? 0 : start + 1;
+  const to = Math.min(start + PAGE_SIZE, total);
+  document.getElementById('page-info').textContent = 'Mostrando ' + from + '–' + to + ' de ' + total;
+  document.getElementById('prev-page').disabled = detailPage <= 0;
+  document.getElementById('next-page').disabled = detailPage >= maxPage;
+}
+
+function csvEscape(val){
+  const s = String(val === undefined || val === null ? '' : val);
+  if (/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+function downloadCSV(filename, rows, headers){
+  const lines = [headers.map(function(h){ return csvEscape(h.label); }).join(',')];
+  rows.forEach(function(r){ lines.push(headers.map(function(h){ return csvEscape(r[h.key]); }).join(',')); });
+  const csv = '\uFEFF' + lines.join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function exportDetailCSV(){
+  const headers = [
+    { key: 'fecha', label: 'Fecha' }, { key: 'orden', label: 'Orden' }, { key: 'cuenta', label: 'Cuenta' },
+    { key: 'ciclo', label: 'Ciclo' }, { key: 'inspector', label: 'Inspector' }, { key: 'supervisor', label: 'Supervisor' },
+    { key: 'causa_cierre', label: 'Causa de cierre' }, { key: 'tipo_error', label: 'Tipo de error' }, { key: 'efectividad', label: 'Efectividad' }
+  ];
+  const scopeLabel = currentScope === 'ALL' ? 'todos' : currentScope.replace(/\s+/g, '_');
+  downloadCSV('detalle_errores_' + scopeLabel + '.csv', detailFiltered, headers);
+}
+function exportSummaryCSV(){
+  const headers = [
+    { key: 'supervisor', label: 'Supervisor' }, { key: 'total', label: 'Total' }, { key: 'correcto', label: 'Correctas' },
+    { key: 'con_errores', label: 'Con error' }, { key: 'pct_error', label: '% Error' }, { key: 'efectiva', label: 'Efectivas' },
+    { key: 'pct_efectividad', label: '% Efectividad' }
+  ];
+  downloadCSV('resumen_por_supervisor.csv', DATA.overall.supervisores, headers);
+}
+
+/* ---------------------------------------------------------------------
+   4) EVENTOS, AUTO-ACTUALIZACIÓN Y PWA
+   --------------------------------------------------------------------- */
+function init(){
+  document.getElementById('supervisor-select').addEventListener('change', function(e){
+    currentScope = e.target.value; detailPage = 0; renderAll();
+  });
+  document.getElementById('table-search').addEventListener('input', function(){
+    detailPage = 0; computeDetailFiltered(); renderDetailTable();
+  });
+  document.getElementById('prev-page').addEventListener('click', function(){ changePage(-1); });
+  document.getElementById('next-page').addEventListener('click', function(){ changePage(1); });
+  document.getElementById('export-detail-btn').addEventListener('click', exportDetailCSV);
+  document.getElementById('export-summary-btn').addEventListener('click', exportSummaryCSV);
+  document.getElementById('refresh-btn').addEventListener('click', function(){ loadData(true); });
+  document.querySelectorAll('#detail-table thead th').forEach(function(th){ th.addEventListener('click', function(){ onSort(th.dataset.key); }); });
+
+  loadData(false);
+  setInterval(function(){ loadData(false); }, REFRESH_INTERVAL_MS);
+
+  if ('serviceWorker' in navigator){
+    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  }
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('install-btn').classList.remove('hidden');
+  });
+  document.getElementById('install-btn').addEventListener('click', async function(){
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById('install-btn').classList.add('hidden');
+  });
+}
+
+init();
+</script>
+</body>
+</html>
