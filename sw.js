@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aaa-auditoria-v2';
+const CACHE_NAME = 'aaa-auditoria-v3';
 const APP_SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (event) {
@@ -21,19 +21,20 @@ self.addEventListener('activate', function (event) {
   self.clients.claim();
 });
 
+// Estrategia "network-first" para todo: siempre intenta traer la versión más
+// reciente de la red (código del dashboard y datos de Sheets). Si no hay
+// conexión, cae a la última copia guardada en caché para que la app abra igual.
+// Esto evita que el dashboard quede "pegado" en una versión vieja después de
+// una actualización.
 self.addEventListener('fetch', function (event) {
-  const url = event.request.url;
-  // Los datos en vivo (Google Sheets) siempre van a la red, nunca a la caché.
-  if (url.indexOf('docs.google.com') !== -1 || url.indexOf('googleusercontent.com') !== -1) {
-    event.respondWith(
-      fetch(event.request).catch(function () { return caches.match(event.request); })
-    );
-    return;
-  }
-  // El resto del "app shell" usa estrategia cache-first para funcionar sin conexión.
+  if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then(function (cached) {
-      return cached || fetch(event.request);
+    fetch(event.request).then(function (response) {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, copy); });
+      return response;
+    }).catch(function () {
+      return caches.match(event.request);
     })
   );
 });
