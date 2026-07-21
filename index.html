@@ -574,6 +574,18 @@
 const SHEET_ID = "1WQhKM-ZG9Ojwq-2zADhvDPCbRDsYfknPeEeX_dcyofY";
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // auto-actualización cada 5 minutos
 
+// Solo se piden las columnas que el dashboard realmente usa, por letra de
+// columna según el orden de la hoja "Validador": A=ORDEN, B=CUENTA, C=CICLO,
+// F=CAUSA_CIERRE, I=OBS_1, J=FECHA_FINALIZACIÓN, L=INSPECTOR2, N=EFECTIVIDAD,
+// P=SUPERVISOR, Q-T=columnas de error, U=ESTADO_AUDITORIA.
+// Con +30.000 filas esto reduce bastante el peso de la respuesta (se excluyen
+// LECTURA, INSPECTOR viejo, COMENTARIO, LECTURA1, Usuario (Llave), LINK ORDER
+// y LINK, que no se usan en el dashboard).
+// Importante: si alguna vez cambia el orden de columnas al pegar los datos,
+// hay que ajustar esta lista — o poner SHEET_COLUMNS_TQ = '' para traer todas
+// las columnas sin filtrar (más lento, pero a prueba de reordenamientos).
+const SHEET_COLUMNS_TQ = 'select A,B,C,F,I,J,L,N,P,Q,R,S,T,U';
+
 const COLORS = {
   success: '#1F9D66', danger: '#E4572E', warning: '#F0A93A',
   teal: '#17A2B8', primary: '#0E6E8C', primaryDark: '#0B3D5C', gray: '#C4CFD6',
@@ -671,7 +683,8 @@ function loadData(isManualRefresh){
   };
 
   const script = document.createElement('script');
-  script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&gid=0&_=' + Date.now();
+  script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&gid=0' +
+    (SHEET_COLUMNS_TQ ? '&tq=' + encodeURIComponent(SHEET_COLUMNS_TQ) : '') + '&_=' + Date.now();
   script.onerror = function(){
     document.getElementById('refresh-btn').disabled = false;
     showErrorBanner('No se pudo contactar la hoja de Google Sheets. Revisa tu conexión y que el enlace de la hoja sea público.');
