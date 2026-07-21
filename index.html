@@ -229,6 +229,30 @@
     font-size:13px; font-family: var(--font-body); min-width:200px; background:#F7FAFB;
   }
 
+  /* ---------- Auditoría de hoy ---------- */
+  .hoy-section{
+    background: linear-gradient(135deg, #E4F1FB 0%, #E9F8F2 100%);
+    border: 1px solid var(--teal);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 18px;
+  }
+  .hoy-header{ display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .hoy-badge{
+    background: var(--teal-dark); color:#fff; font-size:11px; font-weight:700;
+    padding:4px 10px; border-radius:20px; letter-spacing:0.5px;
+  }
+  .hoy-fecha{ font-size:13px; color: var(--text-2); font-weight:600; }
+  .hoy-empty{ font-size:13px; color: var(--text-2); padding: 4px 0 2px; }
+  .hoy-kpis{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+  .hoy-card{ background: rgba(255,255,255,0.75); border-radius:10px; padding:12px 14px; }
+  .hoy-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
+  .hoy-value{ font-family: var(--font-display); font-size:22px; font-weight:700; color:var(--text); line-height:1.1; }
+  .hoy-delta{ font-size:11.5px; margin-top:3px; font-weight:600; }
+  .hoy-delta.up{ color: var(--success); }
+  .hoy-delta.down{ color: var(--danger); }
+  .hoy-delta.neutral{ color: var(--text-2); }
+
   @media (max-width: 640px){
     .btn{ padding: 10px 14px; font-size:13px; }
     .quick-nav a{ padding:9px 15px; }
@@ -243,9 +267,26 @@
   }
   @media (max-width: 640px){
     .kpi-row{ grid-template-columns: 1fr; }
+    .hoy-kpis{ grid-template-columns: repeat(2, 1fr); }
     .dashboard-header{ flex-direction:column; align-items:flex-start; }
     .header-filter select{ min-width: 100%; }
     .status-bar{ flex-direction:column; align-items:flex-start; }
+  }
+
+  /* ---------- Horizontal (landscape) en celular: aprovechar el ancho extra ---------- */
+  @media (orientation: landscape) and (max-width: 1080px){
+    .kpi-row{ grid-template-columns: repeat(4, 1fr); }
+    .chart-row.two-col{ grid-template-columns: 1fr 1fr; }
+    .chart-row.three-col{ grid-template-columns: repeat(2, 1fr); }
+    .chart-container canvas{ max-height: 220px; }
+    .chart-container.tall canvas{ max-height: 300px; }
+    .dashboard-header{ flex-direction:row; align-items:flex-end; }
+    .status-bar{ flex-direction:row; align-items:center; }
+  }
+  @media (orientation: landscape) and (max-width: 640px){
+    .kpi-row{ grid-template-columns: repeat(2, 1fr); }
+    .chart-container canvas{ max-height: 190px; }
+    .chart-container.tall canvas{ max-height: 260px; }
   }
 </style>
 </head>
@@ -278,6 +319,7 @@
   </div>
 
   <nav class="quick-nav">
+    <a href="#sec-hoy">Hoy</a>
     <a href="#sec-kpis">KPIs</a>
     <a href="#sec-tendencias">Tendencias</a>
     <a href="#sec-inspectores">Inspectores</a>
@@ -287,6 +329,36 @@
 
   <div class="setup-banner hidden" id="setup-banner"></div>
   <div class="error-banner hidden" id="error-banner"></div>
+
+  <section class="hoy-section" id="sec-hoy">
+    <div class="hoy-header">
+      <span class="hoy-badge">● HOY</span>
+      <span class="hoy-fecha" id="hoy-fecha">—</span>
+    </div>
+    <div class="hoy-empty hidden" id="hoy-empty">Aún no hay órdenes auditadas registradas para hoy.</div>
+    <div class="hoy-kpis" id="hoy-kpis">
+      <div class="hoy-card">
+        <div class="hoy-label">Auditado hoy</div>
+        <div class="hoy-value" id="hoy-total">—</div>
+        <div class="hoy-delta" id="hoy-total-delta">&nbsp;</div>
+      </div>
+      <div class="hoy-card">
+        <div class="hoy-label">% Correctas</div>
+        <div class="hoy-value" id="hoy-correcto">—</div>
+        <div class="hoy-delta" id="hoy-correcto-delta">&nbsp;</div>
+      </div>
+      <div class="hoy-card">
+        <div class="hoy-label">Con errores</div>
+        <div class="hoy-value" id="hoy-errores">—</div>
+        <div class="hoy-delta" id="hoy-errores-delta">&nbsp;</div>
+      </div>
+      <div class="hoy-card">
+        <div class="hoy-label">% Efectividad</div>
+        <div class="hoy-value" id="hoy-efectividad">—</div>
+        <div class="hoy-delta" id="hoy-efectividad-delta">&nbsp;</div>
+      </div>
+    </div>
+  </section>
 
   <section class="kpi-row" id="sec-kpis">
     <div class="kpi-card">
@@ -523,6 +595,13 @@ function fmtPct(n){ return String(n).replace('.', ',') + '%'; }
 function round1(n){ return Math.round(n * 10) / 10; }
 function formatDateShort(iso){ if(!iso) return '—'; const p = String(iso).split('-'); return p.length===3 ? p[2] + '/' + p[1] : iso; }
 function formatDateLong(iso){ if(!iso) return '—'; const p = String(iso).split('-'); return p.length===3 ? p[2] + '/' + p[1] + '/' + p[0] : iso; }
+
+function isoFromDate(d){
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+function todayISO(){ return isoFromDate(new Date()); }
+function yesterdayISO(){ const d = new Date(); d.setDate(d.getDate() - 1); return isoFromDate(d); }
 
 Chart.defaults.font.family = "'Inter', sans-serif";
 Chart.defaults.color = '#5C7284';
@@ -899,6 +978,7 @@ function renderAll(){
     '<b>' + DATA.meta.total_ciclos + '</b> ciclos';
 
   const scope = getScopeData();
+  renderHoyBlock(scope);
   renderKPIs(scope);
   renderDailyChart(scope);
   renderDailyEfectividadChart(scope);
@@ -917,6 +997,52 @@ function renderAll(){
   renderInspectorTable();
   computeDetailFiltered();
   renderDetailTable();
+}
+
+function renderHoyBlock(scope){
+  const hoy = todayISO();
+  const ayer = yesterdayISO();
+  document.getElementById('hoy-fecha').textContent = formatDateLong(hoy);
+
+  const todayData = scope.daily.find(function(d){ return d.fecha === hoy; });
+  const yestData = scope.daily.find(function(d){ return d.fecha === ayer; });
+
+  if (!todayData || todayData.total === 0){
+    document.getElementById('hoy-empty').classList.remove('hidden');
+    document.getElementById('hoy-kpis').classList.add('hidden');
+    return;
+  }
+  document.getElementById('hoy-empty').classList.add('hidden');
+  document.getElementById('hoy-kpis').classList.remove('hidden');
+
+  const pctCorrecto = round1(todayData.correcto / todayData.total * 100);
+  const pctErrorPct = round1(todayData.con_errores / todayData.total * 100);
+  const pctEfect = round1(todayData.efectiva / todayData.total * 100);
+
+  document.getElementById('hoy-total').textContent = fmtInt(todayData.total);
+  document.getElementById('hoy-correcto').textContent = fmtPct(pctCorrecto);
+  document.getElementById('hoy-errores').textContent = fmtInt(todayData.con_errores);
+  document.getElementById('hoy-efectividad').textContent = fmtPct(pctEfect);
+
+  function setDelta(elId, todayVal, yestVal, goodDirection, isPercent){
+    const el = document.getElementById(elId);
+    if (!yestData){ el.textContent = 'Sin dato de ayer'; el.className = 'hoy-delta neutral'; return; }
+    const diff = round1(todayVal - yestVal);
+    if (diff === 0){ el.textContent = '= vs. ayer'; el.className = 'hoy-delta neutral'; return; }
+    const sign = diff > 0 ? '+' : '';
+    const displayVal = isPercent ? (sign + diff + '%') : (sign + fmtInt(Math.round(diff)));
+    const cls = goodDirection === 'neutral' ? 'neutral' : ((diff > 0) === (goodDirection === 'up') ? 'up' : 'down');
+    el.textContent = displayVal + ' vs. ayer';
+    el.className = 'hoy-delta ' + cls;
+  }
+
+  const yestPctCorrecto = yestData ? round1(yestData.correcto / (yestData.total || 1) * 100) : 0;
+  const yestPctEfect = yestData ? round1(yestData.efectiva / (yestData.total || 1) * 100) : 0;
+
+  setDelta('hoy-total-delta', todayData.total, yestData ? yestData.total : 0, 'neutral', false);
+  setDelta('hoy-correcto-delta', pctCorrecto, yestPctCorrecto, 'up', true);
+  setDelta('hoy-errores-delta', todayData.con_errores, yestData ? yestData.con_errores : 0, 'down', false);
+  setDelta('hoy-efectividad-delta', pctEfect, yestPctEfect, 'up', true);
 }
 
 function renderKPIs(scope){
@@ -1026,25 +1152,24 @@ function renderInspectoresEfectivosChart(scope){
 
 function renderInspectorDivergingChart(scope){
   const items = scope.inspector_comparativa;
-  const maxErr = Math.max.apply(null, items.map(function(i){ return i.pct_error; }).concat([10]));
   if (charts.inspectorDiverging) charts.inspectorDiverging.destroy();
   charts.inspectorDiverging = new Chart(document.getElementById('inspector-diverging-chart'), {
     type: 'bar',
     data: {
       labels: items.map(function(i){ return i.inspector; }),
       datasets: [
-        { label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 3, maxBarThickness: 20 },
-        { label: '% Error', data: items.map(function(i){ return -i.pct_error; }), backgroundColor: COLORS.danger, borderRadius: 3, maxBarThickness: 20 }
+        { label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 3, maxBarThickness: 16 },
+        { label: '% Error', data: items.map(function(i){ return i.pct_error; }), backgroundColor: COLORS.danger, borderRadius: 3, maxBarThickness: 16 }
       ]
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { position: 'bottom' },
-        tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(Math.abs(ctx.raw)); } } }
+        tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(ctx.raw); } } }
       },
       scales: {
-        x: { min: -Math.max(20, Math.ceil(maxErr * 1.4)), max: 100, grid: { color: '#EEF2F5' }, ticks: { callback: function(v){ return Math.abs(v) + '%'; } } },
+        x: { min: 0, max: 100, grid: { color: '#EEF2F5' }, ticks: { callback: function(v){ return v + '%'; } } },
         y: { grid: { display: false } }
       }
     }
