@@ -1437,7 +1437,17 @@ function init(){
   setInterval(function(){ loadData(false); }, REFRESH_INTERVAL_MS);
 
   if ('serviceWorker' in navigator){
-    window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+    let swRefreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', function(){
+      if (swRefreshing) return;
+      swRefreshing = true;
+      window.location.reload();
+    });
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(function(reg){
+        reg.update();
+      }).catch(function(){});
+    });
   }
   let deferredPrompt;
   window.addEventListener('beforeinstallprompt', function(e){
