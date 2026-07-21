@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aaa-auditoria-v3';
+const CACHE_NAME = 'aaa-auditoria-v4';
 const APP_SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (event) {
@@ -21,15 +21,15 @@ self.addEventListener('activate', function (event) {
   self.clients.claim();
 });
 
-// Estrategia "network-first" para todo: siempre intenta traer la versión más
-// reciente de la red (código del dashboard y datos de Sheets). Si no hay
-// conexión, cae a la última copia guardada en caché para que la app abra igual.
-// Esto evita que el dashboard quede "pegado" en una versión vieja después de
-// una actualización.
+// Estrategia "network-first" para todo, con "cache: no-store" para saltarnos
+// también la caché HTTP del navegador (no solo la caché del service worker).
+// Sin esto, el navegador podía devolver una copia local guardada aunque el
+// código de aquí pidiera "red primero", y la app parecía no actualizarse.
+// Si no hay conexión, cae a la última copia guardada para que la app abra igual.
 self.addEventListener('fetch', function (event) {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    fetch(event.request).then(function (response) {
+    fetch(event.request.url, { cache: 'no-store' }).then(function (response) {
       const copy = response.clone();
       caches.open(CACHE_NAME).then(function (cache) { cache.put(event.request, copy); });
       return response;
