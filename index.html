@@ -202,6 +202,41 @@
 
   .hidden{ display:none !important; }
 
+  /* ---------- Quick nav ---------- */
+  html{ scroll-behavior:smooth; }
+  .quick-nav{
+    display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+    margin-bottom:18px; padding-bottom:2px;
+  }
+  .quick-nav a{
+    flex-shrink:0; padding:8px 16px; border-radius:20px; border:1px solid var(--border);
+    background: var(--card); color: var(--teal-dark); font-size:12.8px; font-weight:600;
+    text-decoration:none; box-shadow: var(--shadow); white-space:nowrap;
+  }
+  .quick-nav a:hover{ background: var(--teal-dark); color:#fff; border-color:var(--teal-dark); }
+  .quick-nav::-webkit-scrollbar{ height:0; }
+
+  /* ---------- Back to top ---------- */
+  .back-to-top{
+    position: fixed; bottom: 22px; right: 22px; width:46px; height:46px; border-radius:50%;
+    background: var(--teal-dark); color:#fff; border:none; font-size:20px; cursor:pointer;
+    box-shadow: 0 4px 16px rgba(11,61,92,0.28); z-index: 40;
+  }
+  .back-to-top:hover{ background: var(--navy); }
+
+  #inspector-search{
+    padding: 8px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:13px; font-family: var(--font-body); min-width:200px; background:#F7FAFB;
+  }
+
+  @media (max-width: 640px){
+    .btn{ padding: 10px 14px; font-size:13px; }
+    .quick-nav a{ padding:9px 15px; }
+    .table-actions{ width:100%; }
+    #table-search, #inspector-search{ flex:1; min-width:0; }
+    .back-to-top{ width:42px; height:42px; bottom:16px; right:16px; }
+  }
+
   @media (max-width: 1080px){
     .kpi-row{ grid-template-columns: repeat(2, 1fr); }
     .chart-row.two-col, .chart-row.three-col{ grid-template-columns: 1fr; }
@@ -242,10 +277,18 @@
     </div>
   </div>
 
+  <nav class="quick-nav">
+    <a href="#sec-kpis">KPIs</a>
+    <a href="#sec-tendencias">Tendencias</a>
+    <a href="#sec-inspectores">Inspectores</a>
+    <a href="#sec-supervisores">Supervisores</a>
+    <a href="#sec-detalle">Detalle de errores</a>
+  </nav>
+
   <div class="setup-banner hidden" id="setup-banner"></div>
   <div class="error-banner hidden" id="error-banner"></div>
 
-  <section class="kpi-row">
+  <section class="kpi-row" id="sec-kpis">
     <div class="kpi-card">
       <div class="kpi-icon blue">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -288,11 +331,24 @@
     </div>
   </section>
 
-  <section class="chart-row one-col">
+  <section class="chart-row one-col" id="sec-tendencias">
     <div class="chart-container">
       <h3>Evolución diaria de auditorías</h3>
       <p class="chart-sub">Órdenes correctas vs. con error (barras) y % de efectividad (línea)</p>
       <canvas id="daily-chart" height="90"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row two-col">
+    <div class="chart-container">
+      <h3>Línea de tiempo — efectividad diaria</h3>
+      <p class="chart-sub">% de efectividad por día</p>
+      <canvas id="daily-efectividad-chart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3>Línea de tiempo — errores diarios</h3>
+      <p class="chart-sub">Órdenes con error por día</p>
+      <canvas id="daily-errores-chart"></canvas>
     </div>
   </section>
 
@@ -314,6 +370,27 @@
     </div>
   </section>
 
+  <section class="chart-row two-col" id="sec-inspectores">
+    <div class="chart-container tall">
+      <h3>Inspectores con mayor tasa de error</h3>
+      <p class="chart-sub">% de error sobre el total auditado (mínimo 10 órdenes)</p>
+      <canvas id="inspectores-chart"></canvas>
+    </div>
+    <div class="chart-container tall">
+      <h3>Inspectores más efectivos</h3>
+      <p class="chart-sub">% de efectividad sobre el total auditado (mínimo 10 órdenes)</p>
+      <canvas id="inspectores-efectivos-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row one-col">
+    <div class="chart-container tall">
+      <h3>Efectividad vs. errores por inspector</h3>
+      <p class="chart-sub">Barra verde = % efectividad · barra roja = % error de auditoría · mismos inspectores del gráfico anterior, ordenados de mayor a menor efectividad.</p>
+      <canvas id="inspector-diverging-chart"></canvas>
+    </div>
+  </section>
+
   <section class="chart-row two-col">
     <div class="chart-container tall">
       <h3>Ciclos con más órdenes en error</h3>
@@ -321,13 +398,36 @@
       <canvas id="ciclos-chart"></canvas>
     </div>
     <div class="chart-container tall">
-      <h3>Inspectores con mayor tasa de error</h3>
-      <p class="chart-sub">% de error sobre el total auditado (mínimo 10 órdenes)</p>
-      <canvas id="inspectores-chart"></canvas>
+      <h3>Ciclos más inefectivos</h3>
+      <p class="chart-sub">Menor % de efectividad (mínimo 10 órdenes) · top 15</p>
+      <canvas id="ciclos-inefectivos-chart"></canvas>
     </div>
   </section>
 
-  <section class="chart-row two-col">
+  <section class="table-section">
+    <div class="table-header">
+      <h3>Resumen por inspector</h3>
+      <div class="table-actions">
+        <input type="text" id="inspector-search" placeholder="Buscar inspector…">
+        <button class="btn ghost" id="export-inspector-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 10px;">Efectividad y errores lado a lado, por inspector (<span id="inspector-count">0</span>) · clic en un encabezado para ordenar</p>
+    <div class="table-scroll">
+      <table class="data-table summary-table" id="inspector-table">
+        <thead>
+          <tr>
+            <th data-key="inspector">Inspector2</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Total</th>
+            <th data-key="correcto" class="num">Correctas</th><th data-key="con_errores" class="num">Con error</th>
+            <th data-key="pct_error" class="num sorted">% Error</th><th data-key="pct_efectividad" class="num">% Efectividad</th>
+          </tr>
+        </thead>
+        <tbody id="inspector-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="chart-row two-col" id="sec-supervisores">
     <div class="chart-container tall">
       <h3>Efectividad por supervisor</h3>
       <p class="chart-sub">Comparativo general · el supervisor filtrado se resalta en el gráfico</p>
@@ -360,7 +460,7 @@
     </div>
   </section>
 
-  <section class="table-section">
+  <section class="table-section" id="sec-detalle">
     <div class="table-header">
       <h3>Detalle de órdenes con error (<span id="detail-count">0</span>)</h3>
       <div class="table-actions">
@@ -373,8 +473,8 @@
         <thead>
           <tr>
             <th data-key="fecha">Fecha</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
-            <th data-key="ciclo">Ciclo</th><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th>
-            <th data-key="causa_cierre">Causa de cierre</th><th data-key="tipo_error">Tipo de error</th><th data-key="efectividad">Efectividad</th>
+            <th data-key="ciclo">Ciclo</th><th data-key="inspector">Inspector2</th><th data-key="supervisor">Supervisor</th>
+            <th data-key="causa_cierre">Causa de cierre</th><th data-key="obs_1">Obs. 1</th><th data-key="tipo_error">Tipo de error</th><th data-key="efectividad">Efectividad</th>
           </tr>
         </thead>
         <tbody id="detail-tbody"></tbody>
@@ -392,12 +492,14 @@
   </footer>
 </div>
 
+<button class="back-to-top hidden" id="back-to-top" aria-label="Volver arriba">↑</button>
+
 <script>
 /* =========================================================================
    CONFIGURACIÓN — reemplaza SHEET_ID por el ID real de tu Google Sheet
    (la parte de la URL entre /d/ y /edit). El resto no requiere cambios.
    ========================================================================= */
-const SHEET_ID = "1_NTcyMn3xX0MYqP40qdFc9hiAVpgOXdkfwJEEhRwL3o";
+const SHEET_ID = "1WQhKM-ZG9Ojwq-2zADhvDPCbRDsYfknPeEeX_dcyofY";
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // auto-actualización cada 5 minutos
 
 const COLORS = {
@@ -412,6 +514,8 @@ let detailSort = { key: 'fecha', dir: 'desc' };
 let detailPage = 0;
 const PAGE_SIZE = 50;
 let detailFiltered = [];
+let inspectorSort = { key: 'pct_error', dir: 'desc' };
+let inspectorFiltered = [];
 let lastLoadedAt = null;
 
 function fmtInt(n){ return Number(n || 0).toLocaleString('es-CO'); }
@@ -509,8 +613,8 @@ function gvizDateToISO(raw){
 }
 
 function gvizToObjects(resp){
-  const cols = resp.table.cols.map(function(c){ return c.label || c.id; });
-  const dateColIdx = cols.indexOf('FECHA_FINALIZACIÓN');
+  const cols = resp.table.cols.map(function(c){ return String(c.label || c.id || '').trim(); });
+  const dateColIdx = cols.findIndex(function(c){ return c.toUpperCase() === 'FECHA_FINALIZACIÓN'; });
   return (resp.table.rows || []).map(function(row){
     const obj = {};
     cols.forEach(function(label, i){
@@ -524,6 +628,17 @@ function gvizToObjects(resp){
     });
     return obj;
   });
+}
+
+// Búsqueda de columna tolerante a mayúsculas/minúsculas y espacios extra
+// (evita que un encabezado como " Inspector2 " o "inspector2" no se reconozca).
+function getField(row, name){
+  if(Object.prototype.hasOwnProperty.call(row, name)) return row[name];
+  const target = name.trim().toUpperCase();
+  for(const k in row){
+    if(k.trim().toUpperCase() === target) return row[k];
+  }
+  return '';
 }
 
 /* ---------------------------------------------------------------------
@@ -594,6 +709,18 @@ function topCiclosBlock(sub, n){
   return out.slice(0, n);
 }
 
+function topCiclosInefectivosBlock(sub, n, minTotal){
+  n = n || 15; minTotal = minTotal || 10;
+  const by = groupBy(sub, 'ciclo');
+  let out = Array.from(by.entries()).map(function(e){
+    const rows = e[1], total = rows.length;
+    const efectiva = rows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length;
+    return { ciclo: e[0], total: total, efectiva: efectiva, pct_efectividad: total ? round1(efectiva / total * 100) : 0 };
+  }).filter(function(x){ return x.total >= minTotal; });
+  out.sort(function(a, b){ return a.pct_efectividad - b.pct_efectividad; });
+  return out.slice(0, n);
+}
+
 function topInspectoresBlock(sub, n, minTotal){
   n = n || 12; minTotal = minTotal || 10;
   const by = groupBy(sub, 'inspector');
@@ -609,6 +736,49 @@ function topInspectoresBlock(sub, n, minTotal){
   }).filter(function(x){ return x.total >= minTotal; });
   out.sort(function(a, b){ return b.pct_error - a.pct_error; });
   return out.slice(0, n);
+}
+
+function topInspectoresEfectivosBlock(sub, n, minTotal){
+  n = n || 12; minTotal = minTotal || 10;
+  const by = groupBy(sub, 'inspector');
+  let out = Array.from(by.entries()).map(function(e){
+    const rows = e[1], total = rows.length;
+    const con_errores = rows.filter(function(r){ return r.estado === 'Con Errores'; }).length;
+    const efectiva = rows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length;
+    return {
+      inspector: e[0], total: total, con_errores: con_errores, efectiva: efectiva,
+      pct_error: total ? round1(con_errores / total * 100) : 0,
+      pct_efectividad: total ? round1(efectiva / total * 100) : 0,
+    };
+  }).filter(function(x){ return x.total >= minTotal; });
+  out.sort(function(a, b){ return b.pct_efectividad - a.pct_efectividad; });
+  return out.slice(0, n);
+}
+
+function inspectoresFullBlock(sub, minTotal){
+  minTotal = minTotal || 1;
+  const by = groupBy(sub, 'inspector');
+  let out = Array.from(by.entries()).map(function(e){
+    const rows = e[1], total = rows.length;
+    const correcto = rows.filter(function(r){ return r.estado === 'Correcto'; }).length;
+    const con_errores = rows.filter(function(r){ return r.estado === 'Con Errores'; }).length;
+    const efectiva = rows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length;
+    const supervisorMasFrecuente = (function(){
+      const counts = {};
+      rows.forEach(function(r){ counts[r.supervisor] = (counts[r.supervisor] || 0) + 1; });
+      let best = '', bestN = -1;
+      Object.keys(counts).forEach(function(k){ if(counts[k] > bestN){ best = k; bestN = counts[k]; } });
+      return best;
+    })();
+    return {
+      inspector: e[0], supervisor: supervisorMasFrecuente, total: total, correcto: correcto,
+      con_errores: con_errores, efectiva: efectiva,
+      pct_efectividad: total ? round1(efectiva / total * 100) : 0,
+      pct_error: total ? round1(con_errores / total * 100) : 0,
+    };
+  }).filter(function(x){ return x.total >= minTotal; });
+  out.sort(function(a, b){ return b.total - a.total; });
+  return out;
 }
 
 function supervisoresBlock(sub){
@@ -640,20 +810,24 @@ function buildScope(sub){
   return {
     kpis: kpisBlock(sub), daily: dailyBlock(sub), error_types: errorTypesBlock(sub),
     top_ciclos: topCiclosBlock(sub), top_inspectores: topInspectoresBlock(sub), top_causas: topCausasBlock(sub),
+    top_inspectores_efectivos: topInspectoresEfectivosBlock(sub),
+    top_ciclos_inefectivos: topCiclosInefectivosBlock(sub),
+    inspector_comparativa: topInspectoresEfectivosBlock(sub, 15, 10),
+    inspectores_full: inspectoresFullBlock(sub, 1),
   };
 }
 
 function processRawRows(rawRows){
   const clean = rawRows.map(function(r){
     return {
-      orden: r['ORDEN'], cuenta: r['CUENTA'], ciclo: r['CICLO'],
-      fecha: String(r['FECHA_FINALIZACIÓN'] || '').slice(0, 10),
-      inspector: r['INSPECTOR'], supervisor: r['SUPERVISOR'], causa_cierre: r['CAUSA_CIERRE'],
-      efectividad: r['EFECTIVIDAD'], estado: r['ESTADO_AUDITORIA'],
-      err_campos: !!String(r['ERR_CamposVacios'] || '').trim(),
-      err_lectura: !!String(r['ERR_LecturaIncorrecta'] || '').trim(),
-      err_matriz: !!String(r['ERR_MatrizCierres'] || '').trim(),
-      err_obligatoriedad: !!String(r['ERR_ObligatoriedadLectura'] || '').trim(),
+      orden: getField(r, 'ORDEN'), cuenta: getField(r, 'CUENTA'), ciclo: getField(r, 'CICLO'),
+      fecha: String(getField(r, 'FECHA_FINALIZACIÓN') || '').slice(0, 10),
+      inspector: getField(r, 'INSPECTOR2') || '(Sin asignar)', supervisor: getField(r, 'SUPERVISOR'), causa_cierre: getField(r, 'CAUSA_CIERRE'),
+      efectividad: getField(r, 'EFECTIVIDAD'), estado: getField(r, 'ESTADO_AUDITORIA'), obs_1: getField(r, 'OBS_1'),
+      err_campos: !!String(getField(r, 'ERR_CamposVacios') || '').trim(),
+      err_lectura: !!String(getField(r, 'ERR_LecturaIncorrecta') || '').trim(),
+      err_matriz: !!String(getField(r, 'ERR_MatrizCierres') || '').trim(),
+      err_obligatoriedad: !!String(getField(r, 'ERR_ObligatoriedadLectura') || '').trim(),
     };
   }).filter(function(r){ return r.orden !== '' && r.orden !== undefined && r.orden !== null; });
 
@@ -683,6 +857,7 @@ function processRawRows(rawRows){
         return {
           orden: r.orden, cuenta: r.cuenta, ciclo: r.ciclo, inspector: r.inspector, supervisor: r.supervisor,
           causa_cierre: r.causa_cierre, fecha: r.fecha, tipo_error: r.tipo_error, efectividad: r.efectividad,
+          obs_1: r.obs_1,
         };
       }),
   };
@@ -726,13 +901,20 @@ function renderAll(){
   const scope = getScopeData();
   renderKPIs(scope);
   renderDailyChart(scope);
+  renderDailyEfectividadChart(scope);
+  renderDailyErroresChart(scope);
   renderDoughnuts(scope);
   renderErrorTypesChart(scope);
   renderCiclosChart(scope);
+  renderCiclosInefectivosChart(scope);
   renderInspectoresChart(scope);
+  renderInspectoresEfectivosChart(scope);
+  renderInspectorDivergingChart(scope);
   renderSupervisoresChart();
   renderCausasChart(scope);
   renderSummaryTable();
+  computeInspectorFiltered();
+  renderInspectorTable();
   computeDetailFiltered();
   renderDetailTable();
 }
@@ -828,6 +1010,91 @@ function renderInspectoresChart(scope){
   });
 }
 
+function renderInspectoresEfectivosChart(scope){
+  const items = scope.top_inspectores_efectivos;
+  if (charts.inspectoresEfectivos) charts.inspectoresEfectivos.destroy();
+  charts.inspectoresEfectivos = new Chart(document.getElementById('inspectores-efectivos-chart'), {
+    type: 'bar',
+    data: { labels: items.map(function(i){ return i.inspector; }), datasets: [{ label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 4, maxBarThickness: 18 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ const it = items[ctx.dataIndex]; return it.efectiva + ' de ' + it.total + ' órdenes'; } } } },
+      scales: { x: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+function renderInspectorDivergingChart(scope){
+  const items = scope.inspector_comparativa;
+  const maxErr = Math.max.apply(null, items.map(function(i){ return i.pct_error; }).concat([10]));
+  if (charts.inspectorDiverging) charts.inspectorDiverging.destroy();
+  charts.inspectorDiverging = new Chart(document.getElementById('inspector-diverging-chart'), {
+    type: 'bar',
+    data: {
+      labels: items.map(function(i){ return i.inspector; }),
+      datasets: [
+        { label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 3, maxBarThickness: 20 },
+        { label: '% Error', data: items.map(function(i){ return -i.pct_error; }), backgroundColor: COLORS.danger, borderRadius: 3, maxBarThickness: 20 }
+      ]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(Math.abs(ctx.raw)); } } }
+      },
+      scales: {
+        x: { min: -Math.max(20, Math.ceil(maxErr * 1.4)), max: 100, grid: { color: '#EEF2F5' }, ticks: { callback: function(v){ return Math.abs(v) + '%'; } } },
+        y: { grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderCiclosInefectivosChart(scope){
+  const items = scope.top_ciclos_inefectivos;
+  if (charts.ciclosInefectivos) charts.ciclosInefectivos.destroy();
+  charts.ciclosInefectivos = new Chart(document.getElementById('ciclos-inefectivos-chart'), {
+    type: 'bar',
+    data: { labels: items.map(function(i){ return i.ciclo; }), datasets: [{ label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.warning, borderRadius: 4, maxBarThickness: 18 }] },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ return fmtInt(items[ctx.dataIndex].total) + ' órdenes totales'; } } } },
+      scales: { x: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+function renderDailyEfectividadChart(scope){
+  const labels = scope.daily.map(function(d){ return formatDateShort(d.fecha); });
+  const efect = scope.daily.map(function(d){ return d.total ? round1(d.efectiva / d.total * 100) : 0; });
+  if (charts.dailyEfect) charts.dailyEfect.destroy();
+  charts.dailyEfect = new Chart(document.getElementById('daily-efectividad-chart'), {
+    type: 'line',
+    data: { labels: labels, datasets: [{ label: '% Efectividad', data: efect, borderColor: COLORS.teal, backgroundColor: 'rgba(23,162,184,0.12)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: COLORS.teal, borderWidth: 2.5 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } } }
+    }
+  });
+}
+
+function renderDailyErroresChart(scope){
+  const labels = scope.daily.map(function(d){ return formatDateShort(d.fecha); });
+  const errores = scope.daily.map(function(d){ return d.con_errores; });
+  if (charts.dailyErrores) charts.dailyErrores.destroy();
+  charts.dailyErrores = new Chart(document.getElementById('daily-errores-chart'), {
+    type: 'line',
+    data: { labels: labels, datasets: [{ label: 'Órdenes con error', data: errores, borderColor: COLORS.danger, backgroundColor: 'rgba(228,87,46,0.12)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: COLORS.danger, borderWidth: 2.5 }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#EEF2F5' }, title: { display: true, text: 'Órdenes con error' } } }
+    }
+  });
+}
+
 function renderSupervisoresChart(){
   const items = DATA.overall.supervisores;
   const colors = items.map(function(i){ if (currentScope === 'ALL') return COLORS.teal; return i.supervisor === currentScope ? COLORS.teal : COLORS.gray; });
@@ -866,6 +1133,58 @@ function renderSummaryTable(){
       '<td class="num">' + fmtPct(s.pct_efectividad) + '</td>';
     tbody.appendChild(tr);
   });
+}
+
+function computeInspectorFiltered(){
+  const q = document.getElementById('inspector-search').value.trim().toLowerCase();
+  let rows = DATA.overall.inspectores_full.filter(function(r){
+    if (currentScope !== 'ALL' && r.supervisor !== currentScope) return false;
+    if (!q) return true;
+    return r.inspector.toLowerCase().indexOf(q) !== -1;
+  });
+  rows = rows.slice().sort(function(a, b){
+    const k = inspectorSort.key;
+    let va = a[k], vb = b[k];
+    if (typeof va === 'number' && typeof vb === 'number') return inspectorSort.dir === 'asc' ? va - vb : vb - va;
+    va = String(va); vb = String(vb);
+    if (va < vb) return inspectorSort.dir === 'asc' ? -1 : 1;
+    if (va > vb) return inspectorSort.dir === 'asc' ? 1 : -1;
+    return 0;
+  });
+  inspectorFiltered = rows;
+}
+
+function onSortInspector(key){
+  if (inspectorSort.key === key) inspectorSort.dir = inspectorSort.dir === 'asc' ? 'desc' : 'asc';
+  else { inspectorSort.key = key; inspectorSort.dir = 'desc'; }
+  document.querySelectorAll('#inspector-table thead th').forEach(function(th){ th.classList.toggle('sorted', th.dataset.key === key); });
+  computeInspectorFiltered();
+  renderInspectorTable();
+}
+
+function renderInspectorTable(){
+  document.getElementById('inspector-count').textContent = fmtInt(inspectorFiltered.length);
+  const tbody = document.getElementById('inspector-tbody');
+  tbody.innerHTML = '';
+  inspectorFiltered.forEach(function(r){
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + r.inspector + '</td>' + '<td>' + r.supervisor + '</td>' +
+      '<td class="num">' + fmtInt(r.total) + '</td>' + '<td class="num">' + fmtInt(r.correcto) + '</td>' +
+      '<td class="num">' + fmtInt(r.con_errores) + '</td>' + '<td class="num">' + fmtPct(r.pct_error) + '</td>' +
+      '<td class="num">' + fmtPct(r.pct_efectividad) + '</td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function exportInspectorCSV(){
+  const headers = [
+    { key: 'inspector', label: 'Inspector2' }, { key: 'supervisor', label: 'Supervisor' }, { key: 'total', label: 'Total' },
+    { key: 'correcto', label: 'Correctas' }, { key: 'con_errores', label: 'Con error' }, { key: 'pct_error', label: '% Error' },
+    { key: 'pct_efectividad', label: '% Efectividad' }
+  ];
+  const scopeLabel = currentScope === 'ALL' ? 'todos' : currentScope.replace(/\s+/g, '_');
+  downloadCSV('resumen_por_inspector_' + scopeLabel + '.csv', inspectorFiltered, headers);
 }
 
 function computeDetailFiltered(){
@@ -917,7 +1236,7 @@ function renderDetailTable(){
     tr.innerHTML =
       '<td>' + formatDateShort(r.fecha) + '</td>' + '<td>' + r.orden + '</td>' + '<td>' + r.cuenta + '</td>' +
       '<td>' + r.ciclo + '</td>' + '<td>' + r.inspector + '</td>' + '<td>' + r.supervisor + '</td>' +
-      '<td>' + (r.causa_cierre || '—') + '</td>' + '<td><span class="badge error">' + (r.tipo_error || '—') + '</span></td>' + '<td>' + efBadge + '</td>';
+      '<td>' + (r.causa_cierre || '—') + '</td>' + '<td>' + (r.obs_1 || '—') + '</td>' + '<td><span class="badge error">' + (r.tipo_error || '—') + '</span></td>' + '<td>' + efBadge + '</td>';
     tbody.appendChild(tr);
   });
   const total = detailFiltered.length;
@@ -948,8 +1267,8 @@ function downloadCSV(filename, rows, headers){
 function exportDetailCSV(){
   const headers = [
     { key: 'fecha', label: 'Fecha' }, { key: 'orden', label: 'Orden' }, { key: 'cuenta', label: 'Cuenta' },
-    { key: 'ciclo', label: 'Ciclo' }, { key: 'inspector', label: 'Inspector' }, { key: 'supervisor', label: 'Supervisor' },
-    { key: 'causa_cierre', label: 'Causa de cierre' }, { key: 'tipo_error', label: 'Tipo de error' }, { key: 'efectividad', label: 'Efectividad' }
+    { key: 'ciclo', label: 'Ciclo' }, { key: 'inspector', label: 'Inspector2' }, { key: 'supervisor', label: 'Supervisor' },
+    { key: 'causa_cierre', label: 'Causa de cierre' }, { key: 'obs_1', label: 'Obs. 1' }, { key: 'tipo_error', label: 'Tipo de error' }, { key: 'efectividad', label: 'Efectividad' }
   ];
   const scopeLabel = currentScope === 'ALL' ? 'todos' : currentScope.replace(/\s+/g, '_');
   downloadCSV('detalle_errores_' + scopeLabel + '.csv', detailFiltered, headers);
@@ -977,8 +1296,17 @@ function init(){
   document.getElementById('next-page').addEventListener('click', function(){ changePage(1); });
   document.getElementById('export-detail-btn').addEventListener('click', exportDetailCSV);
   document.getElementById('export-summary-btn').addEventListener('click', exportSummaryCSV);
+  document.getElementById('export-inspector-btn').addEventListener('click', exportInspectorCSV);
   document.getElementById('refresh-btn').addEventListener('click', function(){ loadData(true); });
   document.querySelectorAll('#detail-table thead th').forEach(function(th){ th.addEventListener('click', function(){ onSort(th.dataset.key); }); });
+  document.getElementById('inspector-search').addEventListener('input', function(){ computeInspectorFiltered(); renderInspectorTable(); });
+  document.querySelectorAll('#inspector-table thead th').forEach(function(th){ th.addEventListener('click', function(){ onSortInspector(th.dataset.key); }); });
+
+  const backTop = document.getElementById('back-to-top');
+  window.addEventListener('scroll', function(){
+    backTop.classList.toggle('hidden', window.scrollY < 500);
+  });
+  backTop.addEventListener('click', function(){ window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
   loadData(false);
   setInterval(function(){ loadData(false); }, REFRESH_INTERVAL_MS);
