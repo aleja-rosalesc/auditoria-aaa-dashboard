@@ -571,7 +571,8 @@
    CONFIGURACIÓN — reemplaza SHEET_ID por el ID real de tu Google Sheet
    (la parte de la URL entre /d/ y /edit). El resto no requiere cambios.
    ========================================================================= */
-const SHEET_ID = "1WQhKM-ZG9Ojwq-2zADhvDPCbRDsYfknPeEeX_dcyofY";
+const SHEET_ID = "1_NTcyMn3xX0MYqP40qdFc9hiAVpgOXdkfwJEEhRwL3o";
+const SHEET_GID = "205567382"; // pestaña específica dentro de la hoja (de la URL: ...edit?gid=205567382)
 const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // auto-actualización cada 5 minutos
 
 // Solo se piden las columnas que el dashboard realmente usa, por letra de
@@ -676,14 +677,14 @@ function loadData(isManualRefresh){
       processRawRows(rows);
       lastLoadedAt = new Date();
       setStatus('ok', 'Conectado · última actualización: ' + lastLoadedAt.toLocaleTimeString('es-CO'));
-      document.getElementById('sheet-link').href = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit';
+      document.getElementById('sheet-link').href = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit#gid=' + SHEET_GID;
     }catch(e){
       showErrorBanner('Los datos se recibieron pero no se pudieron procesar: ' + e.message);
     }
   };
 
   const script = document.createElement('script');
-  script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&gid=0' +
+  script.src = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&gid=' + SHEET_GID +
     (SHEET_COLUMNS_TQ ? '&tq=' + encodeURIComponent(SHEET_COLUMNS_TQ) : '') + '&_=' + Date.now();
   script.onerror = function(){
     document.getElementById('refresh-btn').disabled = false;
