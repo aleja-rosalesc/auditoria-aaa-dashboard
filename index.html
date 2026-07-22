@@ -312,6 +312,58 @@
   .hoy-track-table tbody tr:hover{ background:rgba(255,255,255,0.5); }
   .hoy-track-table td.num{ text-align:right; font-variant-numeric: tabular-nums; }
 
+  /* ---------- Página Matriz ---------- */
+  .matriz-hero{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--teal-dark) 100%);
+    color:#fff; border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px;
+    position:relative; overflow:hidden;
+  }
+  .matriz-hero::after{
+    content:""; position:absolute; right:-40px; bottom:-50px; width:170px; height:170px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+  }
+  .matriz-hero h2{
+    font-family: var(--font-display); font-size:19px; font-weight:700; margin:0 0 5px;
+    display:flex; align-items:center; gap:9px;
+  }
+  .matriz-hero p{ margin:0; font-size:12.8px; color:rgba(255,255,255,0.85); }
+  .matriz-legend{ display:flex; gap:10px; margin: 14px 0 0; flex-wrap:wrap; }
+  .matriz-legend span{
+    font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:20px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .matriz-legend .lg-si{ background:rgba(255,255,255,0.18); color:#B8F5D9; }
+  .matriz-legend .lg-no{ background:rgba(255,255,255,0.18); color:#FFD6C4; }
+  .matriz-search-row{ display:flex; gap:10px; margin-bottom:14px; }
+  #matriz-search{
+    flex:1; padding: 10px 14px; border-radius:10px; border:1px solid var(--border);
+    font-size:13.5px; font-family: var(--font-body); background:#fff; box-shadow: var(--shadow);
+  }
+  .matriz-table-wrap{
+    background: var(--card); border:1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow:hidden; margin-bottom:16px;
+  }
+  .matriz-table{ width:100%; border-collapse:collapse; font-size:12.8px; }
+  .matriz-table thead th{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 100%); color:#fff;
+    text-align:left; padding:11px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+    position:sticky; top:0;
+  }
+  .matriz-table tbody td{ padding:10px 14px; border-top:1px solid #F0F3F5; }
+  .matriz-table tbody tr:nth-child(even){ background:#F8FBFC; }
+  .matriz-table tbody tr:hover{ background:#EDF6F9; }
+  .toma-badge{
+    display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:20px;
+    font-size:11px; font-weight:700; letter-spacing:0.3px;
+  }
+  .toma-badge.si{ background: var(--success-bg); color: var(--success); }
+  .toma-badge.no{ background: var(--danger-bg); color: var(--danger); }
+  .toma-badge svg{ width:11px; height:11px; }
+  .matriz-group-row td{
+    background: #E4F1F6 !important; font-weight:700; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.6px; color: var(--teal-dark); padding:8px 14px;
+  }
+
   @media (max-width: 640px){
     .btn{ padding: 10px 14px; font-size:13px; }
     .tab-bar .tab-btn{ font-size:9.5px; }
@@ -406,6 +458,10 @@
     <button class="tab-btn" data-page="detalle">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6M9 8h3"/></svg></span>
       Detalle
+    </button>
+    <button class="tab-btn" data-page="matriz">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></span>
+      Matriz
     </button>
   </nav>
 
@@ -661,6 +717,12 @@
   </div>
 
   <div class="page-content" data-page="detalle">
+  <div class="date-filter-bar">
+    <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Fecha:</span>
+    <label>Desde <input type="date" id="detail-date-from"></label>
+    <label>Hasta <input type="date" id="detail-date-to"></label>
+    <button class="btn ghost small" id="detail-date-clear-btn">Ver todo</button>
+  </div>
   <section class="table-section" id="sec-detalle">
     <div class="table-header">
       <h3>Detalle de órdenes con error (<span id="detail-count">0</span>)</h3>
@@ -687,6 +749,74 @@
       <button id="next-page">Siguiente ›</button>
     </div>
   </section>
+  </div>
+
+  <div class="page-content" data-page="matriz">
+  <div class="matriz-hero">
+    <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg> Matriz de cierres válidos</h2>
+    <p>Combinaciones permitidas de causa de cierre, observación y toma de lectura. Referencia oficial para la auditoría de calidad.</p>
+    <div class="matriz-legend">
+      <span class="lg-si"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg> Con toma de lectura</span>
+      <span class="lg-no"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg> Sin toma de lectura</span>
+    </div>
+  </div>
+
+  <div class="matriz-search-row">
+    <input type="text" id="matriz-search" placeholder="Buscar causa u observación… (ej: fuga, AR, candado)">
+  </div>
+
+  <div class="matriz-table-wrap">
+    <table class="matriz-table" id="matriz-table">
+      <thead>
+        <tr><th>Causa de cierre</th><th>Obs. 1</th><th>Toma lectura</th></tr>
+      </thead>
+      <tbody id="matriz-tbody">
+        <tr class="matriz-group-row" data-group="si"><td colspan="3">✓ Con toma de lectura (SI)</td></tr>
+        <tr><td>AS-Agua Suspendida</td><td>AS-Agua Suspendida</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>AU-Usuario Ausente</td><td>AU-Ausente</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>NF-No Existe Fuga</td><td>BL-Bien Leído Sin Fuga</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>CO-Construcción</td><td>CO-Construcción</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>DC-Distinto Contador</td><td>DC-Distinto Contador</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>DH-Deshabitado</td><td>DH-Desocupado</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>AR-Amerita Revisión De Laboratorio</td><td>EN-Ensayo de Medidor</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>FI-Fuga En Instalación</td><td>FI-Fuga Instalacion</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>FR-Fuga Reparada</td><td>FR-Fuga Reparada</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>FV-Fuga Visible</td><td>FV-Fuga Visible</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>AR-Amerita Revisión De Laboratorio</td><td>MR-Marcha al Reves</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>NA-No Atienden</td><td>NA-No Abren</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>ND-No Dejan Pasar</td><td>ND-No Dejan Pasar</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>AR-Amerita Revisión De Laboratorio</td><td>PA-Parado</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>PG-Programar geófono</td><td>PG-Programar Geofono</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>RI-Predio Con Reconexión ILegal</td><td>RI-Reconexion Ilegal</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>Todas las causas</td><td>SV-Sin verificar</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>LT-Lote</td><td>SV-Sin verificar</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>SSA-Sector Sin Agua</td><td>SV-Sin verificar</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>PNF-Persona No Facultada</td><td>SV-Sin verificar</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>VI-Verificación Incompleta</td><td>SV-Sin verificar</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr><td>SP-Sector Peligroso</td><td>SV-Sin verificar</td><td><span class="toma-badge si">SI</span></td></tr>
+        <tr class="matriz-group-row" data-group="no"><td colspan="3">✕ Sin toma de lectura (NO)</td></tr>
+        <tr><td>Ca-medidor con candado</td><td>CA-Candado</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>CB-Caja Registro Obstaculizada</td><td>CB-Caja Registro Obstaculizada</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>CD-Predio Cerrado</td><td>CD-Cerrado</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>ET-Medidor Enterrado</td><td>ET-Enterrado</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>Todas las causas</td><td>NC-No se puede Comprobar</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>LT-Lote</td><td>NC-No se puede Comprobar</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>SSA-Sector Sin Agua</td><td>NC-No se puede Comprobar</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>PNF-Persona No Facultada</td><td>NC-No se puede Comprobar</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>VI-Verificación Incompleta</td><td>NC-No se puede Comprobar</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>SP-Sector Peligroso</td><td>NC-No se puede Comprobar</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>NE-No Se Encuentra Medidor</td><td>NE-No Encuentro</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>RA-Retiro de Acometida</td><td>RA-Retiro de Acometida</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>SD-Servicio Directo</td><td>SD-Servicio Directo</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>SM-Sin Medidor</td><td>SM-Sin Medidor</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>AR-Amerita Revisión De Laboratorio</td><td>EM-Empañado</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>AR-Amerita Revisión De Laboratorio</td><td>MG-Mantenimiento Medidor Elect</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>AR-Amerita Revisión De Laboratorio</td><td>MS-Medidor Sin Camara Registro</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>AR-Amerita Revisión De Laboratorio</td><td>RO-Roto</td><td><span class="toma-badge no">NO</span></td></tr>
+        <tr><td>AR-Amerita Revisión De Laboratorio</td><td>TC-Tren Lectura Corrido</td><td><span class="toma-badge no">NO</span></td></tr>
+      </tbody>
+    </table>
+  </div>
   </div>
 
   <footer class="dashboard-footer">
@@ -1579,10 +1709,15 @@ function exportInspectorCSV(){
   downloadCSV('resumen_por_inspector_' + scopeLabel + '.csv', inspectorFiltered, headers);
 }
 
+let detailDateFrom = '';  // filtro de fecha propio de la página Detalle
+let detailDateTo = '';
+
 function computeDetailFiltered(){
   const q = document.getElementById('table-search').value.trim().toLowerCase();
   let rows = DATA.errores_detalle.filter(function(r){
     if (currentScope !== 'ALL' && r.supervisor !== currentScope) return false;
+    if (detailDateFrom && r.fecha < detailDateFrom) return false;
+    if (detailDateTo && r.fecha > detailDateTo) return false;
     if (!q) return true;
     return String(r.orden).toLowerCase().indexOf(q) !== -1 ||
            String(r.cuenta).toLowerCase().indexOf(q) !== -1 ||
@@ -1724,6 +1859,38 @@ function init(){
   document.getElementById('hoy-inspector-select').addEventListener('change', function(e){
     hoyInspectorScope = e.target.value;
     renderHoyBlock();
+  });
+
+  // Buscador de la matriz de cierres
+  document.getElementById('matriz-search').addEventListener('input', function(e){
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll('#matriz-tbody tr').forEach(function(tr){
+      if (tr.classList.contains('matriz-group-row')){
+        tr.style.display = q ? 'none' : '';
+        return;
+      }
+      const text = tr.textContent.toLowerCase();
+      tr.style.display = (!q || text.indexOf(q) !== -1) ? '' : 'none';
+    });
+  });
+
+  // Filtro de fechas de la página Detalle
+  document.getElementById('detail-date-from').addEventListener('change', function(e){
+    detailDateFrom = e.target.value || '';
+    detailPage = 0;
+    if (DATA){ computeDetailFiltered(); renderDetailTable(); }
+  });
+  document.getElementById('detail-date-to').addEventListener('change', function(e){
+    detailDateTo = e.target.value || '';
+    detailPage = 0;
+    if (DATA){ computeDetailFiltered(); renderDetailTable(); }
+  });
+  document.getElementById('detail-date-clear-btn').addEventListener('click', function(){
+    detailDateFrom = ''; detailDateTo = '';
+    document.getElementById('detail-date-from').value = '';
+    document.getElementById('detail-date-to').value = '';
+    detailPage = 0;
+    if (DATA){ computeDetailFiltered(); renderDetailTable(); }
   });
 
   const backTop = document.getElementById('back-to-top');
