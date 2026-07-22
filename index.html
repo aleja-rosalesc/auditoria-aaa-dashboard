@@ -125,10 +125,11 @@
   @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
   .status-actions{ display:flex; gap:8px; }
   .btn{
-    padding: 8px 14px; border-radius:8px; border:1px solid var(--teal-dark);
-    background: var(--teal-dark); color:#fff; font-size:12.5px; font-weight:600;
+    padding: 10px 17px; border-radius:9px; border:1px solid var(--teal-dark);
+    background: var(--teal-dark); color:#fff; font-size:13.5px; font-weight:600;
     cursor:pointer; white-space:nowrap; font-family: var(--font-body);
   }
+  .btn.small, .date-filter-bar .btn.ghost.small{ padding:8px 14px; font-size:12.5px; }
   .btn:hover{ background: var(--navy); }
   .btn.ghost{ background:#fff; color:var(--teal-dark); }
   .btn:disabled{ opacity:0.5; cursor:not-allowed; }
@@ -230,19 +231,19 @@
   .tab-bar .tab-btn.role-hidden{ display:none; }
   .tab-bar .tab-btn{
     flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:3px; padding:7px 2px 6px; background:none; border:none; cursor:pointer;
-    color: var(--text-2); font-family: var(--font-body); font-size:10.5px; font-weight:600;
+    gap:3px; padding:8px 2px 7px; background:none; border:none; cursor:pointer;
+    color: var(--text-2); font-family: var(--font-body); font-size:10.8px; font-weight:600;
     border-radius:10px; transition: color 0.15s;
   }
-  .tab-bar .tab-btn svg{ width:21px; height:21px; }
+  .tab-bar .tab-btn svg{ width:22px; height:22px; }
   .tab-bar .tab-btn.active{ color: var(--teal-dark); }
   .tab-bar .tab-btn.active .tab-icon-wrap{ background: var(--success-bg); }
-  .tab-icon-wrap{ width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; transition: background 0.15s; }
+  .tab-icon-wrap{ width:35px; height:35px; border-radius:11px; display:flex; align-items:center; justify-content:center; transition: background 0.15s; }
   .tab-bar .tab-btn .tab-dot{
     width:5px; height:5px; border-radius:50%; background: var(--danger); position:relative; top:-19px; left:9px;
   }
 
-  .dashboard-container{ padding-bottom: 78px; } /* espacio para que la barra inferior no tape contenido */
+  .dashboard-container{ padding-bottom: 82px; } /* espacio para que la barra inferior no tape contenido */
 
   /* ---------- Filtro de fechas ---------- */
   .date-filter-bar{
@@ -411,6 +412,24 @@
     cursor:pointer; text-decoration:underline; padding:0;
   }
 
+  /* ---------- Barra de filtros activos (BI cross-filter) ---------- */
+  .active-filters-bar{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    background: var(--success-bg); border:1px solid #B7E4CE; border-radius: var(--radius);
+    padding: 9px 14px; margin-bottom: 14px; font-size:12.3px;
+  }
+  .active-filters-bar .af-label{ font-weight:700; color: var(--success); margin-right:2px; }
+  .active-filters-bar .af-chip{
+    display:inline-flex; align-items:center; gap:5px; background:#fff; border:1px solid #B7E4CE;
+    border-radius:20px; padding:5px 10px; font-weight:600; color:var(--text); cursor:pointer;
+  }
+  .active-filters-bar .af-chip:hover{ border-color: var(--danger); }
+  .active-filters-bar .af-chip b{ color: var(--danger); font-weight:800; }
+  .active-filters-bar .af-clear-all{
+    margin-left:auto; background:none; border:none; color:var(--text-2); font-size:12px;
+    font-weight:700; text-decoration:underline; cursor:pointer;
+  }
+
   @media (max-width: 640px){
     .btn{ padding: 10px 14px; font-size:13px; }
     .tab-bar .tab-btn{ font-size:9.5px; }
@@ -513,6 +532,8 @@
       <button class="btn hidden" id="install-btn">＋ Instalar app</button>
     </div>
   </div>
+
+  <div class="active-filters-bar hidden" id="active-filters-bar"></div>
 
   <nav class="tab-bar" id="tab-bar">
     <button class="tab-btn active" data-page="hoy">
@@ -692,7 +713,7 @@
     </div>
     <div class="chart-container">
       <h3>Tipos de error detectados</h3>
-      <p class="chart-sub">Órdenes por tipo de error (pueden repetirse)</p>
+      <p class="chart-sub">🔴 Descuentan a la empresa AAA · 🟡 Se concilian internamente · un clic filtra, doble clic abre el detalle</p>
       <canvas id="error-types-chart"></canvas>
     </div>
   </section>
@@ -938,6 +959,11 @@ const COLORS = {
   teal: '#17A2B8', primary: '#0E6E8C', primaryDark: '#0B3D5C', gray: '#C4CFD6',
 };
 
+// Meta de efectividad de la empresa (general) y meta interna para el
+// desglose individual de inspectores y supervisores.
+const EFECTIVIDAD_META = 65;
+const EFECTIVIDAD_META_INDIVIDUAL = 70;
+
 let DATA = null;
 let currentScope = 'ALL';
 let charts = {};
@@ -1124,16 +1150,22 @@ function dailyBlock(sub){
 }
 
 const ERR_DEFS = [
-  ['err_campos', 'Campos vacíos'],
-  ['err_lectura', 'Lectura incorrecta'],
-  ['err_matriz', 'Combinación no válida en matriz'],
-  ['err_obligatoriedad', 'Obligatoriedad de lectura'],
+  ['err_campos', 'Campos vacíos', false],
+  ['err_lectura', 'Lectura incorrecta', true],
+  ['err_matriz', 'Combinación no válida en matriz', true],
+  ['err_obligatoriedad', 'Obligatoriedad de lectura', false],
 ];
 
 function errorTypesBlock(sub){
-  const out = ERR_DEFS.map(function(d){ return { tipo: d[1], count: sub.filter(function(r){ return r[d[0]]; }).length }; });
+  const out = ERR_DEFS.map(function(d){ return { tipo: d[1], count: sub.filter(function(r){ return r[d[0]]; }).length, descuenta: d[2], key: d[0] }; });
   out.sort(function(a, b){ return b.count - a.count; });
   return out;
+}
+
+function fechaRange(rows){
+  const fechas = rows.map(function(r){ return r.fecha; }).filter(Boolean).sort();
+  if (!fechas.length) return { min: '', max: '' };
+  return { min: fechas[0], max: fechas[fechas.length - 1] };
 }
 
 function topCiclosBlock(sub, n){
@@ -1141,8 +1173,9 @@ function topCiclosBlock(sub, n){
   const by = groupBy(sub, 'ciclo');
   let out = Array.from(by.entries()).map(function(e){
     const rows = e[1], total = rows.length;
-    const con_errores = rows.filter(function(r){ return r.estado === 'Con Errores'; }).length;
-    return { ciclo: e[0], total: total, con_errores: con_errores, pct_error: total ? round1(con_errores / total * 100) : 0 };
+    const errRows = rows.filter(function(r){ return r.estado === 'Con Errores'; });
+    const rango = fechaRange(errRows);
+    return { ciclo: e[0], total: total, con_errores: errRows.length, pct_error: total ? round1(errRows.length / total * 100) : 0, fecha_min: rango.min, fecha_max: rango.max };
   });
   out.sort(function(a, b){ return b.con_errores - a.con_errores; });
   return out.slice(0, n);
@@ -1154,7 +1187,9 @@ function topCiclosInefectivosBlock(sub, n, minTotal){
   let out = Array.from(by.entries()).map(function(e){
     const rows = e[1], total = rows.length;
     const efectiva = rows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length;
-    return { ciclo: e[0], total: total, efectiva: efectiva, pct_efectividad: total ? round1(efectiva / total * 100) : 0 };
+    const noEfectivaRows = rows.filter(function(r){ return r.efectividad === 'No Efectivo'; });
+    const rango = fechaRange(noEfectivaRows);
+    return { ciclo: e[0], total: total, efectiva: efectiva, pct_efectividad: total ? round1(efectiva / total * 100) : 0, fecha_min: rango.min, fecha_max: rango.max };
   }).filter(function(x){ return x.total >= minTotal; });
   out.sort(function(a, b){ return a.pct_efectividad - b.pct_efectividad; });
   return out.slice(0, n);
@@ -1260,6 +1295,13 @@ let ALL_CLEAN_ROWS = [];       // todas las filas, sin filtro de fechas (para "H
 let dateFrom = '';             // filtro de fecha "desde" (ISO), vacío = sin límite
 let dateTo = '';               // filtro de fecha "hasta" (ISO), vacío = sin límite
 
+// Filtros cruzados tipo BI, activados con clic en cualquier barra con nombre.
+// Afectan todo el reporte (menos "Hoy", que siempre es independiente).
+let filterInspector = '';
+let filterCiclo = '';
+let filterCausa = '';
+let filterTipoError = ''; // 'err_campos' | 'err_lectura' | 'err_matriz' | 'err_obligatoriedad'
+
 function processRawRows(rawRows){
   const clean = rawRows.map(function(r){
     return {
@@ -1287,12 +1329,17 @@ function processRawRows(rawRows){
   rebuildData();
 }
 
-// Reconstruye DATA aplicando el filtro de fechas activo. La sección "Hoy" no
-// depende de este filtro: usa siempre ALL_CLEAN_ROWS directamente.
+// Reconstruye DATA aplicando el filtro de fechas y los filtros cruzados tipo
+// BI activos. La sección "Hoy" no depende de ninguno de estos: usa siempre
+// ALL_CLEAN_ROWS directamente.
 function rebuildData(){
   let clean = ALL_CLEAN_ROWS;
   if (dateFrom) clean = clean.filter(function(r){ return r.fecha >= dateFrom; });
   if (dateTo) clean = clean.filter(function(r){ return r.fecha <= dateTo; });
+  if (filterInspector) clean = clean.filter(function(r){ return r.inspector === filterInspector; });
+  if (filterCiclo) clean = clean.filter(function(r){ return r.ciclo === filterCiclo; });
+  if (filterCausa) clean = clean.filter(function(r){ return r.causa_cierre === filterCausa; });
+  if (filterTipoError) clean = clean.filter(function(r){ return r[filterTipoError]; });
 
   const fechas = clean.map(function(r){ return r.fecha; }).filter(Boolean).sort();
   const newData = {
@@ -1344,6 +1391,98 @@ function populateSupervisorOptions(){
   sel.disabled = false;
 }
 
+/* ---------------------------------------------------------------------
+   2.5) FILTRADO TIPO BI: clic en una barra = filtrar, doble clic = filtrar y
+   abrir el detalle. Funciona en cualquier gráfico con "nombres" (inspector,
+   ciclo, causa, tipo de error, supervisor).
+   --------------------------------------------------------------------- */
+let _lastBarClick = { dim: null, index: null, time: 0 };
+const DBLCLICK_MS = 480;
+
+function makeBarClickHandler(dimension, items){
+  return function(evt, elements){
+    if (!elements || !elements.length) return;
+    const idx = elements[0].index;
+    const item = items[idx];
+    if (!item) return;
+    const now = Date.now();
+    const isDouble = (_lastBarClick.dim === dimension && _lastBarClick.index === idx && (now - _lastBarClick.time) < DBLCLICK_MS);
+    _lastBarClick = { dim: dimension, index: idx, time: isDouble ? 0 : now };
+    applyDimensionFilter(dimension, item);
+    if (isDouble) goToDetallePage();
+  };
+}
+
+function applyDimensionFilter(dimension, item){
+  detailPage = 0;
+  if (dimension === 'supervisor'){
+    const name = item.supervisor;
+    currentScope = (currentScope === name) ? 'ALL' : name;
+    const sel = document.getElementById('supervisor-select');
+    if (sel) sel.value = currentScope;
+    renderAll();
+    return;
+  }
+  if (dimension === 'inspector'){
+    filterInspector = (filterInspector === item.inspector) ? '' : item.inspector;
+  } else if (dimension === 'ciclo'){
+    filterCiclo = (filterCiclo === item.ciclo) ? '' : item.ciclo;
+  } else if (dimension === 'causa'){
+    filterCausa = (filterCausa === item.causa) ? '' : item.causa;
+  } else if (dimension === 'tipoError'){
+    filterTipoError = (filterTipoError === item.key) ? '' : item.key;
+  }
+  rebuildData();
+}
+
+function goToDetallePage(){
+  const btn = document.querySelector('.tab-bar .tab-btn[data-page="detalle"]');
+  if (btn && !btn.classList.contains('role-hidden')) btn.click();
+}
+
+function clearFilter(which){
+  if (which === 'inspector') filterInspector = '';
+  else if (which === 'ciclo') filterCiclo = '';
+  else if (which === 'causa') filterCausa = '';
+  else if (which === 'tipoError') filterTipoError = '';
+  else if (which === 'supervisor'){ currentScope = 'ALL'; const sel = document.getElementById('supervisor-select'); if (sel) sel.value = 'ALL'; }
+  detailPage = 0;
+  rebuildData();
+}
+
+function clearAllCrossFilters(){
+  filterInspector = ''; filterCiclo = ''; filterCausa = ''; filterTipoError = '';
+  currentScope = 'ALL';
+  const sel = document.getElementById('supervisor-select');
+  if (sel) sel.value = 'ALL';
+  detailPage = 0;
+  rebuildData();
+}
+
+const TIPO_ERROR_LABELS = { err_campos: 'Campos vacíos', err_lectura: 'Lectura incorrecta', err_matriz: 'Combinación no válida en matriz', err_obligatoriedad: 'Obligatoriedad de lectura' };
+
+function renderActiveFiltersBar(){
+  const bar = document.getElementById('active-filters-bar');
+  if (!bar) return;
+  const chips = [];
+  if (currentScope !== 'ALL') chips.push({ label: 'Supervisor: ' + currentScope, clear: 'supervisor' });
+  if (filterInspector) chips.push({ label: 'Inspector: ' + filterInspector, clear: 'inspector' });
+  if (filterCiclo) chips.push({ label: 'Ciclo: ' + filterCiclo, clear: 'ciclo' });
+  if (filterCausa) chips.push({ label: 'Causa: ' + filterCausa, clear: 'causa' });
+  if (filterTipoError) chips.push({ label: 'Tipo de error: ' + TIPO_ERROR_LABELS[filterTipoError], clear: 'tipoError' });
+
+  if (!chips.length){ bar.classList.add('hidden'); bar.innerHTML = ''; return; }
+  bar.classList.remove('hidden');
+  bar.innerHTML =
+    '<span class="af-label">🔎 Filtros activos:</span>' +
+    chips.map(function(c){ return '<span class="af-chip" data-clear="' + c.clear + '">' + c.label + ' <b>✕</b></span>'; }).join('') +
+    '<button class="af-clear-all" id="af-clear-all">Limpiar todo</button>';
+  bar.querySelectorAll('.af-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){ clearFilter(chip.dataset.clear); });
+  });
+  document.getElementById('af-clear-all').addEventListener('click', clearAllCrossFilters);
+}
+
 function renderAll(){
   document.getElementById('header-meta').innerHTML =
     'Periodo <b>' + formatDateLong(DATA.meta.fecha_min) + '</b> – <b>' + formatDateLong(DATA.meta.fecha_max) + '</b> · ' +
@@ -1353,6 +1492,7 @@ function renderAll(){
     '<b>' + DATA.meta.total_ciclos + '</b> ciclos';
 
   const scope = getScopeData();
+  renderActiveFiltersBar();
   renderHoyBlock();
   renderKPIs(scope);
   renderDailyChart(scope);
@@ -1544,6 +1684,7 @@ function renderDailyChart(scope){
   const correcto = scope.daily.map(function(d){ return d.correcto; });
   const errores = scope.daily.map(function(d){ return d.con_errores; });
   const efect = scope.daily.map(function(d){ return d.total ? Math.round(d.efectiva / d.total * 1000) / 10 : 0; });
+  const meta = scope.daily.map(function(){ return EFECTIVIDAD_META; });
   if (charts.daily) charts.daily.destroy();
   charts.daily = new Chart(document.getElementById('daily-chart'), {
     data: {
@@ -1551,7 +1692,8 @@ function renderDailyChart(scope){
       datasets: [
         { type: 'bar', label: 'Correctas', data: correcto, backgroundColor: COLORS.success, stack: 's', borderRadius: 3, maxBarThickness: 34 },
         { type: 'bar', label: 'Con errores', data: errores, backgroundColor: COLORS.danger, stack: 's', borderRadius: 3, maxBarThickness: 34 },
-        { type: 'line', label: '% Efectividad', data: efect, borderColor: COLORS.teal, backgroundColor: COLORS.teal, yAxisID: 'y1', tension: 0.35, pointRadius: 3, pointBackgroundColor: COLORS.teal, borderWidth: 2.5 }
+        { type: 'line', label: '% Efectividad', data: efect, borderColor: COLORS.teal, backgroundColor: COLORS.teal, yAxisID: 'y1', tension: 0.35, pointRadius: 3, pointBackgroundColor: COLORS.teal, borderWidth: 2.5 },
+        { type: 'line', label: 'Meta ' + EFECTIVIDAD_META + '%', data: meta, borderColor: COLORS.warning, yAxisID: 'y1', borderDash: [6, 4], borderWidth: 1.6, pointRadius: 0, fill: false }
       ]
     },
     options: {
@@ -1561,7 +1703,16 @@ function renderDailyChart(scope){
         y: { stacked: true, beginAtZero: true, title: { display: true, text: 'Órdenes auditadas' }, grid: { color: '#EEF2F5' } },
         y1: { position: 'right', beginAtZero: true, max: 100, grid: { drawOnChartArea: false }, title: { display: true, text: '% Efectividad' } }
       },
-      plugins: { legend: { position: 'bottom' } }
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: { callbacks: { label: function(ctx){
+          const d = scope.daily[ctx.dataIndex];
+          if (ctx.dataset.label === 'Correctas') return 'Correctas: ' + fmtInt(ctx.raw) + ' (' + fmtPct(d.total ? round1(ctx.raw / d.total * 100) : 0) + ')';
+          if (ctx.dataset.label === 'Con errores') return 'Con errores: ' + fmtInt(ctx.raw) + ' (' + fmtPct(d.total ? round1(ctx.raw / d.total * 100) : 0) + ')';
+          if (ctx.dataset.label === '% Efectividad') return '% Efectividad: ' + fmtPct(ctx.raw);
+          return ctx.dataset.label + ': ' + fmtPct(ctx.raw);
+        } } }
+      }
     }
   });
 }
@@ -1571,23 +1722,50 @@ function renderDoughnuts(scope){
   charts.estado = new Chart(document.getElementById('estado-chart'), {
     type: 'doughnut',
     data: { labels: ['Correctas', 'Con errores'], datasets: [{ data: [scope.kpis.correcto, scope.kpis.con_errores], backgroundColor: [COLORS.success, COLORS.danger], borderWidth: 0 }] },
-    options: { plugins: { legend: { position: 'bottom' } }, cutout: '68%' }
+    options: {
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(ctx){
+        const total = scope.kpis.total;
+        return ctx.label + ': ' + fmtInt(ctx.raw) + ' (' + fmtPct(total ? round1(ctx.raw / total * 100) : 0) + ')';
+      } } } },
+      cutout: '68%'
+    }
   });
   if (charts.efect) charts.efect.destroy();
   charts.efect = new Chart(document.getElementById('efectividad-chart'), {
     type: 'doughnut',
     data: { labels: ['Efectiva', 'No efectiva'], datasets: [{ data: [scope.kpis.efectiva, scope.kpis.no_efectiva], backgroundColor: [COLORS.teal, COLORS.warning], borderWidth: 0 }] },
-    options: { plugins: { legend: { position: 'bottom' } }, cutout: '68%' }
+    options: {
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(ctx){
+        const total = scope.kpis.total;
+        return ctx.label + ': ' + fmtInt(ctx.raw) + ' (' + fmtPct(total ? round1(ctx.raw / total * 100) : 0) + ')';
+      } } } },
+      cutout: '68%'
+    }
   });
 }
 
 function renderErrorTypesChart(scope){
   const items = scope.error_types;
+  const totalErr = scope.kpis.con_errores;
   if (charts.errTypes) charts.errTypes.destroy();
   charts.errTypes = new Chart(document.getElementById('error-types-chart'), {
     type: 'bar',
-    data: { labels: items.map(function(i){ return i.tipo; }), datasets: [{ data: items.map(function(i){ return i.count; }), backgroundColor: COLORS.danger, borderRadius: 4, maxBarThickness: 22 }] },
-    options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } } }
+    data: {
+      labels: items.map(function(i){ return i.tipo; }),
+      datasets: [{ data: items.map(function(i){ return i.count; }), backgroundColor: items.map(function(i){ return i.descuenta ? COLORS.danger : COLORS.warning; }), borderRadius: 4, maxBarThickness: 22 }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      onClick: makeBarClickHandler('tipoError', items),
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: {
+          label: function(ctx){ const it = items[ctx.dataIndex]; return fmtInt(ctx.raw) + ' órdenes (' + fmtPct(totalErr ? round1(ctx.raw / totalErr * 100) : 0) + ' del total de errores)'; },
+          afterLabel: function(ctx){ return items[ctx.dataIndex].descuenta ? '⚠ Descuenta a la empresa AAA' : '↺ Se concilia internamente'; }
+        } }
+      },
+      scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } }
+    }
   });
 }
 
@@ -1599,7 +1777,15 @@ function renderCiclosChart(scope){
     data: { labels: items.map(function(i){ return i.ciclo; }), datasets: [{ label: 'Órdenes con error', data: items.map(function(i){ return i.con_errores; }), backgroundColor: COLORS.primaryDark, borderRadius: 4, maxBarThickness: 18 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ return '% error del ciclo: ' + fmtPct(items[ctx.dataIndex].pct_error); } } } },
+      onClick: makeBarClickHandler('ciclo', items),
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: function(ctx){ const it = items[ctx.dataIndex]; return fmtInt(ctx.raw) + ' de ' + fmtInt(it.total) + ' órdenes'; },
+        afterLabel: function(ctx){
+          const it = items[ctx.dataIndex];
+          const rango = it.fecha_min === it.fecha_max ? formatDateShort(it.fecha_min) : formatDateShort(it.fecha_min) + ' – ' + formatDateShort(it.fecha_max);
+          return ['% error del ciclo: ' + fmtPct(it.pct_error), 'Fechas con error: ' + rango];
+        }
+      } } },
       scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } }
     }
   });
@@ -1613,7 +1799,11 @@ function renderInspectoresChart(scope){
     data: { labels: items.map(function(i){ return i.inspector; }), datasets: [{ label: '% de error', data: items.map(function(i){ return i.pct_error; }), backgroundColor: COLORS.warning, borderRadius: 4, maxBarThickness: 18 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ const it = items[ctx.dataIndex]; return it.con_errores + ' de ' + it.total + ' órdenes'; } } } },
+      onClick: makeBarClickHandler('inspector', items),
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: function(ctx){ return '% de error: ' + fmtPct(ctx.raw); },
+        afterLabel: function(ctx){ const it = items[ctx.dataIndex]; return it.con_errores + ' de ' + it.total + ' órdenes con error'; }
+      } } },
       scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' }, title: { display: true, text: '% de error' } }, y: { grid: { display: false } } }
     }
   });
@@ -1621,13 +1811,24 @@ function renderInspectoresChart(scope){
 
 function renderInspectoresEfectivosChart(scope){
   const items = scope.top_inspectores_efectivos;
+  const metaLine = items.map(function(){ return EFECTIVIDAD_META_INDIVIDUAL; });
   if (charts.inspectoresEfectivos) charts.inspectoresEfectivos.destroy();
   charts.inspectoresEfectivos = new Chart(document.getElementById('inspectores-efectivos-chart'), {
     type: 'bar',
-    data: { labels: items.map(function(i){ return i.inspector; }), datasets: [{ label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 4, maxBarThickness: 18 }] },
+    data: {
+      labels: items.map(function(i){ return i.inspector; }),
+      datasets: [
+        { label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 4, maxBarThickness: 18 },
+        { type: 'line', label: 'Meta interna ' + EFECTIVIDAD_META_INDIVIDUAL + '%', data: metaLine, borderColor: COLORS.danger, borderDash: [6, 4], borderWidth: 1.6, pointRadius: 0, fill: false }
+      ]
+    },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ const it = items[ctx.dataIndex]; return it.efectiva + ' de ' + it.total + ' órdenes'; } } } },
+      onClick: makeBarClickHandler('inspector', items),
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: {
+        label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(ctx.raw); },
+        afterLabel: function(ctx){ if (ctx.datasetIndex !== 0) return ''; const it = items[ctx.dataIndex]; return it.efectiva + ' de ' + it.total + ' órdenes efectivas'; }
+      } } },
       scales: { x: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } }, y: { grid: { display: false } } }
     }
   });
@@ -1647,9 +1848,16 @@ function renderInspectorDivergingChart(scope){
     },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      onClick: makeBarClickHandler('inspector', items),
       plugins: {
         legend: { position: 'bottom' },
-        tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(ctx.raw); } } }
+        tooltip: { callbacks: {
+          label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(ctx.raw); },
+          afterLabel: function(ctx){
+            const it = items[ctx.dataIndex];
+            return ['Órdenes ejecutadas: ' + fmtInt(it.total), 'Órdenes efectivas: ' + fmtInt(it.efectiva), 'Órdenes con error: ' + fmtInt(it.con_errores)];
+          }
+        } }
       },
       scales: {
         x: { min: 0, max: 100, grid: { color: '#EEF2F5' }, ticks: { callback: function(v){ return v + '%'; } } },
@@ -1667,7 +1875,15 @@ function renderCiclosInefectivosChart(scope){
     data: { labels: items.map(function(i){ return i.ciclo; }), datasets: [{ label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.warning, borderRadius: 4, maxBarThickness: 18 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ return fmtInt(items[ctx.dataIndex].total) + ' órdenes totales'; } } } },
+      onClick: makeBarClickHandler('ciclo', items),
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: function(ctx){ return '% Efectividad: ' + fmtPct(ctx.raw); },
+        afterLabel: function(ctx){
+          const it = items[ctx.dataIndex];
+          const rango = it.fecha_min === it.fecha_max ? formatDateShort(it.fecha_min) : formatDateShort(it.fecha_min) + ' – ' + formatDateShort(it.fecha_max);
+          return [fmtInt(it.efectiva) + ' de ' + fmtInt(it.total) + ' órdenes efectivas', 'Fechas no efectivas: ' + (rango || 'sin datos')];
+        }
+      } } },
       scales: { x: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } }, y: { grid: { display: false } } }
     }
   });
@@ -1676,13 +1892,17 @@ function renderCiclosInefectivosChart(scope){
 function renderDailyEfectividadChart(scope){
   const labels = scope.daily.map(function(d){ return formatDateShort(d.fecha); });
   const efect = scope.daily.map(function(d){ return d.total ? round1(d.efectiva / d.total * 100) : 0; });
+  const meta = scope.daily.map(function(){ return EFECTIVIDAD_META; });
   if (charts.dailyEfect) charts.dailyEfect.destroy();
   charts.dailyEfect = new Chart(document.getElementById('daily-efectividad-chart'), {
     type: 'line',
-    data: { labels: labels, datasets: [{ label: '% Efectividad', data: efect, borderColor: COLORS.teal, backgroundColor: 'rgba(23,162,184,0.12)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: COLORS.teal, borderWidth: 2.5 }] },
+    data: { labels: labels, datasets: [
+      { label: '% Efectividad', data: efect, borderColor: COLORS.teal, backgroundColor: 'rgba(23,162,184,0.12)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: COLORS.teal, borderWidth: 2.5 },
+      { label: 'Meta ' + EFECTIVIDAD_META + '%', data: meta, borderColor: COLORS.warning, borderDash: [6, 4], borderWidth: 1.6, pointRadius: 0, fill: false }
+    ] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: { label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(ctx.raw); } } } },
       scales: { x: { grid: { display: false } }, y: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } } }
     }
   });
@@ -1697,7 +1917,10 @@ function renderDailyErroresChart(scope){
     data: { labels: labels, datasets: [{ label: 'Órdenes con error', data: errores, borderColor: COLORS.danger, backgroundColor: 'rgba(228,87,46,0.12)', fill: true, tension: 0.35, pointRadius: 3, pointBackgroundColor: COLORS.danger, borderWidth: 2.5 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){
+        const d = scope.daily[ctx.dataIndex];
+        return '% del día: ' + fmtPct(d.total ? round1(d.con_errores / d.total * 100) : 0);
+      } } } },
       scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: '#EEF2F5' }, title: { display: true, text: 'Órdenes con error' } } }
     }
   });
@@ -1706,13 +1929,23 @@ function renderDailyErroresChart(scope){
 function renderSupervisoresChart(){
   const items = DATA.overall.supervisores;
   const colors = items.map(function(i){ if (currentScope === 'ALL') return COLORS.teal; return i.supervisor === currentScope ? COLORS.teal : COLORS.gray; });
+  const metaLine = items.map(function(){ return EFECTIVIDAD_META_INDIVIDUAL; });
   if (charts.supervisores) charts.supervisores.destroy();
   charts.supervisores = new Chart(document.getElementById('supervisores-chart'), {
-    type: 'bar',
-    data: { labels: items.map(function(i){ return i.supervisor; }), datasets: [{ label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: colors, borderRadius: 5, maxBarThickness: 30 }] },
+    data: {
+      labels: items.map(function(i){ return i.supervisor; }),
+      datasets: [
+        { type: 'bar', label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: colors, borderRadius: 5, maxBarThickness: 30 },
+        { type: 'line', label: 'Meta interna ' + EFECTIVIDAD_META_INDIVIDUAL + '%', data: metaLine, borderColor: COLORS.danger, borderDash: [6, 4], borderWidth: 1.6, pointRadius: 0, fill: false }
+      ]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: { callbacks: { afterLabel: function(ctx){ return fmtInt(items[ctx.dataIndex].total) + ' órdenes totales'; } } } },
+      onClick: makeBarClickHandler('supervisor', items),
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: {
+        label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(ctx.raw); },
+        afterLabel: function(ctx){ if (ctx.datasetIndex !== 0) return ''; const it = items[ctx.dataIndex]; return [fmtInt(it.efectiva) + ' de ' + fmtInt(it.total) + ' órdenes efectivas', '% error: ' + fmtPct(it.pct_error)]; }
+      } } },
       scales: { y: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } }, x: { grid: { display: false } } }
     }
   });
@@ -1720,11 +1953,19 @@ function renderSupervisoresChart(){
 
 function renderCausasChart(scope){
   const items = scope.top_causas;
+  const totalErr = scope.kpis.con_errores;
   if (charts.causas) charts.causas.destroy();
   charts.causas = new Chart(document.getElementById('causas-chart'), {
     type: 'bar',
     data: { labels: items.map(function(i){ return i.causa; }), datasets: [{ data: items.map(function(i){ return i.count; }), backgroundColor: COLORS.primary, borderRadius: 4, maxBarThickness: 18 }] },
-    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } } }
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      onClick: makeBarClickHandler('causa', items),
+      plugins: { legend: { display: false }, tooltip: { callbacks: {
+        label: function(ctx){ return fmtInt(ctx.raw) + ' órdenes (' + fmtPct(totalErr ? round1(ctx.raw / totalErr * 100) : 0) + ' del total de errores)'; }
+      } } },
+      scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } }
+    }
   });
 }
 
