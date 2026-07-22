@@ -684,9 +684,9 @@
   <section class="chart-row one-col">
     <div class="chart-container">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Comparativo mensual <span style="font-weight:500; font-size:11px; color:var(--text-2);">(solo Administrador)</span></h3>
-      <p class="chart-sub">Efectividad y error por mes, para comparar el desempeño global entre periodos.</p>
-      <div id="monthly-comparative-wrap">
-        <canvas id="monthly-comparative-chart" height="90"></canvas>
+      <p class="chart-sub">Efectividad y error por mes, uno junto al otro para comparar entre periodos · línea punteada = meta 65%</p>
+      <div id="monthly-comparative-wrap" style="height:200px; position:relative;">
+        <canvas id="monthly-comparative-chart"></canvas>
       </div>
       <p class="hoy-track-empty hidden" id="monthly-comparative-empty">Se necesitan al menos 2 meses con datos para poder comparar. Cuando pegues información de otro mes, este gráfico se activa solo.</p>
     </div>
@@ -1858,6 +1858,33 @@ function renderKPIs(scope){
   document.getElementById('kpi-efectividad-sub').textContent = fmtInt(scope.kpis.efectiva) + ' órdenes efectivas';
 }
 
+// Plugin que dibuja la línea de meta de borde a borde del área del gráfico
+// (un dataset tipo "line" se centra en las categorías y deja huecos a los lados).
+const metaLinePlugin = {
+  id: 'metaLinePlugin',
+  afterDatasetsDraw: function(chart){
+    const xScale = chart.scales.x;
+    const area = chart.chartArea;
+    if (!xScale || !area) return;
+    const x = xScale.getPixelForValue(EFECTIVIDAD_META);
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.strokeStyle = COLORS.warning;
+    ctx.setLineDash([6, 4]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, area.top);
+    ctx.lineTo(x, area.bottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = COLORS.warning;
+    ctx.font = "700 11px 'Inter', sans-serif";
+    ctx.textAlign = 'center';
+    ctx.fillText('Meta ' + EFECTIVIDAD_META + '%', x, area.top - 6);
+    ctx.restore();
+  }
+};
+
 function renderMonthlyComparativeChart(){
   const el = document.getElementById('monthly-comparative-chart');
   if (!el) return; // no visible para este rol
@@ -1872,23 +1899,35 @@ function renderMonthlyComparativeChart(){
   if (wrap) wrap.classList.remove('hidden');
   if (empty) empty.classList.add('hidden');
 
+  // Altura dinámica: crece con el número de meses para que las barras nunca se aprieten
+  if (wrap) wrap.style.height = Math.max(160, 60 + items.length * 64) + 'px';
+
   if (charts.monthlyComparative) charts.monthlyComparative.destroy();
   charts.monthlyComparative = new Chart(el, {
+    type: 'bar',
     data: {
       labels: items.map(function(i){ return monthLabel(i.mes); }),
       datasets: [
-        { type: 'bar', label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 5, maxBarThickness: 40, yAxisID: 'y' },
-        { type: 'bar', label: '% Error', data: items.map(function(i){ return i.pct_error; }), backgroundColor: COLORS.danger, borderRadius: 5, maxBarThickness: 40, yAxisID: 'y' },
-        { type: 'line', label: 'Meta ' + EFECTIVIDAD_META + '%', data: items.map(function(){ return EFECTIVIDAD_META; }), borderColor: COLORS.warning, borderDash: [6, 4], borderWidth: 1.6, pointRadius: 0, fill: false, yAxisID: 'y' }
+        { label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 4, maxBarThickness: 22, categoryPercentage: 0.72, barPercentage: 0.92 },
+        { label: '% Error', data: items.map(function(i){ return i.pct_error; }), backgroundColor: COLORS.danger, borderRadius: 4, maxBarThickness: 22, categoryPercentage: 0.72, barPercentage: 0.92 }
       ]
     },
+    plugins: [metaLinePlugin],
     options: {
-      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 18 } },
       plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: {
         label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(ctx.raw); },
-        afterLabel: function(ctx){ if (ctx.datasetIndex !== 0) return ''; const it = items[ctx.dataIndex]; return fmtInt(it.total) + ' órdenes auditadas'; }
+        afterLabel: function(ctx){
+          const it = items[ctx.dataIndex];
+          if (ctx.datasetIndex === 0) return [fmtInt(it.efectiva) + ' de ' + fmtInt(it.total) + ' órdenes efectivas'];
+          return [fmtInt(it.con_errores) + ' de ' + fmtInt(it.total) + ' órdenes con error'];
+        }
       } } },
-      scales: { y: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '%' } }, x: { grid: { display: false } } }
+      scales: {
+        x: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, ticks: { callback: function(v){ return v + '%'; } } },
+        y: { grid: { display: false }, ticks: { font: { weight: '700' } } }
+      }
     }
   });
 }
