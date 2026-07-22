@@ -76,6 +76,10 @@
     width:220px; height:220px; border-radius:50%;
     background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
   }
+  .header-logo-watermark{
+    position:absolute; right:18px; bottom:-10px; height:130px; width:auto;
+    opacity:0.08; filter: brightness(0) invert(1); pointer-events:none; z-index:0;
+  }
   .header-wave{
     position:absolute; left:0; right:0; bottom:-1px; height:22px; opacity:0.5;
     color: rgba(255,255,255,0.5);
@@ -90,8 +94,14 @@
     font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
     color: rgba(255,255,255,0.75); margin-bottom: 6px; display:flex; align-items:center; gap:6px;
   }
-  .drop-icon{ animation: dropBob 2.6s ease-in-out infinite; display:inline-block; }
-  @keyframes dropBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
+  .drop-icon{ animation: dropFall 1.7s ease-in infinite; display:inline-block; transform-origin:center top; }
+  @keyframes dropFall{
+    0%{ transform: translateY(-1px) scale(1); opacity: 0; }
+    12%{ opacity: 1; }
+    75%{ opacity: 1; transform: translateY(9px) scale(1); }
+    90%{ opacity: 0; transform: translateY(11px) scale(0.85); }
+    100%{ opacity: 0; transform: translateY(-1px) scale(1); }
+  }
   .dashboard-header h1{
     font-family: var(--font-display); font-size: 25px; font-weight: 700;
     margin: 0 0 8px 0; letter-spacing: -0.2px;
@@ -301,6 +311,10 @@
   .hoy-filter-row select{
     padding:7px 12px; border-radius:8px; border:1px solid var(--border);
     font-size:12.8px; font-family: var(--font-body); background:#fff; color:var(--text); min-width:220px;
+  }
+  .hoy-filter-row input[type="text"]{
+    padding:7px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:12.8px; font-family: var(--font-body); background:#fff; color:var(--text); min-width:220px; flex:1;
   }
   .hoy-track-section{ margin-top:16px; }
   .hoy-track-section h4{ font-size:13px; font-weight:700; color:var(--text); margin:0 0 8px; display:flex; align-items:center; gap:6px; }
@@ -545,6 +559,7 @@
         <option value="ALL">Todos los supervisores</option>
       </select>
     </div>
+    <img src="logo.png" alt="" class="header-logo-watermark" aria-hidden="true">
     <svg class="header-wave" viewBox="0 0 500 30" preserveAspectRatio="none"><path d="M0 15 Q 62 2 125 15 T 250 15 T 375 15 T 500 15 V30 H0 Z" fill="currentColor"/></svg>
   </header>
 
@@ -555,6 +570,7 @@
     </div>
     <div class="status-actions">
       <span class="role-badge" id="role-badge"><span class="role-pill" id="role-pill">—</span><button id="role-switch-btn">Cambiar</button></span>
+      <button class="btn ghost" id="clear-all-filters-btn">✕ Limpiar todo</button>
       <button class="btn ghost" id="refresh-btn">↻ Actualizar ahora</button>
       <button class="btn hidden" id="install-btn">＋ Instalar app</button>
     </div>
@@ -603,6 +619,7 @@
       <select id="hoy-inspector-select" disabled>
         <option value="ALL">Todos los inspectores</option>
       </select>
+      <input type="text" id="hoy-inspector-search" placeholder="🔍 Buscar inspector por nombre…">
     </div>
     <div class="hoy-empty hidden" id="hoy-empty">Aún no hay órdenes auditadas registradas para hoy.</div>
     <div class="hoy-kpis" id="hoy-kpis">
@@ -663,6 +680,18 @@
     <label>Hasta <input type="date" id="date-to"></label>
     <button class="btn ghost small" id="date-clear-btn">Ver todo</button>
   </div>
+
+  <section class="chart-row one-col">
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Comparativo mensual <span style="font-weight:500; font-size:11px; color:var(--text-2);">(solo Administrador)</span></h3>
+      <p class="chart-sub">Efectividad y error por mes, para comparar el desempeño global entre periodos.</p>
+      <div id="monthly-comparative-wrap">
+        <canvas id="monthly-comparative-chart" height="90"></canvas>
+      </div>
+      <p class="hoy-track-empty hidden" id="monthly-comparative-empty">Se necesitan al menos 2 meses con datos para poder comparar. Cuando pegues información de otro mes, este gráfico se activa solo.</p>
+    </div>
+  </section>
+
   <section class="kpi-row" id="sec-kpis">
     <div class="kpi-card">
       <div class="kpi-icon blue">
@@ -740,7 +769,7 @@
     </div>
     <div class="chart-container">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Tipos de error detectados</h3>
-      <p class="chart-sub">🔴 Descuentan a la empresa AAA · 🟡 Se concilian internamente</p>
+      <p class="chart-sub">🔴 Descuentan a Lecta · 🟡 Se concilian internamente</p>
       <canvas id="error-types-chart"></canvas>
     </div>
   </section>
@@ -1290,6 +1319,29 @@ function inspectoresFullBlock(sub, minTotal){
   return out;
 }
 
+function monthlyComparativeBlock(rows){
+  const by = new Map();
+  rows.forEach(function(r){
+    const ym = r.fecha.slice(0, 7);
+    if (!ym) return;
+    if (!by.has(ym)) by.set(ym, []);
+    by.get(ym).push(r);
+  });
+  let out = Array.from(by.entries()).map(function(e){
+    const mrows = e[1], total = mrows.length;
+    const correcto = mrows.filter(function(r){ return r.estado === 'Correcto'; }).length;
+    const con_errores = mrows.filter(function(r){ return r.estado === 'Con Errores'; }).length;
+    const efectiva = mrows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length;
+    return {
+      mes: e[0], total: total, correcto: correcto, con_errores: con_errores, efectiva: efectiva,
+      pct_efectividad: total ? round1(efectiva / total * 100) : 0,
+      pct_error: total ? round1(con_errores / total * 100) : 0,
+    };
+  });
+  out.sort(function(a, b){ return a.mes.localeCompare(b.mes); });
+  return out;
+}
+
 function supervisoresBlock(sub){
   const by = groupBy(sub, 'supervisor');
   let out = Array.from(by.entries()).map(function(e){
@@ -1403,6 +1455,17 @@ function rebuildData(){
   if (filterCausa) clean = clean.filter(function(r){ return r.causa_cierre === filterCausa; });
   if (filterTipoError) clean = clean.filter(function(r){ return r[filterTipoError]; });
 
+  // Base para el comparativo mensual: aplica todos los filtros MENOS el de
+  // mes (para que siempre se puedan comparar todos los meses disponibles).
+  let cleanForMonthly = ALL_CLEAN_ROWS;
+  if (dateFrom) cleanForMonthly = cleanForMonthly.filter(function(r){ return r.fecha >= dateFrom; });
+  if (dateTo) cleanForMonthly = cleanForMonthly.filter(function(r){ return r.fecha <= dateTo; });
+  if (filterInspector) cleanForMonthly = cleanForMonthly.filter(function(r){ return r.inspector === filterInspector; });
+  if (filterCiclo) cleanForMonthly = cleanForMonthly.filter(function(r){ return r.ciclo === filterCiclo; });
+  if (filterCausa) cleanForMonthly = cleanForMonthly.filter(function(r){ return r.causa_cierre === filterCausa; });
+  if (filterTipoError) cleanForMonthly = cleanForMonthly.filter(function(r){ return r[filterTipoError]; });
+  if (currentScope !== 'ALL') cleanForMonthly = cleanForMonthly.filter(function(r){ return r.supervisor === currentScope; });
+
   const fechas = clean.map(function(r){ return r.fecha; }).filter(Boolean).sort();
   const newData = {
     meta: {
@@ -1414,6 +1477,7 @@ function rebuildData(){
     },
     overall: buildScope(clean),
     by_supervisor: {},
+    monthly: monthlyComparativeBlock(cleanForMonthly),
     errores_detalle: clean.filter(function(r){ return r.estado === 'Con Errores'; })
       .sort(function(a, b){ return b.fecha.localeCompare(a.fecha); })
       .map(function(r){
@@ -1534,16 +1598,28 @@ function clearFilter(which){
   rebuildData();
 }
 
-function clearAllCrossFilters(){
+function clearAllFiltersEverywhere(){
+  // Filtros cruzados globales
   filterInspector = ''; filterCiclo = ''; filterCausa = ''; filterTipoError = ''; filterMonth = '';
   currentScope = 'ALL';
-  const sel = document.getElementById('supervisor-select');
-  if (sel) sel.value = 'ALL';
-  const ms = document.getElementById('month-select');
-  if (ms) ms.value = '';
+  // Filtros propios de la página Detalle
+  detailDateFrom = ''; detailDateTo = ''; detailMonthSel = '';
+  detailInspectorSel = ''; detailCicloSel = ''; detailTipoSel = ''; detailSupervisorSel = '';
+  // Filtro propio de la página Hoy
+  hoyInspectorScope = 'ALL'; hoySearchTerm = '';
+
+  ['supervisor-select', 'month-select'].forEach(function(id){ const el = document.getElementById(id); if (el) el.value = id === 'supervisor-select' ? 'ALL' : ''; });
+  ['detail-date-from', 'detail-date-to', 'detail-month-select', 'detail-inspector-select', 'detail-ciclo-select', 'detail-tipo-select', 'detail-supervisor-select', 'table-search', 'hoy-inspector-search'].forEach(function(id){
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  const hoySel = document.getElementById('hoy-inspector-select');
+  if (hoySel) hoySel.value = 'ALL';
+
   detailPage = 0;
-  rebuildData();
+  rebuildData(); // ya llama a renderAll(), que a su vez llama a renderHoyBlock()
 }
+// Alias retrocompatible
+function clearAllCrossFilters(){ clearAllFiltersEverywhere(); }
 
 const TIPO_ERROR_LABELS = { err_campos: 'Campos vacíos', err_lectura: 'Lectura incorrecta', err_matriz: 'Combinación no válida en matriz', err_obligatoriedad: 'Obligatoriedad de lectura' };
 
@@ -1582,6 +1658,7 @@ function renderAll(){
   renderActiveFiltersBar();
   renderHoyBlock();
   renderKPIs(scope);
+  renderMonthlyComparativeChart();
   renderDailyChart(scope);
   renderDailyEfectividadChart(scope);
   renderDailyErroresChart(scope);
@@ -1602,7 +1679,8 @@ function renderAll(){
   renderDetailTable();
 }
 
-let hoyInspectorScope = 'ALL'; // filtro de inspector propio de la sección "Hoy"
+let hoyInspectorScope = 'ALL'; // filtro de inspector propio de la sección "Hoy" (desplegable)
+let hoySearchTerm = '';        // búsqueda manual por texto, propia de "Hoy"
 
 function populateHoyInspectorOptions(todayRows){
   const sel = document.getElementById('hoy-inspector-select');
@@ -1636,11 +1714,24 @@ function renderHoyBlock(){
 
   populateHoyInspectorOptions(todayAll);
 
-  const todayRows = hoyInspectorScope === 'ALL' ? todayAll : todayAll.filter(function(r){ return r.inspector === hoyInspectorScope; });
-  const yestRows = hoyInspectorScope === 'ALL' ? yestAll : yestAll.filter(function(r){ return r.inspector === hoyInspectorScope; });
+  const q = hoySearchTerm.trim().toLowerCase();
+  const todayRows = todayAll.filter(function(r){
+    if (hoyInspectorScope !== 'ALL' && r.inspector !== hoyInspectorScope) return false;
+    if (q && r.inspector.toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+  const yestRows = yestAll.filter(function(r){
+    if (hoyInspectorScope !== 'ALL' && r.inspector !== hoyInspectorScope) return false;
+    if (q && r.inspector.toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
 
   if (todayRows.length === 0){
-    document.getElementById('hoy-empty').classList.remove('hidden');
+    const emptyEl = document.getElementById('hoy-empty');
+    emptyEl.textContent = todayAll.length === 0
+      ? 'Aún no hay órdenes auditadas registradas para hoy.'
+      : 'Ningún inspector coincide con ese filtro/búsqueda por ahora.';
+    emptyEl.classList.remove('hidden');
     document.getElementById('hoy-kpis').classList.add('hidden');
     document.getElementById('hoy-track-section').classList.add('hidden');
     document.getElementById('hoy-detail-empty').classList.remove('hidden');
@@ -1767,6 +1858,41 @@ function renderKPIs(scope){
   document.getElementById('kpi-efectividad-sub').textContent = fmtInt(scope.kpis.efectiva) + ' órdenes efectivas';
 }
 
+function renderMonthlyComparativeChart(){
+  const el = document.getElementById('monthly-comparative-chart');
+  if (!el) return; // no visible para este rol
+  const items = (DATA.monthly || []).filter(function(m){ return m.total > 0; });
+  const wrap = document.getElementById('monthly-comparative-wrap');
+  const empty = document.getElementById('monthly-comparative-empty');
+  if (items.length < 2){
+    if (wrap) wrap.classList.add('hidden');
+    if (empty) empty.classList.remove('hidden');
+    return;
+  }
+  if (wrap) wrap.classList.remove('hidden');
+  if (empty) empty.classList.add('hidden');
+
+  if (charts.monthlyComparative) charts.monthlyComparative.destroy();
+  charts.monthlyComparative = new Chart(el, {
+    data: {
+      labels: items.map(function(i){ return monthLabel(i.mes); }),
+      datasets: [
+        { type: 'bar', label: '% Efectividad', data: items.map(function(i){ return i.pct_efectividad; }), backgroundColor: COLORS.success, borderRadius: 5, maxBarThickness: 40, yAxisID: 'y' },
+        { type: 'bar', label: '% Error', data: items.map(function(i){ return i.pct_error; }), backgroundColor: COLORS.danger, borderRadius: 5, maxBarThickness: 40, yAxisID: 'y' },
+        { type: 'line', label: 'Meta ' + EFECTIVIDAD_META + '%', data: items.map(function(){ return EFECTIVIDAD_META; }), borderColor: COLORS.warning, borderDash: [6, 4], borderWidth: 1.6, pointRadius: 0, fill: false, yAxisID: 'y' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' }, tooltip: { callbacks: {
+        label: function(ctx){ return ctx.dataset.label + ': ' + fmtPct(ctx.raw); },
+        afterLabel: function(ctx){ if (ctx.datasetIndex !== 0) return ''; const it = items[ctx.dataIndex]; return fmtInt(it.total) + ' órdenes auditadas'; }
+      } } },
+      scales: { y: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '%' } }, x: { grid: { display: false } } }
+    }
+  });
+}
+
 function renderDailyChart(scope){
   const labels = scope.daily.map(function(d){ return formatDateShort(d.fecha); });
   const correcto = scope.daily.map(function(d){ return d.correcto; });
@@ -1849,7 +1975,7 @@ function renderErrorTypesChart(scope){
         legend: { display: false },
         tooltip: { callbacks: {
           label: function(ctx){ const it = items[ctx.dataIndex]; return fmtInt(ctx.raw) + ' órdenes (' + fmtPct(totalErr ? round1(ctx.raw / totalErr * 100) : 0) + ' del total de errores)'; },
-          afterLabel: function(ctx){ return items[ctx.dataIndex].descuenta ? '⚠ Descuenta a la empresa AAA' : '↺ Se concilia internamente'; }
+          afterLabel: function(ctx){ return items[ctx.dataIndex].descuenta ? '⚠ Descuentan a Lecta' : '↺ Se concilia internamente'; }
         } }
       },
       scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } }
@@ -1871,7 +1997,7 @@ function renderCiclosChart(scope){
         afterLabel: function(ctx){
           const it = items[ctx.dataIndex];
           const rango = it.fecha_min === it.fecha_max ? formatDateShort(it.fecha_min) : formatDateShort(it.fecha_min) + ' – ' + formatDateShort(it.fecha_max);
-          return ['% error del ciclo: ' + fmtPct(it.pct_error), 'Fechas con error: ' + rango];
+          return ['% error del ciclo: ' + fmtPct(it.pct_error), 'Fecha inspección: ' + rango];
         }
       } } },
       scales: { x: { beginAtZero: true, grid: { color: '#EEF2F5' } }, y: { grid: { display: false } } }
@@ -1969,7 +2095,7 @@ function renderCiclosInefectivosChart(scope){
         afterLabel: function(ctx){
           const it = items[ctx.dataIndex];
           const rango = it.fecha_min === it.fecha_max ? formatDateShort(it.fecha_min) : formatDateShort(it.fecha_min) + ' – ' + formatDateShort(it.fecha_max);
-          return [fmtInt(it.efectiva) + ' de ' + fmtInt(it.total) + ' órdenes efectivas', 'Fechas no efectivas: ' + (rango || 'sin datos')];
+          return [fmtInt(it.efectiva) + ' de ' + fmtInt(it.total) + ' órdenes efectivas', 'Fecha inspección: ' + (rango || 'sin datos')];
         }
       } } },
       scales: { x: { beginAtZero: true, max: 100, grid: { color: '#EEF2F5' }, title: { display: true, text: '% Efectividad' } }, y: { grid: { display: false } } }
@@ -2357,6 +2483,7 @@ function init(){
   document.getElementById('export-summary-btn').addEventListener('click', exportSummaryCSV);
   document.getElementById('export-inspector-btn').addEventListener('click', exportInspectorCSV);
   document.getElementById('refresh-btn').addEventListener('click', function(){ loadData(true); });
+  document.getElementById('clear-all-filters-btn').addEventListener('click', clearAllFiltersEverywhere);
   document.querySelectorAll('#detail-table thead th').forEach(function(th){ th.addEventListener('click', function(){ onSort(th.dataset.key); }); });
   document.getElementById('inspector-search').addEventListener('input', function(){ computeInspectorFiltered(); renderInspectorTable(); });
   document.querySelectorAll('#inspector-table thead th').forEach(function(th){ th.addEventListener('click', function(){ onSortInspector(th.dataset.key); }); });
@@ -2392,6 +2519,10 @@ function init(){
   // Filtro de inspector en la sección "Hoy"
   document.getElementById('hoy-inspector-select').addEventListener('change', function(e){
     hoyInspectorScope = e.target.value;
+    renderHoyBlock();
+  });
+  document.getElementById('hoy-inspector-search').addEventListener('input', function(e){
+    hoySearchTerm = e.target.value || '';
     renderHoyBlock();
   });
 
