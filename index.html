@@ -430,6 +430,27 @@
     font-weight:700; text-decoration:underline; cursor:pointer;
   }
 
+  /* ---------- Íconos en títulos y animaciones ---------- */
+  .chart-container h3 svg, .table-section h3 svg{
+    width:15px; height:15px; color:var(--teal-dark); vertical-align:-2px; margin-right:5px;
+    display:inline-block;
+  }
+  .chart-container, .table-section{ transition: transform .18s ease, box-shadow .18s ease; }
+  .chart-container:hover, .table-section:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(11,61,92,0.13);
+  }
+  .chart-container:hover h3 svg{ animation: iconWiggle .5s ease; }
+  @keyframes iconWiggle{ 0%,100%{ transform:rotate(0);} 30%{ transform:rotate(-9deg);} 60%{ transform:rotate(9deg);} }
+  .hoy-badge{ animation: badgePulse 2.4s ease-in-out infinite; }
+  @keyframes badgePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(14,110,140,0.35);} 50%{ box-shadow:0 0 0 7px rgba(14,110,140,0);} }
+  .kpi-icon svg{ transition: transform .2s ease; }
+  .kpi-card:hover .kpi-icon svg{ transform: scale(1.15); }
+  .date-filter-bar select{
+    padding:7px 10px; border-radius:8px; border:1px solid var(--border);
+    font-size:12.8px; font-family: var(--font-body); background:#F7FAFB; color: var(--text);
+  }
+
   @media (max-width: 640px){
     .btn{ padding: 10px 14px; font-size:13px; }
     .tab-bar .tab-btn{ font-size:9.5px; }
@@ -511,6 +532,12 @@
         <h1>Dashboard de Auditoría — Hoja Validador</h1>
         <div class="header-meta" id="header-meta">Cargando datos en vivo…</div>
       </div>
+    </div>
+    <div class="header-filter">
+      <label for="month-select">Mes</label>
+      <select id="month-select" disabled>
+        <option value="">Todos los meses</option>
+      </select>
     </div>
     <div class="header-filter">
       <label for="supervisor-select">Filtrar por supervisor</label>
@@ -681,7 +708,7 @@
 
   <section class="chart-row one-col" id="sec-tendencias">
     <div class="chart-container">
-      <h3>Evolución diaria de auditorías</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> Evolución diaria de auditorías</h3>
       <p class="chart-sub">Órdenes correctas vs. con error (barras) y % de efectividad (línea)</p>
       <canvas id="daily-chart" height="90"></canvas>
     </div>
@@ -689,12 +716,12 @@
 
   <section class="chart-row two-col">
     <div class="chart-container">
-      <h3>Línea de tiempo — efectividad diaria</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 8-6-16-3 8H2"/></svg> Línea de tiempo — efectividad diaria</h3>
       <p class="chart-sub">% de efectividad por día</p>
       <canvas id="daily-efectividad-chart"></canvas>
     </div>
     <div class="chart-container">
-      <h3>Línea de tiempo — errores diarios</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Línea de tiempo — errores diarios</h3>
       <p class="chart-sub">Órdenes con error por día</p>
       <canvas id="daily-errores-chart"></canvas>
     </div>
@@ -702,18 +729,18 @@
 
   <section class="chart-row three-col">
     <div class="chart-container">
-      <h3>Estado de auditoría</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg> Estado de auditoría</h3>
       <p class="chart-sub">Correctas vs. con error</p>
       <canvas id="estado-chart"></canvas>
     </div>
     <div class="chart-container">
-      <h3>Efectividad de la inspección</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C12 2 5 10.5 5 15.5C5 19.6 8.1 22 12 22C15.9 22 19 19.6 19 15.5C19 10.5 12 2 12 2Z"/></svg> Efectividad de la inspección</h3>
       <p class="chart-sub">Efectiva vs. no efectiva</p>
       <canvas id="efectividad-chart"></canvas>
     </div>
     <div class="chart-container">
-      <h3>Tipos de error detectados</h3>
-      <p class="chart-sub">🔴 Descuentan a la empresa AAA · 🟡 Se concilian internamente · un clic filtra, doble clic abre el detalle</p>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Tipos de error detectados</h3>
+      <p class="chart-sub">🔴 Descuentan a la empresa AAA · 🟡 Se concilian internamente</p>
       <canvas id="error-types-chart"></canvas>
     </div>
   </section>
@@ -722,12 +749,12 @@
   <div class="page-content" data-page="inspectores">
   <section class="chart-row two-col" id="sec-inspectores">
     <div class="chart-container tall">
-      <h3>Inspectores con mayor tasa de error</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 6l4 4M21 6l-4 4"/></svg> Inspectores con mayor tasa de error</h3>
       <p class="chart-sub">% de error sobre el total auditado (mínimo 10 órdenes)</p>
       <canvas id="inspectores-chart"></canvas>
     </div>
     <div class="chart-container tall">
-      <h3>Inspectores más efectivos</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="5"/><path d="M9 13.5L7.5 21l4.5-2.5L16.5 21 15 13.5"/></svg> Inspectores más efectivos</h3>
       <p class="chart-sub">% de efectividad sobre el total auditado (mínimo 10 órdenes)</p>
       <canvas id="inspectores-efectivos-chart"></canvas>
     </div>
@@ -735,7 +762,7 @@
 
   <section class="chart-row one-col">
     <div class="chart-container tall">
-      <h3>Efectividad vs. errores por inspector</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg> Efectividad vs. errores por inspector</h3>
       <p class="chart-sub">Barra verde = % efectividad · barra roja = % error de auditoría · mismos inspectores del gráfico anterior, ordenados de mayor a menor efectividad.</p>
       <canvas id="inspector-diverging-chart"></canvas>
     </div>
@@ -743,12 +770,12 @@
 
   <section class="chart-row two-col">
     <div class="chart-container tall">
-      <h3>Ciclos con más órdenes en error</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Ciclos con más órdenes en error</h3>
       <p class="chart-sub">Top 15 ciclos por número de órdenes con error</p>
       <canvas id="ciclos-chart"></canvas>
     </div>
     <div class="chart-container tall">
-      <h3>Ciclos más inefectivos</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C12 2 5 10.5 5 15.5C5 19.6 8.1 22 12 22C15.9 22 19 19.6 19 15.5C19 10.5 12 2 12 2Z"/><path d="M4 4l16 16"/></svg> Ciclos más inefectivos</h3>
       <p class="chart-sub">Menor % de efectividad (mínimo 10 órdenes) · top 15</p>
       <canvas id="ciclos-inefectivos-chart"></canvas>
     </div>
@@ -756,7 +783,7 @@
 
   <section class="table-section">
     <div class="table-header">
-      <h3>Resumen por inspector</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2"/><path d="M20 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg> Resumen por inspector</h3>
       <div class="table-actions">
         <input type="text" id="inspector-search" placeholder="Buscar inspector…">
         <button class="btn ghost" id="export-inspector-btn">Exportar CSV</button>
@@ -781,12 +808,12 @@
   <div class="page-content" data-page="supervisores">
   <section class="chart-row two-col" id="sec-supervisores">
     <div class="chart-container tall">
-      <h3>Efectividad por supervisor</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/></svg> Efectividad por supervisor</h3>
       <p class="chart-sub">Comparativo general · el supervisor filtrado se resalta en el gráfico</p>
       <canvas id="supervisores-chart"></canvas>
     </div>
     <div class="chart-container tall">
-      <h3>Principales causas de cierre</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Principales causas de cierre</h3>
       <p class="chart-sub">Top 10 causas registradas</p>
       <canvas id="causas-chart"></canvas>
     </div>
@@ -794,7 +821,7 @@
 
   <section class="table-section">
     <div class="table-header">
-      <h3>Resumen por supervisor</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/></svg> Resumen por supervisor</h3>
       <div class="table-actions">
         <button class="btn ghost" id="export-summary-btn">Exportar CSV</button>
       </div>
@@ -818,11 +845,19 @@
     <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Fecha:</span>
     <label>Desde <input type="date" id="detail-date-from"></label>
     <label>Hasta <input type="date" id="detail-date-to"></label>
+    <label>Mes <select id="detail-month-select"><option value="">Todos</option></select></label>
     <button class="btn ghost small" id="detail-date-clear-btn">Ver todo</button>
+  </div>
+  <div class="date-filter-bar">
+    <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg> Filtros:</span>
+    <label>Inspector <select id="detail-inspector-select"><option value="">Todos</option></select></label>
+    <label>Ciclo <select id="detail-ciclo-select"><option value="">Todos</option></select></label>
+    <label>Tipo de error <select id="detail-tipo-select"><option value="">Todos</option></select></label>
+    <label>Supervisor <select id="detail-supervisor-select"><option value="">Todos</option></select></label>
   </div>
   <section class="table-section" id="sec-detalle">
     <div class="table-header">
-      <h3>Detalle de órdenes con error (<span id="detail-count">0</span>)</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Detalle de órdenes con error (<span id="detail-count">0</span>)</h3>
       <div class="table-actions">
         <input type="text" id="table-search" placeholder="Buscar por orden, cuenta, inspector o ciclo…">
         <button class="btn" id="export-detail-btn">Exportar CSV</button>
@@ -1301,6 +1336,7 @@ let filterInspector = '';
 let filterCiclo = '';
 let filterCausa = '';
 let filterTipoError = ''; // 'err_campos' | 'err_lectura' | 'err_matriz' | 'err_obligatoriedad'
+let filterMonth = '';     // 'YYYY-MM' o vacío = todos los meses
 
 function processRawRows(rawRows){
   const clean = rawRows.map(function(r){
@@ -1326,7 +1362,32 @@ function processRawRows(rawRows){
   });
 
   ALL_CLEAN_ROWS = clean;
+  populateMonthOptions();
   rebuildData();
+}
+
+const MESES_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+function monthLabel(ym){
+  const p = String(ym).split('-');
+  return (MESES_ES[Number(p[1]) - 1] || p[1]) + ' ' + p[0];
+}
+
+function populateMonthOptions(){
+  const months = Array.from(new Set(ALL_CLEAN_ROWS.map(function(r){ return r.fecha.slice(0, 7); }).filter(Boolean))).sort().reverse();
+  ['month-select', 'detail-month-select'].forEach(function(id){
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">' + (id === 'month-select' ? 'Todos los meses' : 'Todos') + '</option>';
+    months.forEach(function(m){
+      const o = document.createElement('option');
+      o.value = m; o.textContent = monthLabel(m);
+      sel.appendChild(o);
+    });
+    sel.value = months.indexOf(prev) !== -1 ? prev : '';
+    sel.disabled = months.length === 0;
+  });
+  if (document.getElementById('month-select')) filterMonth = document.getElementById('month-select').value;
 }
 
 // Reconstruye DATA aplicando el filtro de fechas y los filtros cruzados tipo
@@ -1334,6 +1395,7 @@ function processRawRows(rawRows){
 // ALL_CLEAN_ROWS directamente.
 function rebuildData(){
   let clean = ALL_CLEAN_ROWS;
+  if (filterMonth) clean = clean.filter(function(r){ return r.fecha.slice(0, 7) === filterMonth; });
   if (dateFrom) clean = clean.filter(function(r){ return r.fecha >= dateFrom; });
   if (dateTo) clean = clean.filter(function(r){ return r.fecha <= dateTo; });
   if (filterInspector) clean = clean.filter(function(r){ return r.inspector === filterInspector; });
@@ -1408,9 +1470,30 @@ function makeBarClickHandler(dimension, items){
     const now = Date.now();
     const isDouble = (_lastBarClick.dim === dimension && _lastBarClick.index === idx && (now - _lastBarClick.time) < DBLCLICK_MS);
     _lastBarClick = { dim: dimension, index: idx, time: isDouble ? 0 : now };
-    applyDimensionFilter(dimension, item);
-    if (isDouble) goToDetallePage();
+    if (isDouble){
+      // Doble clic: dejar el filtro ENCENDIDO (sin toggle) y abrir el detalle filtrado
+      forceDimensionFilter(dimension, item);
+      goToDetallePage();
+    } else {
+      applyDimensionFilter(dimension, item);
+    }
   };
+}
+
+function forceDimensionFilter(dimension, item){
+  detailPage = 0;
+  if (dimension === 'supervisor'){
+    currentScope = item.supervisor;
+    const sel = document.getElementById('supervisor-select');
+    if (sel) sel.value = currentScope;
+    renderAll();
+    return;
+  }
+  if (dimension === 'inspector') filterInspector = item.inspector;
+  else if (dimension === 'ciclo') filterCiclo = item.ciclo;
+  else if (dimension === 'causa') filterCausa = item.causa;
+  else if (dimension === 'tipoError') filterTipoError = item.key;
+  rebuildData();
 }
 
 function applyDimensionFilter(dimension, item){
@@ -1445,16 +1528,19 @@ function clearFilter(which){
   else if (which === 'ciclo') filterCiclo = '';
   else if (which === 'causa') filterCausa = '';
   else if (which === 'tipoError') filterTipoError = '';
+  else if (which === 'month'){ filterMonth = ''; const ms = document.getElementById('month-select'); if (ms) ms.value = ''; }
   else if (which === 'supervisor'){ currentScope = 'ALL'; const sel = document.getElementById('supervisor-select'); if (sel) sel.value = 'ALL'; }
   detailPage = 0;
   rebuildData();
 }
 
 function clearAllCrossFilters(){
-  filterInspector = ''; filterCiclo = ''; filterCausa = ''; filterTipoError = '';
+  filterInspector = ''; filterCiclo = ''; filterCausa = ''; filterTipoError = ''; filterMonth = '';
   currentScope = 'ALL';
   const sel = document.getElementById('supervisor-select');
   if (sel) sel.value = 'ALL';
+  const ms = document.getElementById('month-select');
+  if (ms) ms.value = '';
   detailPage = 0;
   rebuildData();
 }
@@ -1465,6 +1551,7 @@ function renderActiveFiltersBar(){
   const bar = document.getElementById('active-filters-bar');
   if (!bar) return;
   const chips = [];
+  if (filterMonth) chips.push({ label: 'Mes: ' + monthLabel(filterMonth), clear: 'month' });
   if (currentScope !== 'ALL') chips.push({ label: 'Supervisor: ' + currentScope, clear: 'supervisor' });
   if (filterInspector) chips.push({ label: 'Inspector: ' + filterInspector, clear: 'inspector' });
   if (filterCiclo) chips.push({ label: 'Ciclo: ' + filterCiclo, clear: 'ciclo' });
@@ -1510,6 +1597,7 @@ function renderAll(){
   renderSummaryTable();
   computeInspectorFiltered();
   renderInspectorTable();
+  populateDetailFilterOptions();
   computeDetailFiltered();
   renderDetailTable();
 }
@@ -2038,6 +2126,44 @@ function exportInspectorCSV(){
 
 let detailDateFrom = '';  // filtro de fecha propio de la página Detalle
 let detailDateTo = '';
+let detailMonthSel = '';
+let detailInspectorSel = '';
+let detailCicloSel = '';
+let detailTipoSel = '';
+let detailSupervisorSel = '';
+
+function populateDetailFilterOptions(){
+  const rows = DATA ? DATA.errores_detalle : [];
+  const cfgs = [
+    ['detail-inspector-select', 'inspector'],
+    ['detail-ciclo-select', 'ciclo'],
+    ['detail-supervisor-select', 'supervisor'],
+  ];
+  cfgs.forEach(function(cfg){
+    const sel = document.getElementById(cfg[0]);
+    if (!sel) return;
+    const prev = sel.value;
+    const vals = Array.from(new Set(rows.map(function(r){ return r[cfg[1]]; }).filter(Boolean))).sort();
+    sel.innerHTML = '<option value="">Todos</option>';
+    vals.forEach(function(v){
+      const o = document.createElement('option');
+      o.value = v; o.textContent = v;
+      sel.appendChild(o);
+    });
+    sel.value = vals.indexOf(prev) !== -1 ? prev : '';
+  });
+  const tipoSel = document.getElementById('detail-tipo-select');
+  if (tipoSel && tipoSel.options.length <= 1){
+    Object.keys(TIPO_ERROR_LABELS).forEach(function(k){
+      const o = document.createElement('option');
+      o.value = TIPO_ERROR_LABELS[k]; o.textContent = TIPO_ERROR_LABELS[k];
+      tipoSel.appendChild(o);
+    });
+  }
+  detailInspectorSel = document.getElementById('detail-inspector-select') ? document.getElementById('detail-inspector-select').value : '';
+  detailCicloSel = document.getElementById('detail-ciclo-select') ? document.getElementById('detail-ciclo-select').value : '';
+  detailSupervisorSel = document.getElementById('detail-supervisor-select') ? document.getElementById('detail-supervisor-select').value : '';
+}
 
 function computeDetailFiltered(){
   const q = document.getElementById('table-search').value.trim().toLowerCase();
@@ -2045,6 +2171,11 @@ function computeDetailFiltered(){
     if (currentScope !== 'ALL' && r.supervisor !== currentScope) return false;
     if (detailDateFrom && r.fecha < detailDateFrom) return false;
     if (detailDateTo && r.fecha > detailDateTo) return false;
+    if (detailMonthSel && r.fecha.slice(0, 7) !== detailMonthSel) return false;
+    if (detailInspectorSel && r.inspector !== detailInspectorSel) return false;
+    if (detailCicloSel && r.ciclo !== detailCicloSel) return false;
+    if (detailSupervisorSel && r.supervisor !== detailSupervisorSel) return false;
+    if (detailTipoSel && String(r.tipo_error || '').indexOf(detailTipoSel) === -1) return false;
     if (!q) return true;
     return String(r.orden).toLowerCase().indexOf(q) !== -1 ||
            String(r.cuenta).toLowerCase().indexOf(q) !== -1 ||
@@ -2289,11 +2420,34 @@ function init(){
     if (DATA){ computeDetailFiltered(); renderDetailTable(); }
   });
   document.getElementById('detail-date-clear-btn').addEventListener('click', function(){
-    detailDateFrom = ''; detailDateTo = '';
-    document.getElementById('detail-date-from').value = '';
-    document.getElementById('detail-date-to').value = '';
+    detailDateFrom = ''; detailDateTo = ''; detailMonthSel = '';
+    detailInspectorSel = ''; detailCicloSel = ''; detailTipoSel = ''; detailSupervisorSel = '';
+    ['detail-date-from','detail-date-to','detail-month-select','detail-inspector-select','detail-ciclo-select','detail-tipo-select','detail-supervisor-select'].forEach(function(id){
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
     detailPage = 0;
     if (DATA){ computeDetailFiltered(); renderDetailTable(); }
+  });
+
+  // Selectores adicionales de la página Detalle
+  [['detail-month-select', function(v){ detailMonthSel = v; }],
+   ['detail-inspector-select', function(v){ detailInspectorSel = v; }],
+   ['detail-ciclo-select', function(v){ detailCicloSel = v; }],
+   ['detail-tipo-select', function(v){ detailTipoSel = v; }],
+   ['detail-supervisor-select', function(v){ detailSupervisorSel = v; }]
+  ].forEach(function(cfg){
+    document.getElementById(cfg[0]).addEventListener('change', function(e){
+      cfg[1](e.target.value || '');
+      detailPage = 0;
+      if (DATA){ computeDetailFiltered(); renderDetailTable(); }
+    });
+  });
+
+  // Filtro global de mes (afecta todo excepto "Hoy")
+  document.getElementById('month-select').addEventListener('change', function(e){
+    filterMonth = e.target.value || '';
+    detailPage = 0;
+    if (ALL_CLEAN_ROWS.length) rebuildData();
   });
 
   const backTop = document.getElementById('back-to-top');
