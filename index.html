@@ -60,7 +60,7 @@
     background: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 55%, var(--teal-dark) 100%);
     color: #fff;
     border-radius: var(--radius);
-    padding: 26px 30px;
+    padding: 24px 30px 34px;
     margin-bottom: 14px;
     display:flex;
     justify-content: space-between;
@@ -76,10 +76,22 @@
     width:220px; height:220px; border-radius:50%;
     background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
   }
+  .header-wave{
+    position:absolute; left:0; right:0; bottom:-1px; height:22px; opacity:0.5;
+    color: rgba(255,255,255,0.5);
+  }
+  .header-titles{ display:flex; align-items:center; gap:14px; position:relative; z-index:1; }
+  .header-logo-badge{
+    background:#fff; border-radius:13px; padding:8px 13px; box-shadow:0 3px 14px rgba(0,0,0,0.18);
+    flex-shrink:0; display:flex; align-items:center; line-height:0;
+  }
+  .header-logo{ height:26px; width:auto; display:block; }
   .header-eyebrow{
     font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
-    color: rgba(255,255,255,0.75); margin-bottom: 6px;
+    color: rgba(255,255,255,0.75); margin-bottom: 6px; display:flex; align-items:center; gap:6px;
   }
+  .drop-icon{ animation: dropBob 2.6s ease-in-out infinite; display:inline-block; }
+  @keyframes dropBob{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-3px); } }
   .dashboard-header h1{
     font-family: var(--font-display); font-size: 25px; font-weight: 700;
     margin: 0 0 8px 0; letter-spacing: -0.2px;
@@ -202,23 +214,52 @@
 
   .hidden{ display:none !important; }
 
-  /* ---------- Quick nav ---------- */
+  /* ---------- Sistema de páginas ---------- */
   html{ scroll-behavior:smooth; }
-  .quick-nav{
-    display:flex; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch;
-    margin-bottom:18px; padding-bottom:2px;
+  .page-content{ display:none; }
+  .page-content.active{ display:block; animation: pageFadeIn 0.18s ease; }
+  @keyframes pageFadeIn{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:translateY(0);} }
+
+  .tab-bar{
+    position: fixed; left:0; right:0; bottom:0; z-index: 50;
+    display:flex; justify-content:space-around; align-items:stretch;
+    background: rgba(255,255,255,0.94); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border); box-shadow: 0 -4px 18px rgba(11,61,92,0.10);
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
   }
-  .quick-nav a{
-    flex-shrink:0; padding:8px 16px; border-radius:20px; border:1px solid var(--border);
-    background: var(--card); color: var(--teal-dark); font-size:12.8px; font-weight:600;
-    text-decoration:none; box-shadow: var(--shadow); white-space:nowrap;
+  .tab-bar .tab-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; padding:7px 2px 6px; background:none; border:none; cursor:pointer;
+    color: var(--text-2); font-family: var(--font-body); font-size:10.5px; font-weight:600;
+    border-radius:10px; transition: color 0.15s;
   }
-  .quick-nav a:hover{ background: var(--teal-dark); color:#fff; border-color:var(--teal-dark); }
-  .quick-nav::-webkit-scrollbar{ height:0; }
+  .tab-bar .tab-btn svg{ width:21px; height:21px; }
+  .tab-bar .tab-btn.active{ color: var(--teal-dark); }
+  .tab-bar .tab-btn.active .tab-icon-wrap{ background: var(--success-bg); }
+  .tab-icon-wrap{ width:32px; height:32px; border-radius:10px; display:flex; align-items:center; justify-content:center; transition: background 0.15s; }
+  .tab-bar .tab-btn .tab-dot{
+    width:5px; height:5px; border-radius:50%; background: var(--danger); position:relative; top:-19px; left:9px;
+  }
+
+  .dashboard-container{ padding-bottom: 78px; } /* espacio para que la barra inferior no tape contenido */
+
+  /* ---------- Filtro de fechas ---------- */
+  .date-filter-bar{
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 12px 18px; margin-bottom: 16px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .date-filter-bar .df-label{ font-size:12px; font-weight:700; color: var(--text-2); display:flex; align-items:center; gap:6px; }
+  .date-filter-bar label{ font-size:12px; color: var(--text-2); font-weight:600; display:flex; align-items:center; gap:6px; }
+  .date-filter-bar input[type="date"]{
+    padding:7px 10px; border-radius:8px; border:1px solid var(--border); font-size:12.8px;
+    font-family: var(--font-body); background:#F7FAFB; color: var(--text);
+  }
+  .date-filter-bar .btn.ghost.small{ padding:6px 12px; font-size:12px; }
 
   /* ---------- Back to top ---------- */
   .back-to-top{
-    position: fixed; bottom: 22px; right: 22px; width:46px; height:46px; border-radius:50%;
+    position: fixed; bottom: 88px; right: 22px; width:46px; height:46px; border-radius:50%;
     background: var(--teal-dark); color:#fff; border:none; font-size:20px; cursor:pointer;
     box-shadow: 0 4px 16px rgba(11,61,92,0.28); z-index: 40;
   }
@@ -253,12 +294,30 @@
   .hoy-delta.down{ color: var(--danger); }
   .hoy-delta.neutral{ color: var(--text-2); }
 
+  .hoy-filter-row{ display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .hoy-filter-row label{ font-size:12px; font-weight:700; color: var(--text-2); }
+  .hoy-filter-row select{
+    padding:7px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:12.8px; font-family: var(--font-body); background:#fff; color:var(--text); min-width:220px;
+  }
+  .hoy-track-section{ margin-top:16px; }
+  .hoy-track-section h4{ font-size:13px; font-weight:700; color:var(--text); margin:0 0 8px; display:flex; align-items:center; gap:6px; }
+  .hoy-track-empty{ font-size:12.8px; color:var(--text-2); background:rgba(255,255,255,0.6); border-radius:10px; padding:12px 14px; }
+  .hoy-track-table{ width:100%; border-collapse:collapse; font-size:12.5px; background:rgba(255,255,255,0.6); border-radius:10px; overflow:hidden; }
+  .hoy-track-table thead th{
+    text-align:left; padding:8px 12px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px;
+    color:var(--text-2); font-weight:700; background:rgba(255,255,255,0.5);
+  }
+  .hoy-track-table tbody td{ padding:8px 12px; border-top:1px solid rgba(255,255,255,0.8); }
+  .hoy-track-table tbody tr:hover{ background:rgba(255,255,255,0.5); }
+  .hoy-track-table td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+
   @media (max-width: 640px){
     .btn{ padding: 10px 14px; font-size:13px; }
-    .quick-nav a{ padding:9px 15px; }
+    .tab-bar .tab-btn{ font-size:9.5px; }
     .table-actions{ width:100%; }
     #table-search, #inspector-search{ flex:1; min-width:0; }
-    .back-to-top{ width:42px; height:42px; bottom:16px; right:16px; }
+    .back-to-top{ width:42px; height:42px; bottom:80px; right:16px; }
   }
 
   @media (max-width: 1080px){
@@ -295,9 +354,17 @@
 
   <header class="dashboard-header">
     <div class="header-titles">
-      <div class="header-eyebrow">Inspecciones AAA · Control de calidad</div>
-      <h1>Dashboard de Auditoría — Hoja Validador</h1>
-      <div class="header-meta" id="header-meta">Cargando datos en vivo…</div>
+      <div class="header-logo-badge">
+        <img src="logo.png" alt="LECTA" class="header-logo">
+      </div>
+      <div>
+        <div class="header-eyebrow">
+          <svg class="drop-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C12 2 5 10.5 5 15.5C5 19.6 8.1 22 12 22C15.9 22 19 19.6 19 15.5C19 10.5 12 2 12 2Z"/></svg>
+          Inspecciones AAA · Control de calidad
+        </div>
+        <h1>Dashboard de Auditoría — Hoja Validador</h1>
+        <div class="header-meta" id="header-meta">Cargando datos en vivo…</div>
+      </div>
     </div>
     <div class="header-filter">
       <label for="supervisor-select">Filtrar por supervisor</label>
@@ -305,6 +372,7 @@
         <option value="ALL">Todos los supervisores</option>
       </select>
     </div>
+    <svg class="header-wave" viewBox="0 0 500 30" preserveAspectRatio="none"><path d="M0 15 Q 62 2 125 15 T 250 15 T 375 15 T 500 15 V30 H0 Z" fill="currentColor"/></svg>
   </header>
 
   <div class="status-bar">
@@ -318,22 +386,43 @@
     </div>
   </div>
 
-  <nav class="quick-nav">
-    <a href="#sec-hoy">Hoy</a>
-    <a href="#sec-kpis">KPIs</a>
-    <a href="#sec-tendencias">Tendencias</a>
-    <a href="#sec-inspectores">Inspectores</a>
-    <a href="#sec-supervisores">Supervisores</a>
-    <a href="#sec-detalle">Detalle de errores</a>
+  <nav class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-page="hoy">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+      Hoy
+    </button>
+    <button class="tab-btn" data-page="resumen">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg></span>
+      Resumen
+    </button>
+    <button class="tab-btn" data-page="inspectores">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="8" r="3.2"/><path d="M4 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="7" r="2"/><path d="M21 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg></span>
+      Inspectores
+    </button>
+    <button class="tab-btn" data-page="supervisores">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/></svg></span>
+      Supervisores
+    </button>
+    <button class="tab-btn" data-page="detalle">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6M9 8h3"/></svg></span>
+      Detalle
+    </button>
   </nav>
 
   <div class="setup-banner hidden" id="setup-banner"></div>
   <div class="error-banner hidden" id="error-banner"></div>
 
+  <div class="page-content active" data-page="hoy" id="page-hoy">
   <section class="hoy-section" id="sec-hoy">
     <div class="hoy-header">
       <span class="hoy-badge">● HOY</span>
       <span class="hoy-fecha" id="hoy-fecha">—</span>
+    </div>
+    <div class="hoy-filter-row">
+      <label for="hoy-inspector-select">Inspector:</label>
+      <select id="hoy-inspector-select" disabled>
+        <option value="ALL">Todos los inspectores</option>
+      </select>
     </div>
     <div class="hoy-empty hidden" id="hoy-empty">Aún no hay órdenes auditadas registradas para hoy.</div>
     <div class="hoy-kpis" id="hoy-kpis">
@@ -358,8 +447,42 @@
         <div class="hoy-delta" id="hoy-efectividad-delta">&nbsp;</div>
       </div>
     </div>
-  </section>
 
+    <div class="hoy-track-section" id="hoy-track-section">
+      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> Inspectores con errores hoy</h4>
+      <div class="hoy-track-empty hidden" id="hoy-track-empty">Ningún inspector registra errores hoy. ¡Buen trabajo!</div>
+      <div class="table-scroll">
+        <table class="hoy-track-table" id="hoy-track-table">
+          <thead>
+            <tr><th>Inspector</th><th>Supervisor</th><th class="num">Auditadas</th><th class="num">Errores</th><th class="num">% Error</th><th>Tipos de error</th></tr>
+          </thead>
+          <tbody id="hoy-track-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="hoy-track-section">
+      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Órdenes con error de hoy</h4>
+      <div class="hoy-track-empty hidden" id="hoy-detail-empty">Sin órdenes con error registradas hoy.</div>
+      <div class="table-scroll">
+        <table class="hoy-track-table" id="hoy-detail-table">
+          <thead>
+            <tr><th>Orden</th><th>Inspector</th><th>Ciclo</th><th>Causa de cierre</th><th>Tipo de error</th></tr>
+          </thead>
+          <tbody id="hoy-detail-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div class="page-content" data-page="resumen">
+  <div class="date-filter-bar">
+    <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Periodo:</span>
+    <label>Desde <input type="date" id="date-from"></label>
+    <label>Hasta <input type="date" id="date-to"></label>
+    <button class="btn ghost small" id="date-clear-btn">Ver todo</button>
+  </div>
   <section class="kpi-row" id="sec-kpis">
     <div class="kpi-card">
       <div class="kpi-icon blue">
@@ -441,7 +564,9 @@
       <canvas id="error-types-chart"></canvas>
     </div>
   </section>
+  </div>
 
+  <div class="page-content" data-page="inspectores">
   <section class="chart-row two-col" id="sec-inspectores">
     <div class="chart-container tall">
       <h3>Inspectores con mayor tasa de error</h3>
@@ -498,7 +623,9 @@
       </table>
     </div>
   </section>
+  </div>
 
+  <div class="page-content" data-page="supervisores">
   <section class="chart-row two-col" id="sec-supervisores">
     <div class="chart-container tall">
       <h3>Efectividad por supervisor</h3>
@@ -531,7 +658,9 @@
       </table>
     </div>
   </section>
+  </div>
 
+  <div class="page-content" data-page="detalle">
   <section class="table-section" id="sec-detalle">
     <div class="table-header">
       <h3>Detalle de órdenes con error (<span id="detail-count">0</span>)</h3>
@@ -558,6 +687,7 @@
       <button id="next-page">Siguiente ›</button>
     </div>
   </section>
+  </div>
 
   <footer class="dashboard-footer">
     Fuente: hoja de Google Sheets conectada en vivo · <a id="sheet-link" href="#" target="_blank" rel="noopener">Abrir hoja de datos</a> · Uso interno de control de calidad
@@ -910,6 +1040,10 @@ function buildScope(sub){
   };
 }
 
+let ALL_CLEAN_ROWS = [];       // todas las filas, sin filtro de fechas (para "Hoy")
+let dateFrom = '';             // filtro de fecha "desde" (ISO), vacío = sin límite
+let dateTo = '';               // filtro de fecha "hasta" (ISO), vacío = sin límite
+
 function processRawRows(rawRows){
   const clean = rawRows.map(function(r){
     return {
@@ -932,6 +1066,17 @@ function processRawRows(rawRows){
     if(r.err_obligatoriedad) tipos.push('Obligatoriedad de lectura');
     r.tipo_error = tipos.join('; ');
   });
+
+  ALL_CLEAN_ROWS = clean;
+  rebuildData();
+}
+
+// Reconstruye DATA aplicando el filtro de fechas activo. La sección "Hoy" no
+// depende de este filtro: usa siempre ALL_CLEAN_ROWS directamente.
+function rebuildData(){
+  let clean = ALL_CLEAN_ROWS;
+  if (dateFrom) clean = clean.filter(function(r){ return r.fecha >= dateFrom; });
+  if (dateTo) clean = clean.filter(function(r){ return r.fecha <= dateTo; });
 
   const fechas = clean.map(function(r){ return r.fecha; }).filter(Boolean).sort();
   const newData = {
@@ -992,7 +1137,7 @@ function renderAll(){
     '<b>' + DATA.meta.total_ciclos + '</b> ciclos';
 
   const scope = getScopeData();
-  renderHoyBlock(scope);
+  renderHoyBlock();
   renderKPIs(scope);
   renderDailyChart(scope);
   renderDailyEfectividadChart(scope);
@@ -1013,34 +1158,79 @@ function renderAll(){
   renderDetailTable();
 }
 
-function renderHoyBlock(scope){
+let hoyInspectorScope = 'ALL'; // filtro de inspector propio de la sección "Hoy"
+
+function populateHoyInspectorOptions(todayRows){
+  const sel = document.getElementById('hoy-inspector-select');
+  const prev = hoyInspectorScope;
+  const counts = {};
+  todayRows.forEach(function(r){ counts[r.inspector] = (counts[r.inspector] || 0) + 1; });
+  const names = Object.keys(counts).sort();
+  sel.innerHTML = '<option value="ALL">Todos los inspectores (' + todayRows.length + ')</option>';
+  names.forEach(function(name){
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name + ' (' + counts[name] + ')';
+    sel.appendChild(opt);
+  });
+  sel.value = counts[prev] !== undefined || prev === 'ALL' ? prev : 'ALL';
+  if (sel.value !== prev) hoyInspectorScope = sel.value;
+  sel.disabled = names.length === 0;
+}
+
+function renderHoyBlock(){
   const hoy = todayISO();
   const ayer = yesterdayISO();
   document.getElementById('hoy-fecha').textContent = formatDateLong(hoy);
 
-  const todayData = scope.daily.find(function(d){ return d.fecha === hoy; });
-  const yestData = scope.daily.find(function(d){ return d.fecha === ayer; });
+  // "Hoy" siempre usa TODAS las filas (sin filtro de fechas), pero respeta
+  // el filtro de supervisor global y su propio filtro de inspector.
+  let baseRows = ALL_CLEAN_ROWS;
+  if (currentScope !== 'ALL') baseRows = baseRows.filter(function(r){ return r.supervisor === currentScope; });
+  const todayAll = baseRows.filter(function(r){ return r.fecha === hoy; });
+  const yestAll = baseRows.filter(function(r){ return r.fecha === ayer; });
 
-  if (!todayData || todayData.total === 0){
+  populateHoyInspectorOptions(todayAll);
+
+  const todayRows = hoyInspectorScope === 'ALL' ? todayAll : todayAll.filter(function(r){ return r.inspector === hoyInspectorScope; });
+  const yestRows = hoyInspectorScope === 'ALL' ? yestAll : yestAll.filter(function(r){ return r.inspector === hoyInspectorScope; });
+
+  if (todayRows.length === 0){
     document.getElementById('hoy-empty').classList.remove('hidden');
     document.getElementById('hoy-kpis').classList.add('hidden');
+    document.getElementById('hoy-track-section').classList.add('hidden');
+    document.getElementById('hoy-detail-empty').classList.remove('hidden');
+    document.getElementById('hoy-detail-table').classList.add('hidden');
     return;
   }
   document.getElementById('hoy-empty').classList.add('hidden');
   document.getElementById('hoy-kpis').classList.remove('hidden');
+  document.getElementById('hoy-track-section').classList.remove('hidden');
 
-  const pctCorrecto = round1(todayData.correcto / todayData.total * 100);
-  const pctErrorPct = round1(todayData.con_errores / todayData.total * 100);
-  const pctEfect = round1(todayData.efectiva / todayData.total * 100);
+  const t = {
+    total: todayRows.length,
+    correcto: todayRows.filter(function(r){ return r.estado === 'Correcto'; }).length,
+    con_errores: todayRows.filter(function(r){ return r.estado === 'Con Errores'; }).length,
+    efectiva: todayRows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length,
+  };
+  const y = yestRows.length === 0 ? null : {
+    total: yestRows.length,
+    correcto: yestRows.filter(function(r){ return r.estado === 'Correcto'; }).length,
+    con_errores: yestRows.filter(function(r){ return r.estado === 'Con Errores'; }).length,
+    efectiva: yestRows.filter(function(r){ return r.efectividad === 'Efectiva'; }).length,
+  };
 
-  document.getElementById('hoy-total').textContent = fmtInt(todayData.total);
+  const pctCorrecto = round1(t.correcto / t.total * 100);
+  const pctEfect = round1(t.efectiva / t.total * 100);
+
+  document.getElementById('hoy-total').textContent = fmtInt(t.total);
   document.getElementById('hoy-correcto').textContent = fmtPct(pctCorrecto);
-  document.getElementById('hoy-errores').textContent = fmtInt(todayData.con_errores);
+  document.getElementById('hoy-errores').textContent = fmtInt(t.con_errores);
   document.getElementById('hoy-efectividad').textContent = fmtPct(pctEfect);
 
   function setDelta(elId, todayVal, yestVal, goodDirection, isPercent){
     const el = document.getElementById(elId);
-    if (!yestData){ el.textContent = 'Sin dato de ayer'; el.className = 'hoy-delta neutral'; return; }
+    if (!y){ el.textContent = 'Sin dato de ayer'; el.className = 'hoy-delta neutral'; return; }
     const diff = round1(todayVal - yestVal);
     if (diff === 0){ el.textContent = '= vs. ayer'; el.className = 'hoy-delta neutral'; return; }
     const sign = diff > 0 ? '+' : '';
@@ -1050,13 +1240,76 @@ function renderHoyBlock(scope){
     el.className = 'hoy-delta ' + cls;
   }
 
-  const yestPctCorrecto = yestData ? round1(yestData.correcto / (yestData.total || 1) * 100) : 0;
-  const yestPctEfect = yestData ? round1(yestData.efectiva / (yestData.total || 1) * 100) : 0;
+  const yestPctCorrecto = y ? round1(y.correcto / (y.total || 1) * 100) : 0;
+  const yestPctEfect = y ? round1(y.efectiva / (y.total || 1) * 100) : 0;
 
-  setDelta('hoy-total-delta', todayData.total, yestData ? yestData.total : 0, 'neutral', false);
+  setDelta('hoy-total-delta', t.total, y ? y.total : 0, 'neutral', false);
   setDelta('hoy-correcto-delta', pctCorrecto, yestPctCorrecto, 'up', true);
-  setDelta('hoy-errores-delta', todayData.con_errores, yestData ? yestData.con_errores : 0, 'down', false);
+  setDelta('hoy-errores-delta', t.con_errores, y ? y.con_errores : 0, 'down', false);
   setDelta('hoy-efectividad-delta', pctEfect, yestPctEfect, 'up', true);
+
+  renderHoyTrackTables(todayRows);
+}
+
+function renderHoyTrackTables(todayRows){
+  // Tabla 1: inspectores con errores hoy (sobre todayRows ya filtradas)
+  const byInsp = groupBy(todayRows, 'inspector');
+  const trackRows = [];
+  byInsp.forEach(function(rows, insp){
+    const errs = rows.filter(function(r){ return r.estado === 'Con Errores'; });
+    if (errs.length === 0) return;
+    const tipos = {};
+    errs.forEach(function(r){
+      String(r.tipo_error || '').split('; ').forEach(function(tp){ if(tp) tipos[tp] = (tipos[tp] || 0) + 1; });
+    });
+    const tiposStr = Object.keys(tipos).map(function(k){ return k + ' (' + tipos[k] + ')'; }).join(' · ');
+    trackRows.push({
+      inspector: insp, supervisor: rows[0].supervisor, total: rows.length,
+      errores: errs.length, pct_error: round1(errs.length / rows.length * 100), tipos: tiposStr,
+    });
+  });
+  trackRows.sort(function(a, b){ return b.errores - a.errores || b.pct_error - a.pct_error; });
+
+  const tbody = document.getElementById('hoy-track-tbody');
+  tbody.innerHTML = '';
+  const emptyEl = document.getElementById('hoy-track-empty');
+  const tableEl = document.getElementById('hoy-track-table');
+  if (trackRows.length === 0){
+    emptyEl.classList.remove('hidden');
+    tableEl.classList.add('hidden');
+  } else {
+    emptyEl.classList.add('hidden');
+    tableEl.classList.remove('hidden');
+    trackRows.forEach(function(r){
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + r.inspector + '</td>' + '<td>' + r.supervisor + '</td>' +
+        '<td class="num">' + fmtInt(r.total) + '</td>' + '<td class="num">' + fmtInt(r.errores) + '</td>' +
+        '<td class="num">' + fmtPct(r.pct_error) + '</td>' + '<td>' + r.tipos + '</td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Tabla 2: órdenes con error de hoy
+  const errOrders = todayRows.filter(function(r){ return r.estado === 'Con Errores'; });
+  const dtbody = document.getElementById('hoy-detail-tbody');
+  dtbody.innerHTML = '';
+  const dEmpty = document.getElementById('hoy-detail-empty');
+  const dTable = document.getElementById('hoy-detail-table');
+  if (errOrders.length === 0){
+    dEmpty.classList.remove('hidden');
+    dTable.classList.add('hidden');
+  } else {
+    dEmpty.classList.add('hidden');
+    dTable.classList.remove('hidden');
+    errOrders.forEach(function(r){
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + r.orden + '</td>' + '<td>' + r.inspector + '</td>' + '<td>' + r.ciclo + '</td>' +
+        '<td>' + (r.causa_cierre || '—') + '</td>' + '<td>' + (r.tipo_error || '—') + '</td>';
+      dtbody.appendChild(tr);
+    });
+  }
 }
 
 function renderKPIs(scope){
@@ -1440,6 +1693,38 @@ function init(){
   document.querySelectorAll('#detail-table thead th').forEach(function(th){ th.addEventListener('click', function(){ onSort(th.dataset.key); }); });
   document.getElementById('inspector-search').addEventListener('input', function(){ computeInspectorFiltered(); renderInspectorTable(); });
   document.querySelectorAll('#inspector-table thead th').forEach(function(th){ th.addEventListener('click', function(){ onSortInspector(th.dataset.key); }); });
+
+  // Navegación por pestañas (páginas)
+  document.querySelectorAll('.tab-bar .tab-btn').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const page = btn.dataset.page;
+      document.querySelectorAll('.tab-bar .tab-btn').forEach(function(b){ b.classList.toggle('active', b === btn); });
+      document.querySelectorAll('.page-content').forEach(function(p){ p.classList.toggle('active', p.dataset.page === page); });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  // Filtro de fechas (aplica a todo excepto la sección "Hoy")
+  document.getElementById('date-from').addEventListener('change', function(e){
+    dateFrom = e.target.value || '';
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById('date-to').addEventListener('change', function(e){
+    dateTo = e.target.value || '';
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById('date-clear-btn').addEventListener('click', function(){
+    dateFrom = ''; dateTo = '';
+    document.getElementById('date-from').value = '';
+    document.getElementById('date-to').value = '';
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+
+  // Filtro de inspector en la sección "Hoy"
+  document.getElementById('hoy-inspector-select').addEventListener('change', function(e){
+    hoyInspectorScope = e.target.value;
+    renderHoyBlock();
+  });
 
   const backTop = document.getElementById('back-to-top');
   window.addEventListener('scroll', function(){

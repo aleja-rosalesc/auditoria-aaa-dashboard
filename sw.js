@@ -1,5 +1,5 @@
-const CACHE_NAME = 'aaa-auditoria-v4';
-const APP_SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png'];
+const CACHE_NAME = 'aaa-auditoria-v5';
+const APP_SHELL = ['./index.html', './manifest.json', './icon-192.png', './icon-512.png', './logo.png'];
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
