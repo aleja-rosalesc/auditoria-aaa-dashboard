@@ -227,6 +227,7 @@
     border-top: 1px solid var(--border); box-shadow: 0 -4px 18px rgba(11,61,92,0.10);
     padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
   }
+  .tab-bar .tab-btn.role-hidden{ display:none; }
   .tab-bar .tab-btn{
     flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
     gap:3px; padding:7px 2px 6px; background:none; border:none; cursor:pointer;
@@ -364,6 +365,52 @@
     letter-spacing:0.6px; color: var(--teal-dark); padding:8px 14px;
   }
 
+  /* ---------- Control de acceso por rol ---------- */
+  .access-gate{
+    position: fixed; inset:0; z-index: 200;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 55%, var(--teal-dark) 100%);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .access-card{
+    background:#fff; border-radius:18px; padding:30px 28px; max-width:380px; width:100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.28); text-align:center;
+  }
+  .access-card .header-logo-badge{ box-shadow:none; border:1px solid var(--border); margin:0 auto 16px; display:inline-flex; }
+  .access-card h2{ font-family: var(--font-display); font-size:18px; margin:0 0 6px; color:var(--text); }
+  .access-card p{ font-size:13px; color:var(--text-2); margin:0 0 20px; }
+  .role-choices{ display:flex; flex-direction:column; gap:10px; }
+  .role-btn{
+    display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:12px;
+    border:1.5px solid var(--border); background:#F7FAFB; cursor:pointer; text-align:left;
+    font-family: var(--font-body); font-size:14px; font-weight:600; color:var(--text);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .role-btn:hover{ border-color:var(--teal-dark); background:#EDF6F9; }
+  .role-btn .role-icon{
+    width:38px; height:38px; border-radius:10px; background:var(--success-bg); color:var(--success);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .role-btn.admin .role-icon{ background: var(--warning-bg); color:#B97A15; }
+  .role-btn small{ display:block; font-weight:400; color:var(--text-2); font-size:11.5px; margin-top:2px; }
+  .access-password-row{ margin-top:16px; text-align:left; }
+  .access-password-row label{ font-size:12px; font-weight:700; color:var(--text-2); display:block; margin-bottom:6px; }
+  .access-password-row input{
+    width:100%; padding:11px 14px; border-radius:10px; border:1.5px solid var(--border);
+    font-size:14px; font-family: var(--font-body); box-sizing:border-box; margin-bottom:10px;
+  }
+  .access-error{ color:var(--danger); font-size:12.5px; margin:0 0 10px; min-height:1px; }
+  .access-back-btn{ font-size:12px; color:var(--text-2); background:none; border:none; cursor:pointer; margin-top:6px; text-decoration:underline; }
+
+  .role-badge{
+    display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--text-2);
+  }
+  .role-badge .role-pill{ padding:3px 10px; border-radius:20px; background:var(--success-bg); color:var(--success); }
+  .role-badge.admin-pill .role-pill{ background:var(--warning-bg); color:#B97A15; }
+  .role-badge button{
+    background:none; border:none; color:var(--teal-dark); font-size:11.5px; font-weight:700;
+    cursor:pointer; text-decoration:underline; padding:0;
+  }
+
   @media (max-width: 640px){
     .btn{ padding: 10px 14px; font-size:13px; }
     .tab-bar .tab-btn{ font-size:9.5px; }
@@ -402,6 +449,34 @@
 </style>
 </head>
 <body>
+
+<div class="access-gate" id="access-gate">
+  <div class="access-card">
+    <div class="header-logo-badge"><img src="logo.png" alt="LECTA" class="header-logo"></div>
+    <h2>Dashboard de Auditoría</h2>
+    <p>Selecciona tu rol para continuar</p>
+
+    <div class="role-choices" id="role-choices">
+      <button class="role-btn" id="role-btn-supervisor">
+        <span class="role-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+        <span>Supervisor<small>Acceso a Hoy y Detalle de tu equipo</small></span>
+      </button>
+      <button class="role-btn admin" id="role-btn-admin">
+        <span class="role-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+        <span>Administrador<small>Acceso completo al dashboard</small></span>
+      </button>
+    </div>
+
+    <div class="access-password-row hidden" id="access-password-row">
+      <label for="access-password-input">Contraseña de administrador</label>
+      <p class="access-error" id="access-error">&nbsp;</p>
+      <input type="password" id="access-password-input" placeholder="Contraseña">
+      <button class="btn" id="access-password-submit" style="width:100%;">Entrar</button>
+      <button class="access-back-btn" id="access-back-btn">‹ Volver</button>
+    </div>
+  </div>
+</div>
+
 <div class="dashboard-container">
 
   <header class="dashboard-header">
@@ -433,6 +508,7 @@
       <span id="status-text">Conectando con Google Sheets…</span>
     </div>
     <div class="status-actions">
+      <span class="role-badge" id="role-badge"><span class="role-pill" id="role-pill">—</span><button id="role-switch-btn">Cambiar</button></span>
       <button class="btn ghost" id="refresh-btn">↻ Actualizar ahora</button>
       <button class="btn hidden" id="install-btn">＋ Instalar app</button>
     </div>
@@ -846,6 +922,16 @@ const REFRESH_INTERVAL_MS = 5 * 60 * 1000; // auto-actualización cada 5 minutos
 // hay que ajustar esta lista — o poner SHEET_COLUMNS_TQ = '' para traer todas
 // las columnas sin filtrar (más lento, pero a prueba de reordenamientos).
 const SHEET_COLUMNS_TQ = 'select A,B,C,F,I,J,L,N,P,Q,R,S,T,U';
+
+// Contraseña del rol Administrador. Cámbiala cuando quieras — es solo una
+// barrera de buena fe (uso interno), no seguridad real: este archivo es
+// público en GitHub, así que cualquiera con conocimientos técnicos podría
+// ver esta contraseña en el código o saltarse el control. Sirve para que
+// un Supervisor no entre por error o casualidad a la vista de Administrador.
+const ADMIN_PASSWORD = "AAA2026admin";
+const ROLE_STORAGE_KEY = "aaa_dashboard_role";
+// Páginas que un Supervisor NO puede ver (el Administrador ve todas):
+const SUPERVISOR_HIDDEN_PAGES = ["resumen", "inspectores", "supervisores", "matriz"];
 
 const COLORS = {
   success: '#1F9D66', danger: '#E4572E', warning: '#F0A93A',
@@ -1812,6 +1898,80 @@ function exportSummaryCSV(){
 /* ---------------------------------------------------------------------
    4) EVENTOS, AUTO-ACTUALIZACIÓN Y PWA
    --------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------
+   0) CONTROL DE ACCESO POR ROL (barrera de buena fe, no seguridad real)
+   --------------------------------------------------------------------- */
+let currentRole = null; // 'supervisor' | 'admin'
+
+function applyRoleRestrictions(role){
+  currentRole = role;
+  const isAdmin = role === 'admin';
+  document.querySelectorAll('.tab-bar .tab-btn').forEach(function(btn){
+    const hidden = !isAdmin && SUPERVISOR_HIDDEN_PAGES.indexOf(btn.dataset.page) !== -1;
+    btn.classList.toggle('role-hidden', hidden);
+  });
+  const activeBtn = document.querySelector('.tab-bar .tab-btn.active');
+  if (activeBtn && activeBtn.classList.contains('role-hidden')){
+    const hoyBtn = document.querySelector('.tab-bar .tab-btn[data-page="hoy"]');
+    if (hoyBtn) hoyBtn.click();
+  }
+  const badge = document.getElementById('role-badge');
+  const pill = document.getElementById('role-pill');
+  badge.classList.toggle('admin-pill', isAdmin);
+  pill.textContent = isAdmin ? 'Administrador' : 'Supervisor';
+}
+
+function unlockDashboard(role){
+  try{ localStorage.setItem(ROLE_STORAGE_KEY, role); }catch(e){}
+  document.getElementById('access-gate').classList.add('hidden');
+  applyRoleRestrictions(role);
+}
+
+function initAccessGate(){
+  let storedRole = null;
+  try{ storedRole = localStorage.getItem(ROLE_STORAGE_KEY); }catch(e){}
+  if (storedRole === 'admin' || storedRole === 'supervisor'){
+    unlockDashboard(storedRole);
+  }
+
+  document.getElementById('role-btn-supervisor').addEventListener('click', function(){
+    unlockDashboard('supervisor');
+  });
+  document.getElementById('role-btn-admin').addEventListener('click', function(){
+    document.getElementById('role-choices').classList.add('hidden');
+    document.getElementById('access-password-row').classList.remove('hidden');
+    document.getElementById('access-password-input').focus();
+  });
+  document.getElementById('access-back-btn').addEventListener('click', function(){
+    document.getElementById('access-password-row').classList.add('hidden');
+    document.getElementById('role-choices').classList.remove('hidden');
+    document.getElementById('access-error').textContent = '\u00a0';
+    document.getElementById('access-password-input').value = '';
+  });
+  function trySubmitPassword(){
+    const val = document.getElementById('access-password-input').value;
+    if (val === ADMIN_PASSWORD){
+      unlockDashboard('admin');
+    } else {
+      document.getElementById('access-error').textContent = 'Contraseña incorrecta.';
+      document.getElementById('access-password-input').value = '';
+      document.getElementById('access-password-input').focus();
+    }
+  }
+  document.getElementById('access-password-submit').addEventListener('click', trySubmitPassword);
+  document.getElementById('access-password-input').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') trySubmitPassword();
+  });
+  document.getElementById('role-switch-btn').addEventListener('click', function(){
+    try{ localStorage.removeItem(ROLE_STORAGE_KEY); }catch(e){}
+    document.getElementById('access-gate').classList.remove('hidden');
+    document.getElementById('role-choices').classList.remove('hidden');
+    document.getElementById('access-password-row').classList.add('hidden');
+    document.getElementById('access-password-input').value = '';
+    document.getElementById('access-error').textContent = '\u00a0';
+  });
+}
+
 function init(){
   document.getElementById('supervisor-select').addEventListener('change', function(e){
     currentScope = e.target.value; detailPage = 0; renderAll();
@@ -1838,6 +1998,8 @@ function init(){
       window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   });
+
+  initAccessGate();
 
   // Filtro de fechas (aplica a todo excepto la sección "Hoy")
   document.getElementById('date-from').addEventListener('change', function(e){
