@@ -478,11 +478,43 @@
     .chart-row.two-col, .chart-row.three-col{ grid-template-columns: 1fr; }
   }
   @media (max-width: 640px){
-    .kpi-row{ grid-template-columns: 1fr; }
+    /* Aprovechar mejor el ancho de la pantalla */
+    .dashboard-container{ padding-left: 10px; padding-right: 10px; }
+    .chart-container, .table-section, .hoy-section{ padding-left: 12px; padding-right: 12px; }
+
+    .kpi-row{ grid-template-columns: 1fr 1fr; gap:10px; }
     .hoy-kpis{ grid-template-columns: repeat(2, 1fr); }
-    .dashboard-header{ flex-direction:column; align-items:flex-start; }
-    .header-filter select{ min-width: 100%; }
-    .status-bar{ flex-direction:column; align-items:flex-start; }
+
+    /* Header compacto: título en menos líneas, logo más discreto */
+    .dashboard-header{ flex-direction:column; align-items:stretch; padding: 16px 16px 26px; gap:12px; }
+    .dashboard-header h1{ font-size: 19px; margin-bottom: 5px; }
+    .header-eyebrow{ font-size: 10.5px; letter-spacing: 1px; }
+    .header-meta{ font-size: 12px; }
+    .header-titles{ gap:10px; align-items:flex-start; }
+    .header-logo-badge{ padding:6px 10px; border-radius:10px; }
+    .header-logo{ height:20px; }
+    .header-logo-watermark{ height:90px; right:8px; }
+    .header-filter select{ min-width: 100%; width:100%; }
+
+    /* Barra de estado: que los botones se acomoden en varias filas, sin cortarse */
+    .status-bar{ flex-direction:column; align-items:stretch; gap:10px; }
+    .status-actions{ flex-wrap: wrap; row-gap:8px; }
+    .status-actions .btn{ flex:1; min-width: 130px; padding: 9px 10px; font-size:12.3px; }
+
+    /* Barras de filtro: campos a ancho completo, fáciles de tocar */
+    .date-filter-bar{ padding: 10px 12px; gap:10px; }
+    .date-filter-bar label{ flex:1 1 45%; min-width: 140px; justify-content: space-between; }
+    .date-filter-bar input[type="date"], .date-filter-bar select{ flex:1; min-width:0; }
+    .hoy-filter-row select, .hoy-filter-row input[type="text"]{ min-width: 100%; }
+
+    /* Tablas: nombres en una sola línea + desplazamiento lateral,
+       en vez de columnas apretadas con texto partido en 4 renglones */
+    .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin: 0 -12px; padding: 0 12px; }
+    .data-table, .hoy-track-table{ min-width: 640px; }
+    .data-table th, .data-table td, .hoy-track-table th, .hoy-track-table td{ white-space: nowrap; }
+    .matriz-table{ min-width: 520px; }
+    .matriz-table td, .matriz-table th{ white-space: nowrap; }
+    .matriz-table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
   }
 
   /* ---------- Horizontal (landscape) en celular: aprovechar el ancho extra ---------- */
