@@ -696,7 +696,7 @@
       <div class="table-scroll">
         <table class="hoy-track-table" id="hoy-detail-table">
           <thead>
-            <tr><th>Orden</th><th>Inspector</th><th>Ciclo</th><th>Causa de cierre</th><th>Tipo de error</th></tr>
+            <tr><th>Orden</th><th>Inspector</th><th>Ciclo</th><th>Causa de cierre</th><th>Obs. 1</th><th>Tipo de error</th></tr>
           </thead>
           <tbody id="hoy-detail-tbody"></tbody>
         </table>
@@ -1873,7 +1873,7 @@ function renderHoyTrackTables(todayRows){
       const tr = document.createElement('tr');
       tr.innerHTML =
         '<td>' + r.orden + '</td>' + '<td>' + r.inspector + '</td>' + '<td>' + r.ciclo + '</td>' +
-        '<td>' + (r.causa_cierre || '—') + '</td>' + '<td>' + (r.tipo_error || '—') + '</td>';
+        '<td>' + (r.causa_cierre || '—') + '</td>' + '<td>' + (r.obs_1 || '—') + '</td>' + '<td>' + (r.tipo_error || '—') + '</td>';
       dtbody.appendChild(tr);
     });
   }
