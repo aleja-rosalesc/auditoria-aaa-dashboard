@@ -161,6 +161,21 @@
   .kpi-icon.blue{ background:#E4F1F6; color:var(--teal-dark); }
   .kpi-icon.green{ background:var(--success-bg); color:var(--success); }
   .kpi-icon.red{ background:var(--danger-bg); color:var(--danger); }
+
+  .sem-badge{
+    display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px;
+    font-weight:700; font-size:0.92em; line-height:1.5;
+  }
+  .sem-badge::before{ content:''; width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .sem-badge.sem-rojo{ background:var(--danger-bg); color:var(--danger); }
+  .sem-badge.sem-naranja{ background:var(--warning-bg); color:#B97A15; }
+  .sem-badge.sem-verde{ background:var(--success-bg); color:var(--success); }
+  .kpi-value.sem-rojo{ color:var(--danger); }
+  .kpi-value.sem-naranja{ color:#B97A15; }
+  .kpi-value.sem-verde{ color:var(--success); }
+  .hoy-value.sem-rojo{ color:var(--danger); }
+  .hoy-value.sem-naranja{ color:#B97A15; }
+  .hoy-value.sem-verde{ color:var(--success); }
   .kpi-icon.amber{ background:var(--warning-bg); color:#B97A15; }
   .kpi-label{ font-size: 12px; color: var(--text-2); font-weight:600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom:4px; }
   .kpi-value{ font-family: var(--font-display); font-size: 26px; font-weight:700; color: var(--text); line-height:1.1; }
@@ -1074,6 +1089,20 @@ function fmtInt(n) {
 
 function fmtPct(n) {
   return String(n).replace(".", ",") + "%";
+}
+
+function semClass(pct) {
+  if (pct < 65) return "sem-rojo";
+  if (pct < 70) return "sem-naranja";
+  return "sem-verde";
+}
+function semColor(pct) {
+  if (pct < 65) return COLORS.danger;
+  if (pct < 70) return "#B97A15";
+  return COLORS.success;
+}
+function semBadge(pct) {
+  return '<span class="sem-badge ' + semClass(pct) + '">' + fmtPct(pct) + "</span>";
 }
 
 function round1(n) {
@@ -2057,7 +2086,9 @@ function renderHoyBlock() {
   document.getElementById("hoy-total").textContent = fmtInt(t.total);
   document.getElementById("hoy-correcto").textContent = fmtPct(pctCorrecto);
   document.getElementById("hoy-errores").textContent = fmtInt(t.con_errores);
-  document.getElementById("hoy-efectividad").textContent = fmtPct(pctEfect);
+  const efEl = document.getElementById("hoy-efectividad");
+  efEl.textContent = fmtPct(pctEfect);
+  efEl.className = "hoy-value " + semClass(pctEfect);
   function setDelta(elId, todayVal, yestVal, goodDirection, isPercent) {
     const el = document.getElementById(elId);
     if (!y) {
@@ -2183,7 +2214,7 @@ function renderAyerTable(rows, fechaISO) {
   list.sort(function(a, b) { return b.total - a.total; });
   list.forEach(function(r) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + fmtPct(r.pct_efectividad) + "</td>";
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
     tbody.appendChild(tr);
   });
   const tot = rows.length;
@@ -2193,7 +2224,7 @@ function renderAyerTable(rows, fechaISO) {
   const trTot = document.createElement("tr");
   trTot.style.fontWeight = "700";
   trTot.style.borderTop = "2px solid #C9D6DD";
-  trTot.innerHTML = "<td>Total</td><td>—</td>" + '<td class="num">' + fmtInt(tot) + "</td>" + '<td class="num">' + fmtInt(totCorrecto) + "</td>" + '<td class="num">' + fmtInt(totErr) + "</td>" + '<td class="num">' + fmtPct(tot ? round1(totErr / tot * 100) : 0) + "</td>" + '<td class="num">' + fmtPct(tot ? round1(totEf / tot * 100) : 0) + "</td>";
+  trTot.innerHTML = "<td>Total</td><td>—</td>" + '<td class="num">' + fmtInt(tot) + "</td>" + '<td class="num">' + fmtInt(totCorrecto) + "</td>" + '<td class="num">' + fmtInt(totErr) + "</td>" + '<td class="num">' + fmtPct(tot ? round1(totErr / tot * 100) : 0) + "</td>" + '<td class="num">' + semBadge(tot ? round1(totEf / tot * 100) : 0) + "</td>";
   tbody.appendChild(trTot);
 }
 
@@ -2204,7 +2235,9 @@ function renderKPIs(scope) {
   document.getElementById("kpi-correcto-sub").textContent = fmtInt(scope.kpis.correcto) + " órdenes correctas";
   document.getElementById("kpi-errores").textContent = fmtInt(scope.kpis.con_errores);
   document.getElementById("kpi-errores-sub").textContent = fmtPct(scope.kpis.pct_con_errores) + " del total auditado";
-  document.getElementById("kpi-efectividad").textContent = fmtPct(scope.kpis.pct_efectividad);
+  const kpiEfEl = document.getElementById("kpi-efectividad");
+  kpiEfEl.textContent = fmtPct(scope.kpis.pct_efectividad);
+  kpiEfEl.className = "kpi-value " + semClass(scope.kpis.pct_efectividad);
   document.getElementById("kpi-efectividad-sub").textContent = fmtInt(scope.kpis.efectiva) + " órdenes efectivas";
 }
 
@@ -2217,7 +2250,7 @@ const metaLinePlugin = {
     const x = xScale.getPixelForValue(EFECTIVIDAD_META);
     const ctx = chart.ctx;
     ctx.save();
-    ctx.strokeStyle = COLORS.warning;
+    ctx.strokeStyle = COLORS.primaryDark;
     ctx.setLineDash([ 6, 4 ]);
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -2225,7 +2258,7 @@ const metaLinePlugin = {
     ctx.lineTo(x, area.bottom);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = COLORS.warning;
+    ctx.fillStyle = COLORS.primaryDark;
     ctx.font = "700 11px 'Inter', sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("Meta " + EFECTIVIDAD_META + "%", x, area.top - 6);
@@ -2261,7 +2294,9 @@ function renderMonthlyComparativeChart() {
         data: items.map(function(i) {
           return i.pct_efectividad;
         }),
-        backgroundColor: COLORS.success,
+        backgroundColor: items.map(function(i) {
+          return semColor(i.pct_efectividad);
+        }),
         borderRadius: 4,
         maxBarThickness: 22,
         categoryPercentage: .72,
@@ -2705,14 +2740,16 @@ function renderInspectoresEfectivosChart(scope) {
         data: items.map(function(i) {
           return i.pct_efectividad;
         }),
-        backgroundColor: COLORS.success,
+        backgroundColor: items.map(function(i) {
+          return semColor(i.pct_efectividad);
+        }),
         borderRadius: 4,
         maxBarThickness: 18
       }, {
         type: "line",
         label: "Meta interna " + EFECTIVIDAD_META_INDIVIDUAL + "%",
         data: metaLine,
-        borderColor: COLORS.danger,
+        borderColor: COLORS.primaryDark,
         borderDash: [ 6, 4 ],
         borderWidth: 1.6,
         pointRadius: 0,
@@ -2777,7 +2814,9 @@ function renderInspectorDivergingChart(scope) {
         data: items.map(function(i) {
           return i.pct_efectividad;
         }),
-        backgroundColor: COLORS.success,
+        backgroundColor: items.map(function(i) {
+          return semColor(i.pct_efectividad);
+        }),
         borderRadius: 3,
         maxBarThickness: 16
       }, {
@@ -2848,7 +2887,9 @@ function renderCiclosInefectivosChart(scope) {
         data: items.map(function(i) {
           return i.pct_efectividad;
         }),
-        backgroundColor: COLORS.warning,
+        backgroundColor: items.map(function(i) {
+          return semColor(i.pct_efectividad);
+        }),
         borderRadius: 4,
         maxBarThickness: 18
       } ]
@@ -3033,8 +3074,9 @@ function renderDailyErroresChart(scope) {
 function renderSupervisoresChart() {
   const items = DATA.overall.supervisores;
   const colors = items.map(function(i) {
-    if (currentScope === "ALL") return COLORS.teal;
-    return i.supervisor === currentScope ? COLORS.teal : COLORS.gray;
+    const base = semColor(i.pct_efectividad);
+    if (currentScope === "ALL") return base;
+    return i.supervisor === currentScope ? base : COLORS.gray;
   });
   const metaLine = items.map(function() {
     return EFECTIVIDAD_META_INDIVIDUAL;
@@ -3058,7 +3100,7 @@ function renderSupervisoresChart() {
         type: "line",
         label: "Meta interna " + EFECTIVIDAD_META_INDIVIDUAL + "%",
         data: metaLine,
-        borderColor: COLORS.danger,
+        borderColor: COLORS.primaryDark,
         borderDash: [ 6, 4 ],
         borderWidth: 1.6,
         pointRadius: 0,
@@ -3167,7 +3209,7 @@ function renderSummaryTable() {
   DATA.overall.supervisores.forEach(function(s) {
     const tr = document.createElement("tr");
     if (currentScope === s.supervisor) tr.className = "active-row";
-    tr.innerHTML = "<td>" + s.supervisor + "</td>" + '<td class="num">' + fmtInt(s.total) + "</td>" + '<td class="num">' + fmtInt(s.correcto) + "</td>" + '<td class="num">' + fmtInt(s.con_errores) + "</td>" + '<td class="num">' + fmtPct(s.pct_error) + "</td>" + '<td class="num">' + fmtInt(s.efectiva) + "</td>" + '<td class="num">' + fmtPct(s.pct_efectividad) + "</td>";
+    tr.innerHTML = "<td>" + s.supervisor + "</td>" + '<td class="num">' + fmtInt(s.total) + "</td>" + '<td class="num">' + fmtInt(s.correcto) + "</td>" + '<td class="num">' + fmtInt(s.con_errores) + "</td>" + '<td class="num">' + fmtPct(s.pct_error) + "</td>" + '<td class="num">' + fmtInt(s.efectiva) + "</td>" + '<td class="num">' + semBadge(s.pct_efectividad) + "</td>";
     tbody.appendChild(tr);
   });
 }
@@ -3210,7 +3252,7 @@ function renderInspectorTable() {
   tbody.innerHTML = "";
   inspectorFiltered.forEach(function(r) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + fmtPct(r.pct_efectividad) + "</td>";
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
     tbody.appendChild(tr);
   });
 }
