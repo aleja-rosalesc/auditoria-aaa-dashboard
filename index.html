@@ -683,6 +683,19 @@
         </table>
       </div>
     </div>
+
+    <div class="hoy-track-section">
+      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Ayer · <span id="ayer-fecha">—</span></h4>
+      <div class="hoy-track-empty hidden" id="ayer-empty">Sin órdenes registradas ayer.</div>
+      <div class="table-scroll">
+        <table class="hoy-track-table" id="ayer-table">
+          <thead>
+            <tr><th>Inspector</th><th>Supervisor</th><th class="num">Auditadas</th><th class="num">Correctas</th><th class="num">Con error</th><th class="num">% Error</th><th class="num">% Efectividad</th></tr>
+          </thead>
+          <tbody id="ayer-tbody"></tbody>
+        </table>
+      </div>
+    </div>
   </section>
   </div>
 
@@ -2009,6 +2022,7 @@ function renderHoyBlock() {
     document.getElementById("hoy-track-section").classList.add("hidden");
     document.getElementById("hoy-detail-empty").classList.remove("hidden");
     document.getElementById("hoy-detail-table").classList.add("hidden");
+    renderAyerTable(yestRows, ayer);
     return;
   }
   document.getElementById("hoy-empty").classList.add("hidden");
@@ -2070,6 +2084,7 @@ function renderHoyBlock() {
   setDelta("hoy-errores-delta", t.con_errores, y ? y.con_errores : 0, "down", false);
   setDelta("hoy-efectividad-delta", pctEfect, yestPctEfect, "up", true);
   renderHoyTrackTables(todayRows);
+  renderAyerTable(yestRows, ayer);
 }
 
 function renderHoyTrackTables(todayRows) {
@@ -2136,6 +2151,50 @@ function renderHoyTrackTables(todayRows) {
       dtbody.appendChild(tr);
     });
   }
+}
+
+function renderAyerTable(rows, fechaISO) {
+  const fechaEl = document.getElementById("ayer-fecha");
+  if (!fechaEl) return;
+  fechaEl.textContent = formatDateLong(fechaISO);
+  const tbody = document.getElementById("ayer-tbody");
+  const empty = document.getElementById("ayer-empty");
+  const table = document.getElementById("ayer-table");
+  tbody.innerHTML = "";
+  if (!rows.length) {
+    empty.classList.remove("hidden");
+    table.classList.add("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  table.classList.remove("hidden");
+  const by = groupBy(rows, "inspector");
+  const list = Array.from(by.entries()).map(function(e) {
+    const rws = e[1], total = rws.length;
+    const correcto = rws.filter(function(r) { return r.estado === "Correcto"; }).length;
+    const con_errores = rws.filter(function(r) { return r.estado === "Con Errores"; }).length;
+    const efectiva = rws.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+    return {
+      inspector: e[0], supervisor: rws[0].supervisor, total: total, correcto: correcto, con_errores: con_errores,
+      pct_error: total ? round1(con_errores / total * 100) : 0,
+      pct_efectividad: total ? round1(efectiva / total * 100) : 0
+    };
+  });
+  list.sort(function(a, b) { return b.total - a.total; });
+  list.forEach(function(r) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + fmtPct(r.pct_efectividad) + "</td>";
+    tbody.appendChild(tr);
+  });
+  const tot = rows.length;
+  const totCorrecto = rows.filter(function(r) { return r.estado === "Correcto"; }).length;
+  const totErr = rows.filter(function(r) { return r.estado === "Con Errores"; }).length;
+  const totEf = rows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+  const trTot = document.createElement("tr");
+  trTot.style.fontWeight = "700";
+  trTot.style.borderTop = "2px solid #C9D6DD";
+  trTot.innerHTML = "<td>Total</td><td>—</td>" + '<td class="num">' + fmtInt(tot) + "</td>" + '<td class="num">' + fmtInt(totCorrecto) + "</td>" + '<td class="num">' + fmtInt(totErr) + "</td>" + '<td class="num">' + fmtPct(tot ? round1(totErr / tot * 100) : 0) + "</td>" + '<td class="num">' + fmtPct(tot ? round1(totEf / tot * 100) : 0) + "</td>";
+  tbody.appendChild(trTot);
 }
 
 function renderKPIs(scope) {
