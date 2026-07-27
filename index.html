@@ -119,6 +119,29 @@
   }
   .header-filter select option{ background: var(--navy); color:#fff; }
 
+  .msel{ position:relative; }
+  .msel-toggle{
+    padding: 10px 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12); color: #fff; font-size: 13.5px; font-weight: 500;
+    font-family: var(--font-body); min-width: 250px; cursor:pointer; text-align:left;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .msel-toggle:disabled{ opacity:0.55; cursor:not-allowed; }
+  .msel-toggle::after{ content:'▾'; font-size:10px; opacity:0.85; flex-shrink:0; }
+  .msel-panel{
+    position:absolute; top:calc(100% + 6px); left:0; z-index:70; min-width:270px; max-width:320px;
+    max-height:280px; overflow-y:auto; background:#fff; border-radius:10px; border:1px solid var(--border);
+    box-shadow:0 12px 32px rgba(0,0,0,0.2); padding:6px;
+  }
+  .msel-panel.hidden{ display:none; }
+  .msel-option{
+    display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px; cursor:pointer;
+    font-size:13px; color:var(--text); font-weight:500;
+  }
+  .msel-option:hover{ background:#F1F6F8; }
+  .msel-option input{ accent-color: var(--teal-dark); width:15px; height:15px; cursor:pointer; flex-shrink:0; }
+  .msel-option.msel-all{ border-bottom:1px solid var(--border); margin-bottom:4px; padding-bottom:9px; font-weight:700; }
+
   .status-bar{
     background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
     border: 1px solid var(--border); padding: 12px 20px; margin-bottom: 18px;
@@ -495,7 +518,8 @@
     .header-logo-badge{ padding:6px 10px; border-radius:10px; }
     .header-logo{ height:20px; }
     .header-logo-watermark{ height:90px; right:8px; }
-    .header-filter select{ min-width: 100%; width:100%; }
+    .header-filter select, .msel-toggle{ min-width: 100%; width:100%; }
+    .msel-panel{ left:0; right:0; max-width:none; }
 
     .status-bar{ flex-direction:column; align-items:stretch; gap:10px; }
     .status-actions{ flex-wrap: wrap; row-gap:8px; }
@@ -576,16 +600,18 @@
       </div>
     </div>
     <div class="header-filter">
-      <label for="month-select">Mes</label>
-      <select id="month-select" disabled>
-        <option value="">Todos los meses</option>
-      </select>
+      <label>Mes</label>
+      <div class="msel" id="month-msel">
+        <button type="button" class="msel-toggle" id="month-msel-toggle" disabled>Todos los meses</button>
+        <div class="msel-panel hidden" id="month-msel-panel"></div>
+      </div>
     </div>
     <div class="header-filter">
-      <label for="supervisor-select">Filtrar por supervisor</label>
-      <select id="supervisor-select" disabled>
-        <option value="ALL">Todos los supervisores</option>
-      </select>
+      <label>Filtrar por supervisor</label>
+      <div class="msel" id="supervisor-msel">
+        <button type="button" class="msel-toggle" id="supervisor-msel-toggle" disabled>Todos los supervisores</button>
+        <div class="msel-panel hidden" id="supervisor-msel-panel"></div>
+      </div>
     </div>
     <img src="logo.png" alt="" class="header-logo-watermark" aria-hidden="true">
     <svg class="header-wave" viewBox="0 0 500 30" preserveAspectRatio="none"><path d="M0 15 Q 62 2 125 15 T 250 15 T 375 15 T 500 15 V30 H0 Z" fill="currentColor"/></svg>
@@ -1041,7 +1067,7 @@ const ADMIN_PASSWORD = "AAA2026admin";
 
 const ROLE_STORAGE_KEY = "aaa_dashboard_role";
 
-const SUPERVISOR_HIDDEN_PAGES = [ "resumen", "inspectores", "supervisores" ];
+const SUPERVISOR_HIDDEN_PAGES = [ "resumen", "inspectores" ];
 
 const COLORS = {
   success: "#1F9D66",
@@ -1059,7 +1085,7 @@ const EFECTIVIDAD_META_INDIVIDUAL = 70;
 
 let DATA = null;
 
-let currentScope = "ALL";
+let currentScopes = [];
 
 let charts = {};
 
@@ -1203,7 +1229,8 @@ function loadData(isManualRefresh) {
       const rows = gvizToObjects(resp);
       processRawRows(rows);
       lastLoadedAt = new Date;
-      setStatus("ok", "Conectado · última actualización: " + lastLoadedAt.toLocaleTimeString("es-CO"));
+      const fechaDatos = DATA && DATA.meta.fecha_max ? formatDateLong(DATA.meta.fecha_max) : "—";
+      setStatus("ok", "Conectado · última actualización: " + lastLoadedAt.toLocaleTimeString("es-CO") + " · Datos hasta: " + fechaDatos);
       document.getElementById("sheet-link").href = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit#gid=" + SHEET_GID;
     } catch (e) {
       showErrorBanner("Los datos se recibieron pero no se pudieron procesar: " + e.message);
@@ -1626,7 +1653,7 @@ let filterCausa = "";
 
 let filterTipoError = "";
 
-let filterMonth = "";
+let filterMonths = [];
 
 function processRawRows(rawRows) {
   const clean = rawRows.map(function(r) {
@@ -1673,27 +1700,104 @@ function populateMonthOptions() {
   const months = Array.from(new Set(ALL_CLEAN_ROWS.map(function(r) {
     return r.fecha.slice(0, 7);
   }).filter(Boolean))).sort().reverse();
-  [ "month-select", "detail-month-select" ].forEach(function(id) {
-    const sel = document.getElementById(id);
-    if (!sel) return;
-    const prev = sel.value;
-    sel.innerHTML = '<option value="">' + (id === "month-select" ? "Todos los meses" : "Todos") + "</option>";
+
+  const detailSel = document.getElementById("detail-month-select");
+  if (detailSel) {
+    const prev = detailSel.value;
+    detailSel.innerHTML = '<option value="">Todos</option>';
     months.forEach(function(m) {
       const o = document.createElement("option");
       o.value = m;
       o.textContent = monthLabel(m);
-      sel.appendChild(o);
+      detailSel.appendChild(o);
     });
-    sel.value = months.indexOf(prev) !== -1 ? prev : "";
-    sel.disabled = months.length === 0;
+    detailSel.value = months.indexOf(prev) !== -1 ? prev : "";
+  }
+
+  filterMonths = filterMonths.filter(function(m) {
+    return months.indexOf(m) !== -1;
   });
-  if (document.getElementById("month-select")) filterMonth = document.getElementById("month-select").value;
+  const options = months.map(function(m) {
+    return { value: m, label: monthLabel(m) };
+  });
+  renderMultiSelect("month-msel", options, filterMonths, "Todos los meses", function(next) {
+    filterMonths = next;
+    detailPage = 0;
+    rebuildData();
+  });
+}
+
+function setupMultiSelectToggle(containerId) {
+  const toggle = document.getElementById(containerId + "-toggle");
+  const panel = document.getElementById(containerId + "-panel");
+  if (!toggle || !panel) return;
+  toggle.addEventListener("click", function(e) {
+    e.stopPropagation();
+    const willOpen = panel.classList.contains("hidden");
+    document.querySelectorAll(".msel-panel").forEach(function(p) {
+      p.classList.add("hidden");
+    });
+    if (willOpen) panel.classList.remove("hidden");
+  });
+  panel.addEventListener("click", function(e) {
+    e.stopPropagation();
+  });
+}
+
+function renderMultiSelect(containerId, options, selected, allLabel, onChange) {
+  const toggle = document.getElementById(containerId + "-toggle");
+  const panel = document.getElementById(containerId + "-panel");
+  if (!toggle || !panel) return;
+  toggle.disabled = options.length === 0;
+  panel.innerHTML = "";
+  const allRow = document.createElement("label");
+  allRow.className = "msel-option msel-all";
+  const allCb = document.createElement("input");
+  allCb.type = "checkbox";
+  allCb.checked = selected.length === 0;
+  allCb.addEventListener("change", function() {
+    onChange([]);
+  });
+  allRow.appendChild(allCb);
+  allRow.appendChild(document.createTextNode(" " + allLabel));
+  panel.appendChild(allRow);
+  options.forEach(function(opt) {
+    const row = document.createElement("label");
+    row.className = "msel-option";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = opt.value;
+    cb.checked = selected.indexOf(opt.value) !== -1;
+    cb.addEventListener("change", function() {
+      let next = selected.slice();
+      if (cb.checked) {
+        if (next.indexOf(opt.value) === -1) next.push(opt.value);
+      } else {
+        next = next.filter(function(v) {
+          return v !== opt.value;
+        });
+      }
+      onChange(next);
+    });
+    row.appendChild(cb);
+    const countTxt = opt.count !== undefined ? " (" + fmtInt(opt.count) + ")" : "";
+    row.appendChild(document.createTextNode(" " + opt.label + countTxt));
+    panel.appendChild(row);
+  });
+  let label;
+  if (selected.length === 0) label = allLabel; else if (selected.length === 1) {
+    const found = options.filter(function(o) {
+      return o.value === selected[0];
+    })[0];
+    label = found ? found.label : selected[0];
+  } else label = selected.length + " seleccionados";
+  toggle.textContent = label;
 }
 
 function rebuildData() {
   let clean = ALL_CLEAN_ROWS;
-  if (filterMonth) clean = clean.filter(function(r) {
-    return r.fecha.slice(0, 7) === filterMonth;
+  if (filterMonths.length) clean = clean.filter(function(r) {
+    return filterMonths.indexOf(r.fecha.slice(0, 7)) !== -1;
   });
   if (dateFrom) clean = clean.filter(function(r) {
     return r.fecha >= dateFrom;
@@ -1712,6 +1816,10 @@ function rebuildData() {
   });
   if (filterTipoError) clean = clean.filter(function(r) {
     return r[filterTipoError];
+  });
+  const cleanForSupervisorCompare = clean;
+  if (currentScopes.length) clean = clean.filter(function(r) {
+    return currentScopes.indexOf(r.supervisor) !== -1;
   });
   let cleanForMonthly = ALL_CLEAN_ROWS;
   if (dateFrom) cleanForMonthly = cleanForMonthly.filter(function(r) {
@@ -1732,8 +1840,8 @@ function rebuildData() {
   if (filterTipoError) cleanForMonthly = cleanForMonthly.filter(function(r) {
     return r[filterTipoError];
   });
-  if (currentScope !== "ALL") cleanForMonthly = cleanForMonthly.filter(function(r) {
-    return r.supervisor === currentScope;
+  if (currentScopes.length) cleanForMonthly = cleanForMonthly.filter(function(r) {
+    return currentScopes.indexOf(r.supervisor) !== -1;
   });
   const fechas = clean.map(function(r) {
     return r.fecha;
@@ -1754,7 +1862,6 @@ function rebuildData() {
       })).size
     },
     overall: buildScope(clean),
-    by_supervisor: {},
     monthly: monthlyComparativeBlock(cleanForMonthly),
     errores_detalle: clean.filter(function(r) {
       return r.estado === "Con Errores";
@@ -1775,33 +1882,30 @@ function rebuildData() {
       };
     })
   };
-  newData.overall.supervisores = supervisoresBlock(clean);
-  groupBy(clean, "supervisor").forEach(function(rows, sup) {
-    newData.by_supervisor[sup] = buildScope(rows);
-  });
-  const keepScope = currentScope === "ALL" || newData.by_supervisor[currentScope] ? currentScope : "ALL";
+  newData.overall.supervisores = supervisoresBlock(cleanForSupervisorCompare);
   DATA = newData;
-  currentScope = keepScope;
+  currentScopes = currentScopes.filter(function(s) {
+    return newData.overall.supervisores.some(function(x) {
+      return x.supervisor === s;
+    });
+  });
   populateSupervisorOptions();
   renderAll();
 }
 
 function getScopeData() {
-  return currentScope === "ALL" ? DATA.overall : DATA.by_supervisor[currentScope];
+  return DATA.overall;
 }
 
 function populateSupervisorOptions() {
-  const sel = document.getElementById("supervisor-select");
-  const prev = currentScope;
-  sel.innerHTML = '<option value="ALL">Todos los supervisores</option>';
-  DATA.overall.supervisores.forEach(function(s) {
-    const opt = document.createElement("option");
-    opt.value = s.supervisor;
-    opt.textContent = s.supervisor + " (" + fmtInt(s.total) + ")";
-    sel.appendChild(opt);
+  const list = DATA.overall.supervisores.map(function(s) {
+    return { value: s.supervisor, label: s.supervisor, count: s.total };
   });
-  sel.value = prev;
-  sel.disabled = false;
+  renderMultiSelect("supervisor-msel", list, currentScopes, "Todos los supervisores", function(next) {
+    currentScopes = next;
+    detailPage = 0;
+    rebuildData();
+  });
 }
 
 let _lastBarClick = {
@@ -1837,10 +1941,8 @@ function makeBarClickHandler(dimension, items) {
 function forceDimensionFilter(dimension, item) {
   detailPage = 0;
   if (dimension === "supervisor") {
-    currentScope = item.supervisor;
-    const sel = document.getElementById("supervisor-select");
-    if (sel) sel.value = currentScope;
-    renderAll();
+    if (currentScopes.indexOf(item.supervisor) === -1) currentScopes.push(item.supervisor);
+    rebuildData();
     return;
   }
   if (dimension === "inspector") filterInspector = item.inspector; else if (dimension === "ciclo") filterCiclo = item.ciclo; else if (dimension === "causa") filterCausa = item.causa; else if (dimension === "tipoError") filterTipoError = item.key;
@@ -1851,10 +1953,9 @@ function applyDimensionFilter(dimension, item) {
   detailPage = 0;
   if (dimension === "supervisor") {
     const name = item.supervisor;
-    currentScope = currentScope === name ? "ALL" : name;
-    const sel = document.getElementById("supervisor-select");
-    if (sel) sel.value = currentScope;
-    renderAll();
+    const idx = currentScopes.indexOf(name);
+    if (idx === -1) currentScopes.push(name); else currentScopes.splice(idx, 1);
+    rebuildData();
     return;
   }
   if (dimension === "inspector") {
@@ -1874,15 +1975,15 @@ function goToDetallePage() {
   if (btn && !btn.classList.contains("role-hidden")) btn.click();
 }
 
-function clearFilter(which) {
+function clearFilter(which, value) {
   if (which === "inspector") filterInspector = ""; else if (which === "ciclo") filterCiclo = ""; else if (which === "causa") filterCausa = ""; else if (which === "tipoError") filterTipoError = ""; else if (which === "month") {
-    filterMonth = "";
-    const ms = document.getElementById("month-select");
-    if (ms) ms.value = "";
+    filterMonths = value !== undefined ? filterMonths.filter(function(m) {
+      return m !== value;
+    }) : [];
   } else if (which === "supervisor") {
-    currentScope = "ALL";
-    const sel = document.getElementById("supervisor-select");
-    if (sel) sel.value = "ALL";
+    currentScopes = value !== undefined ? currentScopes.filter(function(s) {
+      return s !== value;
+    }) : [];
   }
   detailPage = 0;
   rebuildData();
@@ -1893,8 +1994,8 @@ function clearAllFiltersEverywhere() {
   filterCiclo = "";
   filterCausa = "";
   filterTipoError = "";
-  filterMonth = "";
-  currentScope = "ALL";
+  filterMonths = [];
+  currentScopes = [];
   detailDateFrom = "";
   detailDateTo = "";
   detailMonthSel = "";
@@ -1904,10 +2005,6 @@ function clearAllFiltersEverywhere() {
   detailSupervisorSel = "";
   hoyInspectorScope = "ALL";
   hoySearchTerm = "";
-  [ "supervisor-select", "month-select" ].forEach(function(id) {
-    const el = document.getElementById(id);
-    if (el) el.value = id === "supervisor-select" ? "ALL" : "";
-  });
   [ "detail-date-from", "detail-date-to", "detail-month-select", "detail-inspector-select", "detail-ciclo-select", "detail-tipo-select", "detail-supervisor-select", "table-search", "hoy-inspector-search" ].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.value = "";
@@ -1933,13 +2030,19 @@ function renderActiveFiltersBar() {
   const bar = document.getElementById("active-filters-bar");
   if (!bar) return;
   const chips = [];
-  if (filterMonth) chips.push({
-    label: "Mes: " + monthLabel(filterMonth),
-    clear: "month"
+  filterMonths.forEach(function(m) {
+    chips.push({
+      label: "Mes: " + monthLabel(m),
+      clear: "month",
+      value: m
+    });
   });
-  if (currentScope !== "ALL") chips.push({
-    label: "Supervisor: " + currentScope,
-    clear: "supervisor"
+  currentScopes.forEach(function(s) {
+    chips.push({
+      label: "Supervisor: " + s,
+      clear: "supervisor",
+      value: s
+    });
   });
   if (filterInspector) chips.push({
     label: "Inspector: " + filterInspector,
@@ -1963,12 +2066,13 @@ function renderActiveFiltersBar() {
     return;
   }
   bar.classList.remove("hidden");
-  bar.innerHTML = '<span class="af-label">🔎 Filtros activos:</span>' + chips.map(function(c) {
-    return '<span class="af-chip" data-clear="' + c.clear + '">' + c.label + " <b>✕</b></span>";
+  bar.innerHTML = '<span class="af-label">🔎 Filtros activos:</span>' + chips.map(function(c, i) {
+    return '<span class="af-chip" data-idx="' + i + '">' + c.label + " <b>✕</b></span>";
   }).join("") + '<button class="af-clear-all" id="af-clear-all">Limpiar todo</button>';
   bar.querySelectorAll(".af-chip").forEach(function(chip) {
+    const c = chips[Number(chip.dataset.idx)];
     chip.addEventListener("click", function() {
-      clearFilter(chip.dataset.clear);
+      clearFilter(c.clear, c.value);
     });
   });
   document.getElementById("af-clear-all").addEventListener("click", clearAllCrossFilters);
@@ -2030,8 +2134,8 @@ function renderHoyBlock() {
   const ayer = lastWorkedDayBefore(hoy);
   document.getElementById("hoy-fecha").textContent = formatDateLong(hoy);
   let baseRows = ALL_CLEAN_ROWS;
-  if (currentScope !== "ALL") baseRows = baseRows.filter(function(r) {
-    return r.supervisor === currentScope;
+  if (currentScopes.length) baseRows = baseRows.filter(function(r) {
+    return currentScopes.indexOf(r.supervisor) !== -1;
   });
   const todayAll = baseRows.filter(function(r) {
     return r.fecha === hoy;
@@ -2238,7 +2342,7 @@ function renderAyerTable(rows, fechaISO) {
 
 function renderKPIs(scope) {
   document.getElementById("kpi-total").textContent = fmtInt(scope.kpis.total);
-  document.getElementById("kpi-total-sub").textContent = currentScope === "ALL" ? "Todos los supervisores" : currentScope;
+  document.getElementById("kpi-total-sub").textContent = currentScopes.length === 0 ? "Todos los supervisores" : currentScopes.join(", ");
   document.getElementById("kpi-correcto").textContent = fmtPct(scope.kpis.pct_correcto);
   document.getElementById("kpi-correcto-sub").textContent = fmtInt(scope.kpis.correcto) + " órdenes correctas";
   document.getElementById("kpi-errores").textContent = fmtInt(scope.kpis.con_errores);
@@ -3083,8 +3187,8 @@ function renderSupervisoresChart() {
   const items = DATA.overall.supervisores;
   const colors = items.map(function(i) {
     const base = semColor(i.pct_efectividad);
-    if (currentScope === "ALL") return base;
-    return i.supervisor === currentScope ? base : COLORS.gray;
+    if (currentScopes.length === 0) return base;
+    return currentScopes.indexOf(i.supervisor) !== -1 ? base : COLORS.gray;
   });
   const metaLine = items.map(function() {
     return EFECTIVIDAD_META_INDIVIDUAL;
@@ -3211,12 +3315,17 @@ function renderCausasChart(scope) {
   });
 }
 
+function scopeLabelText() {
+  if (currentScopes.length === 0) return "todos";
+  return currentScopes.join("_").replace(/\s+/g, "_");
+}
+
 function renderSummaryTable() {
   const tbody = document.getElementById("summary-tbody");
   tbody.innerHTML = "";
   DATA.overall.supervisores.forEach(function(s) {
     const tr = document.createElement("tr");
-    if (currentScope === s.supervisor) tr.className = "active-row";
+    if (currentScopes.indexOf(s.supervisor) !== -1) tr.className = "active-row";
     tr.innerHTML = "<td>" + s.supervisor + "</td>" + '<td class="num">' + fmtInt(s.total) + "</td>" + '<td class="num">' + fmtInt(s.correcto) + "</td>" + '<td class="num">' + fmtInt(s.con_errores) + "</td>" + '<td class="num">' + fmtPct(s.pct_error) + "</td>" + '<td class="num">' + fmtInt(s.efectiva) + "</td>" + '<td class="num">' + semBadge(s.pct_efectividad) + "</td>";
     tbody.appendChild(tr);
   });
@@ -3225,7 +3334,7 @@ function renderSummaryTable() {
 function computeInspectorFiltered() {
   const q = document.getElementById("inspector-search").value.trim().toLowerCase();
   let rows = DATA.overall.inspectores_full.filter(function(r) {
-    if (currentScope !== "ALL" && r.supervisor !== currentScope) return false;
+    if (currentScopes.length && currentScopes.indexOf(r.supervisor) === -1) return false;
     if (!q) return true;
     return r.inspector.toLowerCase().indexOf(q) !== -1;
   });
@@ -3288,7 +3397,7 @@ function exportInspectorCSV() {
     key: "pct_efectividad",
     label: "% Efectividad"
   } ];
-  const scopeLabel = currentScope === "ALL" ? "todos" : currentScope.replace(/\s+/g, "_");
+  const scopeLabel = scopeLabelText();
   downloadCSV("resumen_por_inspector_" + scopeLabel + ".csv", inspectorFiltered, headers);
 }
 
@@ -3342,7 +3451,7 @@ function populateDetailFilterOptions() {
 function computeDetailFiltered() {
   const q = document.getElementById("table-search").value.trim().toLowerCase();
   let rows = DATA.errores_detalle.filter(function(r) {
-    if (currentScope !== "ALL" && r.supervisor !== currentScope) return false;
+    if (currentScopes.length && currentScopes.indexOf(r.supervisor) === -1) return false;
     if (detailDateFrom && r.fecha < detailDateFrom) return false;
     if (detailDateTo && r.fecha > detailDateTo) return false;
     if (detailMonthSel && r.fecha.slice(0, 7) !== detailMonthSel) return false;
@@ -3467,7 +3576,7 @@ function exportDetailCSV() {
     key: "efectividad",
     label: "Efectividad"
   } ];
-  const scopeLabel = currentScope === "ALL" ? "todos" : currentScope.replace(/\s+/g, "_");
+  const scopeLabel = scopeLabelText();
   downloadCSV("detalle_errores_" + scopeLabel + ".csv", detailFiltered, headers);
 }
 
@@ -3574,10 +3683,12 @@ function initAccessGate() {
 }
 
 function init() {
-  document.getElementById("supervisor-select").addEventListener("change", function(e) {
-    currentScope = e.target.value;
-    detailPage = 0;
-    renderAll();
+  setupMultiSelectToggle("supervisor-msel");
+  setupMultiSelectToggle("month-msel");
+  document.addEventListener("click", function() {
+    document.querySelectorAll(".msel-panel").forEach(function(p) {
+      p.classList.add("hidden");
+    });
   });
   document.getElementById("table-search").addEventListener("input", function() {
     detailPage = 0;
@@ -3714,11 +3825,6 @@ function init() {
         renderDetailTable();
       }
     });
-  });
-  document.getElementById("month-select").addEventListener("change", function(e) {
-    filterMonth = e.target.value || "";
-    detailPage = 0;
-    if (ALL_CLEAN_ROWS.length) rebuildData();
   });
   const backTop = document.getElementById("back-to-top");
   window.addEventListener("scroll", function() {
