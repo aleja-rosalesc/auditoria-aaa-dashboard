@@ -129,9 +129,11 @@
   .msel-toggle:disabled{ opacity:0.55; cursor:not-allowed; }
   .msel-toggle::after{ content:'▾'; font-size:10px; opacity:0.85; flex-shrink:0; }
   .msel-panel{
-    position:absolute; top:calc(100% + 6px); left:0; z-index:70; min-width:270px; max-width:320px;
-    max-height:280px; overflow-y:auto; background:#fff; border-radius:10px; border:1px solid var(--border);
-    box-shadow:0 12px 32px rgba(0,0,0,0.2); padding:6px;
+    position:fixed; top:0; left:0; z-index:150; min-width:270px; max-width:340px;
+    max-height:60vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:#fff; border-radius:10px; border:1px solid var(--border);
+    box-shadow:0 12px 32px rgba(0,0,0,0.25); padding:6px;
+    overscroll-behavior: contain;
   }
   .msel-panel.hidden{ display:none; }
   .msel-option{
@@ -519,7 +521,7 @@
     .header-logo{ height:20px; }
     .header-logo-watermark{ height:90px; right:8px; }
     .header-filter select, .msel-toggle{ min-width: 100%; width:100%; }
-    .msel-panel{ left:0; right:0; max-width:none; }
+    .msel-panel{ max-width: calc(100vw - 20px); }
 
     .status-bar{ flex-direction:column; align-items:stretch; gap:10px; }
     .status-actions{ flex-wrap: wrap; row-gap:8px; }
@@ -1727,6 +1729,28 @@ function populateMonthOptions() {
   });
 }
 
+function positionMselPanel(toggle, panel) {
+  const r = toggle.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  panel.style.minWidth = Math.max(r.width, 240) + "px";
+  const spaceBelow = vh - r.bottom - 12;
+  const spaceAbove = r.top - 12;
+  const openUp = spaceBelow < 200 && spaceAbove > spaceBelow;
+  const maxH = Math.max(160, Math.min(Math.round(vh * .6), openUp ? spaceAbove : spaceBelow));
+  panel.style.maxHeight = maxH + "px";
+  panel.style.top = (openUp ? Math.max(8, r.top - 6 - maxH) : r.bottom + 6) + "px";
+  const pw = panel.offsetWidth || r.width;
+  let left = r.left;
+  if (left + pw > vw - 10) left = Math.max(10, vw - 10 - pw);
+  panel.style.left = left + "px";
+}
+
+function closeAllMselPanels() {
+  document.querySelectorAll(".msel-panel").forEach(function(p) {
+    p.classList.add("hidden");
+  });
+}
+
 function setupMultiSelectToggle(containerId) {
   const toggle = document.getElementById(containerId + "-toggle");
   const panel = document.getElementById(containerId + "-panel");
@@ -1734,14 +1758,21 @@ function setupMultiSelectToggle(containerId) {
   toggle.addEventListener("click", function(e) {
     e.stopPropagation();
     const willOpen = panel.classList.contains("hidden");
-    document.querySelectorAll(".msel-panel").forEach(function(p) {
-      p.classList.add("hidden");
-    });
-    if (willOpen) panel.classList.remove("hidden");
+    closeAllMselPanels();
+    if (willOpen) {
+      panel.classList.remove("hidden");
+      positionMselPanel(toggle, panel);
+    }
   });
   panel.addEventListener("click", function(e) {
     e.stopPropagation();
   });
+  window.addEventListener("resize", function() {
+    if (!panel.classList.contains("hidden")) positionMselPanel(toggle, panel);
+  });
+  window.addEventListener("scroll", function() {
+    if (!panel.classList.contains("hidden")) positionMselPanel(toggle, panel);
+  }, true);
 }
 
 function renderMultiSelect(containerId, options, selected, allLabel, onChange) {
@@ -1749,6 +1780,7 @@ function renderMultiSelect(containerId, options, selected, allLabel, onChange) {
   const panel = document.getElementById(containerId + "-panel");
   if (!toggle || !panel) return;
   toggle.disabled = options.length === 0;
+  const prevScroll = panel.scrollTop;
   panel.innerHTML = "";
   const allRow = document.createElement("label");
   allRow.className = "msel-option msel-all";
@@ -1792,6 +1824,10 @@ function renderMultiSelect(containerId, options, selected, allLabel, onChange) {
     label = found ? found.label : selected[0];
   } else label = selected.length + " seleccionados";
   toggle.textContent = label;
+  if (!panel.classList.contains("hidden")) {
+    positionMselPanel(toggle, panel);
+    panel.scrollTop = prevScroll;
+  }
 }
 
 function rebuildData() {
@@ -3685,11 +3721,7 @@ function initAccessGate() {
 function init() {
   setupMultiSelectToggle("supervisor-msel");
   setupMultiSelectToggle("month-msel");
-  document.addEventListener("click", function() {
-    document.querySelectorAll(".msel-panel").forEach(function(p) {
-      p.classList.add("hidden");
-    });
-  });
+  document.addEventListener("click", closeAllMselPanels);
   document.getElementById("table-search").addEventListener("input", function() {
     detailPage = 0;
     computeDetailFiltered();
