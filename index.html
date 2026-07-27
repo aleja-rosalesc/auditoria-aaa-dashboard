@@ -1136,6 +1136,14 @@ function yesterdayISO() {
   return isoFromDate(d);
 }
 
+function lastWorkedDayBefore(beforeISO) {
+  let best = "";
+  ALL_CLEAN_ROWS.forEach(function(r) {
+    if (r.fecha && r.fecha < beforeISO && r.fecha > best) best = r.fecha;
+  });
+  return best;
+}
+
 Chart.defaults.font.family = "'Inter', sans-serif";
 
 Chart.defaults.color = "#5C7284";
@@ -2019,7 +2027,7 @@ function populateHoyInspectorOptions(todayRows) {
 
 function renderHoyBlock() {
   const hoy = todayISO();
-  const ayer = yesterdayISO();
+  const ayer = lastWorkedDayBefore(hoy);
   document.getElementById("hoy-fecha").textContent = formatDateLong(hoy);
   let baseRows = ALL_CLEAN_ROWS;
   if (currentScope !== "ALL") baseRows = baseRows.filter(function(r) {
