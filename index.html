@@ -239,6 +239,11 @@
   }
   .data-table thead th:hover{ color: var(--teal-dark); }
   .data-table thead th.sorted::after{ content:" ▾"; font-size:9px; }
+  .data-table thead th.sorted.asc::after{ content:" ▴"; }
+  .hoy-track-table thead th{ cursor:pointer; user-select:none; }
+  .hoy-track-table thead th:hover{ color: var(--teal-dark); }
+  .hoy-track-table thead th.sorted::after{ content:" ▾"; font-size:9px; }
+  .hoy-track-table thead th.sorted.asc::after{ content:" ▴"; }
   .data-table tbody td{ padding: 9px 12px; border-bottom:1px solid #F0F3F5; white-space:nowrap; }
   .data-table tbody tr:hover{ background:#F7FBFC; }
   .badge{ display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; }
@@ -707,7 +712,7 @@
       <div class="table-scroll">
         <table class="hoy-track-table" id="hoy-track-table">
           <thead>
-            <tr><th>Inspector</th><th>Supervisor</th><th class="num">Auditadas</th><th class="num">Errores</th><th class="num">% Error</th><th>Tipos de error</th></tr>
+            <tr><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Auditadas</th><th data-key="errores" class="num sorted">Errores</th><th data-key="pct_error" class="num">% Error</th><th data-key="tipos">Tipos de error</th></tr>
           </thead>
           <tbody id="hoy-track-tbody"></tbody>
         </table>
@@ -720,7 +725,7 @@
       <div class="table-scroll">
         <table class="hoy-track-table" id="hoy-detail-table">
           <thead>
-            <tr><th>Orden</th><th>Inspector</th><th>Ciclo</th><th>Causa de cierre</th><th>Obs. 1</th><th>Tipo de error</th></tr>
+            <tr><th data-key="orden" class="sorted">Orden</th><th data-key="inspector">Inspector</th><th data-key="ciclo">Ciclo</th><th data-key="causa_cierre">Causa de cierre</th><th data-key="obs_1">Obs. 1</th><th data-key="tipo_error">Tipo de error</th></tr>
           </thead>
           <tbody id="hoy-detail-tbody"></tbody>
         </table>
@@ -733,7 +738,7 @@
       <div class="table-scroll">
         <table class="hoy-track-table" id="ayer-table">
           <thead>
-            <tr><th>Inspector</th><th>Supervisor</th><th class="num">Auditadas</th><th class="num">Correctas</th><th class="num">Con error</th><th class="num">% Error</th><th class="num">% Efectividad</th></tr>
+            <tr><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num sorted">Auditadas</th><th data-key="correcto" class="num">Correctas</th><th data-key="con_errores" class="num">Con error</th><th data-key="pct_error" class="num">% Error</th><th data-key="pct_efectividad" class="num">% Efectividad</th></tr>
           </thead>
           <tbody id="ayer-tbody"></tbody>
         </table>
@@ -928,8 +933,8 @@
       <table class="data-table summary-table" id="summary-table">
         <thead>
           <tr>
-            <th>Supervisor</th><th class="num">Total</th><th class="num">Correctas</th>
-            <th class="num">Con error</th><th class="num">% Error</th><th class="num">Efectivas</th><th class="num">% Efectividad</th>
+            <th data-key="supervisor">Supervisor</th><th data-key="total" class="num sorted">Total</th><th data-key="correcto" class="num">Correctas</th>
+            <th data-key="con_errores" class="num">Con error</th><th data-key="pct_error" class="num">% Error</th><th data-key="efectiva" class="num">Efectivas</th><th data-key="pct_efectividad" class="num">% Efectividad</th>
           </tr>
         </thead>
         <tbody id="summary-tbody"></tbody>
@@ -2266,9 +2271,13 @@ function renderHoyBlock() {
   renderAyerTable(yestRows, ayer);
 }
 
+let _hoyTrackRows = null;
+
 function renderHoyTrackTables(todayRows) {
+  if (todayRows !== undefined) _hoyTrackRows = todayRows;
+  todayRows = _hoyTrackRows || [];
   const byInsp = groupBy(todayRows, "inspector");
-  const trackRows = [];
+  let trackRows = [];
   byInsp.forEach(function(rows, insp) {
     const errs = rows.filter(function(r) {
       return r.estado === "Con Errores";
@@ -2292,9 +2301,10 @@ function renderHoyTrackTables(todayRows) {
       tipos: tiposStr
     });
   });
-  trackRows.sort(function(a, b) {
-    return b.errores - a.errores || b.pct_error - a.pct_error;
+  attachTableSort("hoy-track-table", "errores", "desc", function() {
+    renderHoyTrackTables();
   });
+  trackRows = sortByState(trackRows, getTableSort("hoy-track-table", "errores", "desc"));
   const tbody = document.getElementById("hoy-track-tbody");
   tbody.innerHTML = "";
   const emptyEl = document.getElementById("hoy-track-empty");
@@ -2311,7 +2321,7 @@ function renderHoyTrackTables(todayRows) {
       tbody.appendChild(tr);
     });
   }
-  const errOrders = todayRows.filter(function(r) {
+  let errOrders = todayRows.filter(function(r) {
     return r.estado === "Con Errores";
   });
   const dtbody = document.getElementById("hoy-detail-tbody");
@@ -2324,6 +2334,10 @@ function renderHoyTrackTables(todayRows) {
   } else {
     dEmpty.classList.add("hidden");
     dTable.classList.remove("hidden");
+    attachTableSort("hoy-detail-table", "orden", "desc", function() {
+      renderHoyTrackTables();
+    });
+    errOrders = sortByState(errOrders, getTableSort("hoy-detail-table", "orden", "desc"));
     errOrders.forEach(function(r) {
       const tr = document.createElement("tr");
       tr.innerHTML = "<td>" + r.orden + "</td>" + "<td>" + r.inspector + "</td>" + "<td>" + r.ciclo + "</td>" + "<td>" + (r.causa_cierre || "—") + "</td>" + "<td>" + (r.obs_1 || "—") + "</td>" + "<td>" + (r.tipo_error || "—") + "</td>";
@@ -2332,10 +2346,69 @@ function renderHoyTrackTables(todayRows) {
   }
 }
 
+const tableSorts = {};
+
+function getTableSort(tableId, defKey, defDir) {
+  if (!tableSorts[tableId]) tableSorts[tableId] = {
+    key: defKey,
+    dir: defDir || "desc"
+  };
+  return tableSorts[tableId];
+}
+
+function sortByState(list, sort) {
+  return list.slice().sort(function(a, b) {
+    let va = a[sort.key], vb = b[sort.key];
+    if (typeof va === "number" && typeof vb === "number") return sort.dir === "asc" ? va - vb : vb - va;
+    const na = Number(va), nb = Number(vb);
+    if (!isNaN(na) && !isNaN(nb) && String(va).trim() !== "" && String(vb).trim() !== "") {
+      return sort.dir === "asc" ? na - nb : nb - na;
+    }
+    va = String(va === undefined || va === null ? "" : va).toLowerCase();
+    vb = String(vb === undefined || vb === null ? "" : vb).toLowerCase();
+    if (va < vb) return sort.dir === "asc" ? -1 : 1;
+    if (va > vb) return sort.dir === "asc" ? 1 : -1;
+    return 0;
+  });
+}
+
+function markSortedHeader(tableId, sort) {
+  document.querySelectorAll("#" + tableId + " thead th").forEach(function(th) {
+    const active = th.dataset.key === sort.key;
+    th.classList.toggle("sorted", active);
+    th.classList.toggle("asc", active && sort.dir === "asc");
+  });
+}
+
+function attachTableSort(tableId, defKey, defDir, rerender) {
+  const sort = getTableSort(tableId, defKey, defDir);
+  document.querySelectorAll("#" + tableId + " thead th").forEach(function(th) {
+    if (!th.dataset.key || th._sortBound) return;
+    th._sortBound = true;
+    th.addEventListener("click", function() {
+      if (sort.key === th.dataset.key) sort.dir = sort.dir === "asc" ? "desc" : "asc"; else {
+        sort.key = th.dataset.key;
+        sort.dir = "desc";
+      }
+      markSortedHeader(tableId, sort);
+      rerender();
+    });
+  });
+  markSortedHeader(tableId, sort);
+}
+
+let _ayerRows = null;
+let _ayerFecha = "";
+
 function renderAyerTable(rows, fechaISO) {
   const fechaEl = document.getElementById("ayer-fecha");
   if (!fechaEl) return;
-  fechaEl.textContent = formatDateLong(fechaISO);
+  if (rows !== undefined) {
+    _ayerRows = rows;
+    _ayerFecha = fechaISO;
+  }
+  rows = _ayerRows || [];
+  fechaEl.textContent = formatDateLong(_ayerFecha);
   const tbody = document.getElementById("ayer-tbody");
   const empty = document.getElementById("ayer-empty");
   const table = document.getElementById("ayer-table");
@@ -2348,7 +2421,7 @@ function renderAyerTable(rows, fechaISO) {
   empty.classList.add("hidden");
   table.classList.remove("hidden");
   const by = groupBy(rows, "inspector");
-  const list = Array.from(by.entries()).map(function(e) {
+  let list = Array.from(by.entries()).map(function(e) {
     const rws = e[1], total = rws.length;
     const correcto = rws.filter(function(r) { return r.estado === "Correcto"; }).length;
     const con_errores = rws.filter(function(r) { return r.estado === "Con Errores"; }).length;
@@ -2359,7 +2432,10 @@ function renderAyerTable(rows, fechaISO) {
       pct_efectividad: total ? round1(efectiva / total * 100) : 0
     };
   });
-  list.sort(function(a, b) { return b.total - a.total; });
+  attachTableSort("ayer-table", "total", "desc", function() {
+    renderAyerTable();
+  });
+  list = sortByState(list, getTableSort("ayer-table", "total", "desc"));
   list.forEach(function(r) {
     const tr = document.createElement("tr");
     tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
@@ -3359,7 +3435,9 @@ function scopeLabelText() {
 function renderSummaryTable() {
   const tbody = document.getElementById("summary-tbody");
   tbody.innerHTML = "";
-  DATA.overall.supervisores.forEach(function(s) {
+  attachTableSort("summary-table", "total", "desc", renderSummaryTable);
+  const list = sortByState(DATA.overall.supervisores, getTableSort("summary-table", "total", "desc"));
+  list.forEach(function(s) {
     const tr = document.createElement("tr");
     if (currentScopes.indexOf(s.supervisor) !== -1) tr.className = "active-row";
     tr.innerHTML = "<td>" + s.supervisor + "</td>" + '<td class="num">' + fmtInt(s.total) + "</td>" + '<td class="num">' + fmtInt(s.correcto) + "</td>" + '<td class="num">' + fmtInt(s.con_errores) + "</td>" + '<td class="num">' + fmtPct(s.pct_error) + "</td>" + '<td class="num">' + fmtInt(s.efectiva) + "</td>" + '<td class="num">' + semBadge(s.pct_efectividad) + "</td>";
