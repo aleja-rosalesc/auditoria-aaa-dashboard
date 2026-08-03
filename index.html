@@ -901,7 +901,7 @@
           <tr>
             <th data-key="inspector">Inspector2</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Total</th>
             <th data-key="correcto" class="num">Correctas</th><th data-key="con_errores" class="num">Con error</th>
-            <th data-key="pct_error" class="num sorted">% Error</th><th data-key="pct_efectividad" class="num">% Efectividad</th>
+            <th data-key="pct_error" class="num sorted">% Error</th><th data-key="pct_efectividad" class="num">% Efectividad</th><th data-key="tipos_error">Errores</th>
           </tr>
         </thead>
         <tbody id="inspector-tbody"></tbody>
@@ -1515,12 +1515,22 @@ function inspectoresFullBlock(sub, minTotal) {
     const correcto = rows.filter(function(r) {
       return r.estado === "Correcto";
     }).length;
-    const con_errores = rows.filter(function(r) {
+    const errRows = rows.filter(function(r) {
       return r.estado === "Con Errores";
-    }).length;
+    });
+    const con_errores = errRows.length;
     const efectiva = rows.filter(function(r) {
       return r.efectividad === "Efectiva";
     }).length;
+    const tiposCount = {};
+    errRows.forEach(function(r) {
+      String(r.tipo_error || "").split("; ").forEach(function(tp) {
+        if (tp) tiposCount[tp] = (tiposCount[tp] || 0) + 1;
+      });
+    });
+    const tiposErrorStr = Object.keys(tiposCount).map(function(k) {
+      return k + " (" + tiposCount[k] + ")";
+    }).join(" · ");
     const supervisorMasFrecuente = function() {
       const counts = {};
       rows.forEach(function(r) {
@@ -1542,6 +1552,7 @@ function inspectoresFullBlock(sub, minTotal) {
       correcto: correcto,
       con_errores: con_errores,
       efectiva: efectiva,
+      tipos_error: tiposErrorStr,
       pct_efectividad: total ? round1(efectiva / total * 100) : 0,
       pct_error: total ? round1(con_errores / total * 100) : 0
     };
@@ -3485,7 +3496,7 @@ function renderInspectorTable() {
   tbody.innerHTML = "";
   inspectorFiltered.forEach(function(r) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>" + "<td>" + (r.tipos_error || "—") + "</td>";
     tbody.appendChild(tr);
   });
 }
@@ -3512,6 +3523,9 @@ function exportInspectorCSV() {
   }, {
     key: "pct_efectividad",
     label: "% Efectividad"
+  }, {
+    key: "tipos_error",
+    label: "Errores (desglose)"
   } ];
   const scopeLabel = scopeLabelText();
   downloadCSV("resumen_por_inspector_" + scopeLabel + ".csv", inspectorFiltered, headers);
