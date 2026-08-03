@@ -144,6 +144,27 @@
   .msel-option input{ accent-color: var(--teal-dark); width:15px; height:15px; cursor:pointer; flex-shrink:0; }
   .msel-option.msel-all{ border-bottom:1px solid var(--border); margin-bottom:4px; padding-bottom:9px; font-weight:700; }
 
+  .msel-toggle.small{
+    padding: 8px 12px; border-radius:8px; border:1px solid var(--border);
+    background:#fff; color:var(--text); font-size:12.8px; font-weight:600; min-width:0;
+  }
+  .msel-toggle.small::after{ color:var(--text-2); }
+  .msel-toggle.small:hover{ border-color:var(--teal-dark); }
+
+  #inspector-table.hide-col-supervisor th:nth-child(2), #inspector-table.hide-col-supervisor td:nth-child(2){ display:none; }
+  #inspector-table.hide-col-total th:nth-child(3), #inspector-table.hide-col-total td:nth-child(3){ display:none; }
+  #inspector-table.hide-col-correcto th:nth-child(4), #inspector-table.hide-col-correcto td:nth-child(4){ display:none; }
+  #inspector-table.hide-col-con_errores th:nth-child(5), #inspector-table.hide-col-con_errores td:nth-child(5){ display:none; }
+  #inspector-table.hide-col-pct_error th:nth-child(6), #inspector-table.hide-col-pct_error td:nth-child(6){ display:none; }
+  #inspector-table.hide-col-pct_efectividad th:nth-child(7), #inspector-table.hide-col-pct_efectividad td:nth-child(7){ display:none; }
+  #inspector-table.hide-col-tipos_error th:nth-child(8), #inspector-table.hide-col-tipos_error td:nth-child(8){ display:none; }
+
+  @media (min-width: 860px){
+    #inspector-table td:nth-child(8), #inspector-table th:nth-child(8){
+      white-space: normal; word-break: break-word; max-width: 340px; line-height:1.5;
+    }
+  }
+
   .status-bar{
     background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
     border: 1px solid var(--border); padding: 12px 20px; margin-bottom: 18px;
@@ -891,17 +912,21 @@
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2"/><path d="M20 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg> Resumen por inspector</h3>
       <div class="table-actions">
         <input type="text" id="inspector-search" placeholder="Buscar inspector…">
+        <div class="msel" id="inspector-cols-msel">
+          <button type="button" class="msel-toggle small" id="inspector-cols-msel-toggle">👁 Columnas</button>
+          <div class="msel-panel hidden" id="inspector-cols-msel-panel"></div>
+        </div>
         <button class="btn ghost" id="export-inspector-btn">Exportar CSV</button>
       </div>
     </div>
-    <p class="chart-sub" style="margin:-4px 0 10px;">Efectividad y errores lado a lado, por inspector (<span id="inspector-count">0</span>) · clic en un encabezado para ordenar</p>
+    <p class="chart-sub" style="margin:-4px 0 10px;">Efectividad y errores lado a lado, por inspector (<span id="inspector-count">0</span>) · clic en un encabezado para ordenar · oculta columnas para ver todo sin desplazar</p>
     <div class="table-scroll">
       <table class="data-table summary-table" id="inspector-table">
         <thead>
           <tr>
-            <th data-key="inspector">Inspector2</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Total</th>
-            <th data-key="correcto" class="num">Correctas</th><th data-key="con_errores" class="num">Con error</th>
-            <th data-key="pct_error" class="num sorted">% Error</th><th data-key="pct_efectividad" class="num">% Efectividad</th><th data-key="tipos_error">Errores</th>
+            <th data-key="inspector" data-col="inspector">Inspector2</th><th data-key="supervisor" data-col="supervisor">Supervisor</th><th data-key="total" class="num" data-col="total">Total</th>
+            <th data-key="correcto" class="num" data-col="correcto">Correctas</th><th data-key="con_errores" class="num" data-col="con_errores">Con error</th>
+            <th data-key="pct_error" class="num sorted" data-col="pct_error">% Error</th><th data-key="pct_efectividad" class="num" data-col="pct_efectividad">% Efectividad</th><th data-key="tipos_error" data-col="tipos_error">Errores</th>
           </tr>
         </thead>
         <tbody id="inspector-tbody"></tbody>
@@ -1791,6 +1816,49 @@ function setupMultiSelectToggle(containerId) {
   window.addEventListener("scroll", function() {
     if (!panel.classList.contains("hidden")) positionMselPanel(toggle, panel);
   }, true);
+}
+
+// Selector de columnas ocultables para una tabla. Lee las columnas disponibles
+// directamente del atributo data-col de cada encabezado, para no duplicar la
+// lista a mano. El estado (qué se oculta) vive solo en memoria de esta sesión.
+const hiddenColsByTable = {};
+
+function initColumnPicker(tableId, containerId, alwaysVisibleKey) {
+  const table = document.getElementById(tableId);
+  const panel = document.getElementById(containerId + "-panel");
+  if (!table || !panel) return;
+  hiddenColsByTable[tableId] = hiddenColsByTable[tableId] || new Set();
+  const cols = Array.from(table.querySelectorAll("thead th[data-col]")).map(function(th) {
+    return { key: th.dataset.col, label: th.textContent.trim() };
+  });
+  panel.innerHTML = "";
+  cols.forEach(function(col) {
+    if (col.key === alwaysVisibleKey) return;
+    const row = document.createElement("label");
+    row.className = "msel-option";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = !hiddenColsByTable[tableId].has(col.key);
+    cb.addEventListener("change", function() {
+      if (cb.checked) hiddenColsByTable[tableId].delete(col.key); else hiddenColsByTable[tableId].add(col.key);
+      applyColumnVisibility(tableId);
+    });
+    row.appendChild(cb);
+    row.appendChild(document.createTextNode(" " + col.label));
+    panel.appendChild(row);
+  });
+  applyColumnVisibility(tableId);
+  setupMultiSelectToggle(containerId);
+}
+
+function applyColumnVisibility(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const hidden = hiddenColsByTable[tableId] || new Set();
+  table.className = table.className.replace(/\bhide-col-\S+/g, "").trim();
+  hidden.forEach(function(key) {
+    table.className += " hide-col-" + key;
+  });
 }
 
 function renderMultiSelect(containerId, options, selected, allLabel, onChange) {
@@ -3815,6 +3883,7 @@ function initAccessGate() {
 function init() {
   setupMultiSelectToggle("supervisor-msel");
   setupMultiSelectToggle("month-msel");
+  initColumnPicker("inspector-table", "inspector-cols-msel", "inspector");
   document.addEventListener("click", closeAllMselPanels);
   document.getElementById("table-search").addEventListener("input", function() {
     detailPage = 0;
