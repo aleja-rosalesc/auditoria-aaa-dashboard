@@ -1,4 +1,4 @@
-const CACHE_NAME = "aaa-entrada-v1";
+const CACHE_NAME = "aaa-pregeofono-v1";
 const APP_SHELL = ["./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./logo.png"];
 
 self.addEventListener("install", function (event) {
@@ -17,10 +17,6 @@ self.addEventListener("activate", function (event) {
 
 self.addEventListener("fetch", function (event) {
   if (event.request.method !== "GET") return;
-  // Solo controla la pantalla de entrada; no intercepta pedidos hacia /critica/ ni /pregeofono/,
-  // esos los maneja el service worker propio de cada tablero.
-  const url = new URL(event.request.url);
-  if (url.pathname.indexOf("/critica/") !== -1 || url.pathname.indexOf("/pregeofono/") !== -1) return;
   event.respondWith(
     fetch(event.request.url, { cache: "no-store" }).then(function (response) {
       const copy = response.clone();

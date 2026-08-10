@@ -1,0 +1,3929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Cumplimiento — Pregeófono</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B3D5C">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pregeófono">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --navy: #0B3D5C;
+    --navy-2: #0E547A;
+    --teal: #17A2B8;
+    --teal-dark: #0E6E8C;
+    --success: #1F9D66;
+    --success-bg: #E5F5EE;
+    --danger: #E4572E;
+    --danger-bg: #FCEAE3;
+    --warning: #F0A93A;
+    --warning-bg: #FDF1DD;
+    --gray: #A9B7C2;
+    --bg: #EFF4F7;
+    --card: #FFFFFF;
+    --text: #142B3C;
+    --text-2: #5C7284;
+    --border: #E2E9EE;
+    --radius: 14px;
+    --shadow: 0 2px 14px rgba(11, 61, 92, 0.07);
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--bg);
+    font-family: var(--font-body);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .dashboard-container{
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 20px 22px 40px;
+  }
+
+  .dashboard-header{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 55%, var(--teal-dark) 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 24px 30px 34px;
+    margin-bottom: 14px;
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dashboard-header::after{
+    content:"";
+    position:absolute; right:-60px; top:-60px;
+    width:220px; height:220px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
+  }
+  .header-logo-watermark{
+    position:absolute; right:18px; bottom:-10px; height:130px; width:auto;
+    opacity:0.08; filter: brightness(0) invert(1); pointer-events:none; z-index:0;
+  }
+  .header-wave{
+    position:absolute; left:0; right:0; bottom:-1px; height:22px; opacity:0.5;
+    color: rgba(255,255,255,0.5);
+  }
+  .header-titles{ display:flex; align-items:center; gap:14px; position:relative; z-index:1; }
+  .header-logo-badge{
+    background:#fff; border-radius:13px; padding:8px 13px; box-shadow:0 3px 14px rgba(0,0,0,0.18);
+    flex-shrink:0; display:flex; align-items:center; line-height:0;
+  }
+  .header-logo{ height:26px; width:auto; display:block; }
+  .header-eyebrow{
+    font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
+    color: rgba(255,255,255,0.75); margin-bottom: 6px; display:flex; align-items:center; gap:6px;
+  }
+  .drop-icon{ animation: dropFall 1.7s ease-in infinite; display:inline-block; transform-origin:center top; }
+  @keyframes dropFall{
+    0%{ transform: translateY(-1px) scale(1); opacity: 0; }
+    12%{ opacity: 1; }
+    75%{ opacity: 1; transform: translateY(9px) scale(1); }
+    90%{ opacity: 0; transform: translateY(11px) scale(0.85); }
+    100%{ opacity: 0; transform: translateY(-1px) scale(1); }
+  }
+  .dashboard-header h1{
+    font-family: var(--font-display); font-size: 25px; font-weight: 700;
+    margin: 0 0 8px 0; letter-spacing: -0.2px;
+  }
+  .header-meta{ font-size: 13px; color: rgba(255,255,255,0.82); }
+  .header-meta b{ color:#fff; font-weight:600; }
+  .header-filter{ display:flex; flex-direction:column; gap:6px; position: relative; z-index:1; }
+  .header-filter > label{
+    font-size: 11px; text-transform:uppercase; letter-spacing:1px;
+    color: rgba(255,255,255,0.7); font-weight:600;
+  }
+  .header-filter select{
+    padding: 10px 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12); color: #fff; font-size: 13.5px; font-weight: 500;
+    font-family: var(--font-body); min-width: 250px; cursor:pointer;
+  }
+  .header-filter select option{ background: var(--navy); color:#fff; }
+
+  .msel{ position:relative; }
+  .msel-toggle{
+    padding: 10px 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12); color: #fff; font-size: 13.5px; font-weight: 500;
+    font-family: var(--font-body); min-width: 250px; cursor:pointer; text-align:left;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .msel-toggle:disabled{ opacity:0.55; cursor:not-allowed; }
+  .msel-toggle::after{ content:'▾'; font-size:10px; opacity:0.85; flex-shrink:0; }
+  .msel-panel{
+    position:fixed; top:0; left:0; z-index:150; min-width:270px; max-width:340px;
+    max-height:60vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:#fff; border-radius:10px; border:1px solid var(--border);
+    box-shadow:0 12px 32px rgba(0,0,0,0.25); padding:6px;
+    overscroll-behavior: contain;
+  }
+  .msel-panel.hidden{ display:none; }
+  .msel-option{
+    display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px; cursor:pointer;
+    font-size:13px; color:var(--text); font-weight:500;
+  }
+  .msel-option:hover{ background:#F1F6F8; }
+  .msel-option input{ accent-color: var(--teal-dark); width:15px; height:15px; cursor:pointer; flex-shrink:0; }
+  .msel-option.msel-all{ border-bottom:1px solid var(--border); margin-bottom:4px; padding-bottom:9px; font-weight:700; }
+
+  .status-bar{
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    border: 1px solid var(--border); padding: 12px 20px; margin-bottom: 18px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    font-size: 12.8px; color: var(--text-2);
+  }
+  .status-left{ display:flex; align-items:center; gap:8px; }
+  .status-dot{ width:9px; height:9px; border-radius:50%; background: var(--gray); flex-shrink:0; }
+  .status-dot.ok{ background: var(--success); }
+  .status-dot.loading{ background: var(--warning); animation: pulse 1.2s infinite; }
+  .status-dot.error{ background: var(--danger); }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  .status-actions{ display:flex; gap:8px; }
+  .btn{
+    padding: 10px 17px; border-radius:9px; border:1px solid var(--teal-dark);
+    background: var(--teal-dark); color:#fff; font-size:13.5px; font-weight:600;
+    cursor:pointer; white-space:nowrap; font-family: var(--font-body);
+  }
+  .btn.small, .date-filter-bar .btn.ghost.small{ padding:8px 14px; font-size:12.5px; }
+  .btn:hover{ background: var(--navy); }
+  .btn.ghost{ background:#fff; color:var(--teal-dark); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .setup-banner{
+    background: var(--warning-bg); border: 1px solid #F0D9A8; color:#7A5714;
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; font-size:13.5px; line-height:1.6;
+  }
+  .setup-banner code{ background:#fff; padding:1px 6px; border-radius:4px; font-size:12.5px; }
+  .error-banner{
+    background: var(--danger-bg); border: 1px solid #F3B7A2; color:#8A3216;
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; font-size:13.5px; line-height:1.6;
+  }
+
+  .kpi-row{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 18px; }
+  .kpi-card{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border); display:flex; align-items:flex-start; gap:14px;
+  }
+  .kpi-icon{ width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .kpi-icon svg{ width:20px; height:20px; }
+  .kpi-icon.blue{ background:#E4F1F6; color:var(--teal-dark); }
+  .kpi-icon.green{ background:var(--success-bg); color:var(--success); }
+  .kpi-icon.red{ background:var(--danger-bg); color:var(--danger); }
+
+  .sem-badge{
+    display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px;
+    font-weight:700; font-size:0.92em; line-height:1.5;
+  }
+  .sem-badge::before{ content:''; width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .sem-badge.sem-rojo{ background:var(--danger-bg); color:var(--danger); }
+  .sem-badge.sem-naranja{ background:var(--warning-bg); color:#B97A15; }
+  .sem-badge.sem-verde{ background:var(--success-bg); color:var(--success); }
+  .kpi-value.sem-rojo{ color:var(--danger); }
+  .kpi-value.sem-naranja{ color:#B97A15; }
+  .kpi-value.sem-verde{ color:var(--success); }
+  .hoy-value.sem-rojo{ color:var(--danger); }
+  .hoy-value.sem-naranja{ color:#B97A15; }
+  .hoy-value.sem-verde{ color:var(--success); }
+  .kpi-icon.amber{ background:var(--warning-bg); color:#B97A15; }
+  .kpi-label{ font-size: 12px; color: var(--text-2); font-weight:600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom:4px; }
+  .kpi-value{ font-family: var(--font-display); font-size: 26px; font-weight:700; color: var(--text); line-height:1.1; }
+  .kpi-sub{ font-size:12px; color:var(--text-2); margin-top:3px; }
+
+  .chart-row{ display:grid; gap:16px; margin-bottom:16px; }
+  .chart-row.two-col{ grid-template-columns: 1fr 1fr; }
+  .chart-row.three-col{ grid-template-columns: repeat(3, 1fr); }
+  .chart-row.one-col{ grid-template-columns: 1fr; }
+  .chart-container{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px 14px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .chart-container h3{ font-size: 13.5px; font-weight:700; color: var(--text); margin: 0 0 4px 0; }
+  .chart-sub{ font-size:11.5px; color:var(--text-2); margin: 0 0 12px 0; }
+  .chart-container canvas{ max-height: 270px; }
+  .chart-container.tall canvas{ max-height: 380px; }
+
+  .table-section{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .table-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+  .table-header h3{ font-size:14.5px; font-weight:700; margin:0; color:var(--text); }
+  .table-actions{ display:flex; gap:8px; align-items:center; }
+  #table-search{
+    padding: 8px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:13px; font-family: var(--font-body); min-width:260px; background:#F7FAFB;
+  }
+  .table-scroll{ overflow-x:auto; }
+  .data-table{ width:100%; border-collapse: collapse; font-size:12.8px; }
+  .data-table thead th{
+    text-align:left; padding: 10px 12px; border-bottom: 2px solid var(--border);
+    color: var(--text-2); font-weight:700; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.4px; white-space:nowrap; user-select:none; cursor:pointer; background:#F7FAFB;
+  }
+  .data-table thead th:hover{ color: var(--teal-dark); }
+  .data-table thead th.sorted::after{ content:" ▾"; font-size:9px; }
+  .data-table thead th.sorted.asc::after{ content:" ▴"; }
+  .hoy-track-table thead th{ cursor:pointer; user-select:none; }
+  .hoy-track-table thead th:hover{ color: var(--teal-dark); }
+  .hoy-track-table thead th.sorted::after{ content:" ▾"; font-size:9px; }
+  .hoy-track-table thead th.sorted.asc::after{ content:" ▴"; }
+  .data-table tbody td{ padding: 9px 12px; border-bottom:1px solid #F0F3F5; white-space:nowrap; }
+  .data-table tbody tr:hover{ background:#F7FBFC; }
+  .badge{ display:inline-block; padding:3px 9px; border-radius:20px; font-size:11px; font-weight:600; }
+  .badge.efectiva{ background:var(--success-bg); color:var(--success); }
+  .badge.no-efectiva{ background:var(--warning-bg); color:#B97A15; }
+  .badge.error{ background:var(--danger-bg); color:var(--danger); font-weight:500;}
+  .table-pagination{ display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:12px; font-size:12.5px; color:var(--text-2); }
+  .table-pagination button{
+    padding:6px 12px; border-radius:7px; border:1px solid var(--border);
+    background:#fff; cursor:pointer; font-size:12px; font-weight:600; color:var(--text);
+  }
+  .table-pagination button:disabled{ opacity:0.4; cursor:not-allowed; }
+  .summary-table tbody tr.active-row{ background: var(--success-bg); }
+  .summary-table tbody td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+  .data-table td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+
+  .dashboard-footer{ text-align:center; font-size:12px; color: var(--text-2); padding: 14px 0 4px; }
+  .dashboard-footer a{ color: var(--teal-dark); }
+
+  .hidden{ display:none !important; }
+
+  html{ scroll-behavior:smooth; }
+  .page-content{ display:none; }
+  .page-content.active{ display:block; animation: pageFadeIn 0.18s ease; }
+  @keyframes pageFadeIn{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:translateY(0);} }
+
+  .tab-bar{
+    position: fixed; left:0; right:0; bottom:0; z-index: 50;
+    display:flex; justify-content:space-around; align-items:stretch;
+    background: rgba(255,255,255,0.94); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border); box-shadow: 0 -4px 18px rgba(11,61,92,0.10);
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  }
+  .tab-bar .tab-btn.role-hidden{ display:none; }
+  .tab-bar .tab-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; padding:8px 2px 7px; background:none; border:none; cursor:pointer;
+    color: var(--text-2); font-family: var(--font-body); font-size:10.8px; font-weight:600;
+    border-radius:10px; transition: color 0.15s;
+  }
+  .tab-bar .tab-btn svg{ width:22px; height:22px; }
+  .tab-bar .tab-btn.active{ color: var(--teal-dark); }
+  .tab-bar .tab-btn.active .tab-icon-wrap{ background: var(--success-bg); }
+  .tab-icon-wrap{ width:35px; height:35px; border-radius:11px; display:flex; align-items:center; justify-content:center; transition: background 0.15s; }
+  .tab-bar .tab-btn .tab-dot{
+    width:5px; height:5px; border-radius:50%; background: var(--danger); position:relative; top:-19px; left:9px;
+  }
+
+  .dashboard-container{ padding-bottom: 82px; } 
+
+  .date-filter-bar{
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 12px 18px; margin-bottom: 16px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .date-filter-bar .df-label{ font-size:12px; font-weight:700; color: var(--text-2); display:flex; align-items:center; gap:6px; }
+  .date-filter-bar label{ font-size:12px; color: var(--text-2); font-weight:600; display:flex; align-items:center; gap:6px; }
+  .date-filter-bar input[type="date"]{
+    padding:7px 10px; border-radius:8px; border:1px solid var(--border); font-size:12.8px;
+    font-family: var(--font-body); background:#F7FAFB; color: var(--text);
+  }
+  .date-filter-bar .btn.ghost.small{ padding:6px 12px; font-size:12px; }
+
+  .back-to-top{
+    position: fixed; bottom: 88px; right: 22px; width:46px; height:46px; border-radius:50%;
+    background: var(--teal-dark); color:#fff; border:none; font-size:20px; cursor:pointer;
+    box-shadow: 0 4px 16px rgba(11,61,92,0.28); z-index: 40;
+  }
+  .back-to-top:hover{ background: var(--navy); }
+
+  #inspector-search{
+    padding: 8px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:13px; font-family: var(--font-body); min-width:200px; background:#F7FAFB;
+  }
+
+  .hoy-section{
+    background: linear-gradient(135deg, #E4F1FB 0%, #E9F8F2 100%);
+    border: 1px solid var(--teal);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 18px;
+  }
+  .hoy-header{ display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .hoy-badge{
+    background: var(--teal-dark); color:#fff; font-size:11px; font-weight:700;
+    padding:4px 10px; border-radius:20px; letter-spacing:0.5px;
+  }
+  .hoy-fecha{ font-size:13px; color: var(--text-2); font-weight:600; }
+  .hoy-empty{ font-size:13px; color: var(--text-2); padding: 4px 0 2px; }
+  .hoy-kpis{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+  .hoy-card{ background: rgba(255,255,255,0.75); border-radius:10px; padding:12px 14px; }
+  .hoy-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
+  .hoy-value{ font-family: var(--font-display); font-size:22px; font-weight:700; color:var(--text); line-height:1.1; }
+  .hoy-delta{ font-size:11.5px; margin-top:3px; font-weight:600; }
+  .hoy-delta.up{ color: var(--success); }
+  .hoy-delta.down{ color: var(--danger); }
+  .hoy-delta.neutral{ color: var(--text-2); }
+
+  .hoy-filter-row{ display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .hoy-filter-row label{ font-size:12px; font-weight:700; color: var(--text-2); }
+  .hoy-filter-row select{
+    padding:7px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:12.8px; font-family: var(--font-body); background:#fff; color:var(--navy); min-width:220px;
+  }
+  .hoy-filter-row select option{ background:#fff; color: var(--navy); }
+  .hoy-filter-row input[type="text"]{
+    padding:7px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:12.8px; font-family: var(--font-body); background:#fff; color:var(--text); min-width:220px; flex:1;
+  }
+  .hoy-track-section{ margin-top:16px; }
+  .hoy-track-section h4{ font-size:13px; font-weight:700; color:var(--text); margin:0 0 8px; display:flex; align-items:center; gap:6px; }
+  .hoy-track-empty{ font-size:12.8px; color:var(--text-2); background:rgba(255,255,255,0.6); border-radius:10px; padding:12px 14px; }
+  .hoy-track-table{ width:100%; border-collapse:collapse; font-size:12.5px; background:rgba(255,255,255,0.6); border-radius:10px; overflow:hidden; }
+  .hoy-track-table thead th{
+    text-align:left; padding:8px 12px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px;
+    color:var(--text-2); font-weight:700; background:rgba(255,255,255,0.5);
+  }
+  .hoy-track-table tbody td{ padding:8px 12px; border-top:1px solid rgba(255,255,255,0.8); }
+  .hoy-track-table tbody tr:hover{ background:rgba(255,255,255,0.5); }
+  .hoy-track-table td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+
+  .matriz-hero{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--teal-dark) 100%);
+    color:#fff; border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px;
+    position:relative; overflow:hidden;
+  }
+  .matriz-hero::after{
+    content:""; position:absolute; right:-40px; bottom:-50px; width:170px; height:170px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+  }
+  .matriz-hero h2{
+    font-family: var(--font-display); font-size:19px; font-weight:700; margin:0 0 5px;
+    display:flex; align-items:center; gap:9px;
+  }
+  .matriz-hero p{ margin:0; font-size:12.8px; color:rgba(255,255,255,0.85); }
+  .matriz-legend{ display:flex; gap:10px; margin: 14px 0 0; flex-wrap:wrap; }
+  .matriz-legend span{
+    font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:20px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .matriz-legend .lg-si{ background:rgba(255,255,255,0.18); color:#B8F5D9; }
+  .matriz-legend .lg-no{ background:rgba(255,255,255,0.18); color:#FFD6C4; }
+  .matriz-search-row{ display:flex; gap:10px; margin-bottom:14px; }
+  #matriz-search{
+    flex:1; padding: 10px 14px; border-radius:10px; border:1px solid var(--border);
+    font-size:13.5px; font-family: var(--font-body); background:#fff; box-shadow: var(--shadow);
+  }
+  .matriz-table-wrap{
+    background: var(--card); border:1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow:hidden; margin-bottom:16px;
+  }
+  .matriz-table{ width:100%; border-collapse:collapse; font-size:12.8px; }
+  .matriz-table thead th{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 100%); color:#fff;
+    text-align:left; padding:11px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+    position:sticky; top:0;
+  }
+  .matriz-table tbody td{ padding:10px 14px; border-top:1px solid #F0F3F5; }
+  .matriz-table tbody tr:nth-child(even){ background:#F8FBFC; }
+  .matriz-table tbody tr:hover{ background:#EDF6F9; }
+  .toma-badge{
+    display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:20px;
+    font-size:11px; font-weight:700; letter-spacing:0.3px;
+  }
+  .toma-badge.si{ background: var(--success-bg); color: var(--success); }
+  .toma-badge.no{ background: var(--danger-bg); color: var(--danger); }
+  .toma-badge svg{ width:11px; height:11px; }
+  .matriz-group-row td{
+    background: #E4F1F6 !important; font-weight:700; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.6px; color: var(--teal-dark); padding:8px 14px;
+  }
+
+  .access-gate{
+    position: fixed; inset:0; z-index: 200;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 55%, var(--teal-dark) 100%);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .access-card{
+    background:#fff; border-radius:18px; padding:30px 28px; max-width:380px; width:100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.28); text-align:center;
+  }
+  .access-card .header-logo-badge{ box-shadow:none; border:1px solid var(--border); margin:0 auto 16px; display:inline-flex; }
+  .access-card h2{ font-family: var(--font-display); font-size:18px; margin:0 0 6px; color:var(--text); }
+  .access-card p{ font-size:13px; color:var(--text-2); margin:0 0 20px; }
+  .role-choices{ display:flex; flex-direction:column; gap:10px; }
+  .role-btn{
+    display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:12px;
+    border:1.5px solid var(--border); background:#F7FAFB; cursor:pointer; text-align:left;
+    font-family: var(--font-body); font-size:14px; font-weight:600; color:var(--text);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .role-btn:hover{ border-color:var(--teal-dark); background:#EDF6F9; }
+  .role-btn .role-icon{
+    width:38px; height:38px; border-radius:10px; background:var(--success-bg); color:var(--success);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .role-btn.admin .role-icon{ background: var(--warning-bg); color:#B97A15; }
+  .role-btn small{ display:block; font-weight:400; color:var(--text-2); font-size:11.5px; margin-top:2px; }
+  .access-password-row{ margin-top:16px; text-align:left; }
+  .access-password-row label{ font-size:12px; font-weight:700; color:var(--text-2); display:block; margin-bottom:6px; }
+  .access-password-row input{
+    width:100%; padding:11px 14px; border-radius:10px; border:1.5px solid var(--border);
+    font-size:14px; font-family: var(--font-body); box-sizing:border-box; margin-bottom:10px;
+  }
+  .access-error{ color:var(--danger); font-size:12.5px; margin:0 0 10px; min-height:1px; }
+  .access-back-btn{ font-size:12px; color:var(--text-2); background:none; border:none; cursor:pointer; margin-top:6px; text-decoration:underline; }
+
+  .role-badge{
+    display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--text-2);
+  }
+  .role-badge .role-pill{ padding:3px 10px; border-radius:20px; background:var(--success-bg); color:var(--success); }
+  .role-badge.admin-pill .role-pill{ background:var(--warning-bg); color:#B97A15; }
+  .role-badge button{
+    background:none; border:none; color:var(--teal-dark); font-size:11.5px; font-weight:700;
+    cursor:pointer; text-decoration:underline; padding:0;
+  }
+
+  .active-filters-bar{
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    background: var(--success-bg); border:1px solid #B7E4CE; border-radius: var(--radius);
+    padding: 9px 14px; margin-bottom: 14px; font-size:12.3px;
+  }
+  .active-filters-bar .af-label{ font-weight:700; color: var(--success); margin-right:2px; }
+  .active-filters-bar .af-chip{
+    display:inline-flex; align-items:center; gap:5px; background:#fff; border:1px solid #B7E4CE;
+    border-radius:20px; padding:5px 10px; font-weight:600; color:var(--text); cursor:pointer;
+  }
+  .active-filters-bar .af-chip:hover{ border-color: var(--danger); }
+  .active-filters-bar .af-chip b{ color: var(--danger); font-weight:800; }
+  .active-filters-bar .af-clear-all{
+    margin-left:auto; background:none; border:none; color:var(--text-2); font-size:12px;
+    font-weight:700; text-decoration:underline; cursor:pointer;
+  }
+
+  .chart-container h3 svg, .table-section h3 svg{
+    width:15px; height:15px; color:var(--teal-dark); vertical-align:-2px; margin-right:5px;
+    display:inline-block;
+  }
+  .chart-container, .table-section{ transition: transform .18s ease, box-shadow .18s ease; }
+  .chart-container:hover, .table-section:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(11,61,92,0.13);
+  }
+  .chart-container:hover h3 svg{ animation: iconWiggle .5s ease; }
+  @keyframes iconWiggle{ 0%,100%{ transform:rotate(0);} 30%{ transform:rotate(-9deg);} 60%{ transform:rotate(9deg);} }
+  .hoy-badge{ animation: badgePulse 2.4s ease-in-out infinite; }
+  @keyframes badgePulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(14,110,140,0.35);} 50%{ box-shadow:0 0 0 7px rgba(14,110,140,0);} }
+  .kpi-icon svg{ transition: transform .2s ease; }
+  .kpi-card:hover .kpi-icon svg{ transform: scale(1.15); }
+  .date-filter-bar select{
+    padding:7px 10px; border-radius:8px; border:1px solid var(--border);
+    font-size:12.8px; font-family: var(--font-body); background:#F7FAFB; color: var(--navy);
+  }
+  .date-filter-bar select option{ background:#fff; color: var(--navy); }
+
+  @media (max-width: 640px){
+    .btn{ padding: 10px 14px; font-size:13px; }
+    .tab-bar .tab-btn{ font-size:9.5px; }
+    .table-actions{ width:100%; }
+    #table-search, #inspector-search{ flex:1; min-width:0; }
+    .back-to-top{ width:42px; height:42px; bottom:80px; right:16px; }
+  }
+
+  @media (max-width: 1080px){
+    .kpi-row{ grid-template-columns: repeat(2, 1fr); }
+    .chart-row.two-col, .chart-row.three-col{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px){
+    
+    .dashboard-container{ padding-left: 10px; padding-right: 10px; }
+    .chart-container, .table-section, .hoy-section{ padding-left: 12px; padding-right: 12px; }
+
+    .kpi-row{ grid-template-columns: 1fr 1fr; gap:10px; }
+    .hoy-kpis{ grid-template-columns: repeat(2, 1fr); }
+
+    .dashboard-header{ flex-direction:column; align-items:stretch; padding: 16px 16px 26px; gap:12px; }
+    .dashboard-header h1{ font-size: 19px; margin-bottom: 5px; }
+    .header-eyebrow{ font-size: 10.5px; letter-spacing: 1px; }
+    .header-meta{ font-size: 12px; }
+    .header-titles{ gap:10px; align-items:flex-start; }
+    .header-logo-badge{ padding:6px 10px; border-radius:10px; }
+    .header-logo{ height:20px; }
+    .header-logo-watermark{ height:90px; right:8px; }
+    .header-filter select, .msel-toggle{ min-width: 100%; width:100%; }
+    .msel-panel{ max-width: calc(100vw - 20px); }
+
+    .status-bar{ flex-direction:column; align-items:stretch; gap:10px; }
+    .status-actions{ flex-wrap: wrap; row-gap:8px; }
+    .status-actions .btn{ flex:1; min-width: 130px; padding: 9px 10px; font-size:12.3px; }
+
+    .date-filter-bar{ padding: 10px 12px; gap:10px; }
+    .date-filter-bar label{ flex:1 1 45%; min-width: 140px; justify-content: space-between; }
+    .date-filter-bar input[type="date"], .date-filter-bar select{ flex:1; min-width:0; }
+    .hoy-filter-row select, .hoy-filter-row input[type="text"]{ min-width: 100%; }
+
+    .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin: 0 -12px; padding: 0 12px; }
+    .data-table, .hoy-track-table{ min-width: 640px; }
+    .data-table th, .data-table td, .hoy-track-table th, .hoy-track-table td{ white-space: nowrap; }
+    .matriz-table{ min-width: 520px; }
+    .matriz-table td, .matriz-table th{ white-space: nowrap; }
+    .matriz-table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+  }
+
+  @media (orientation: landscape) and (max-width: 1080px){
+    .kpi-row{ grid-template-columns: repeat(4, 1fr); }
+    .chart-row.two-col{ grid-template-columns: 1fr 1fr; }
+    .chart-row.three-col{ grid-template-columns: repeat(2, 1fr); }
+    .chart-container canvas{ max-height: 220px; }
+    .chart-container.tall canvas{ max-height: 300px; }
+    .dashboard-header{ flex-direction:row; align-items:flex-end; }
+    .status-bar{ flex-direction:row; align-items:center; }
+  }
+  @media (orientation: landscape) and (max-width: 640px){
+    .kpi-row{ grid-template-columns: repeat(2, 1fr); }
+    .chart-container canvas{ max-height: 190px; }
+    .chart-container.tall canvas{ max-height: 260px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="access-gate" id="access-gate">
+  <div class="access-card">
+    <div class="header-logo-badge"><img src="logo.png" alt="LECTA" class="header-logo"></div>
+    <h2>Cumplimiento Pregeófono</h2>
+    <p>Selecciona tu rol para continuar</p>
+
+    <div class="role-choices" id="role-choices">
+      <button class="role-btn" id="role-btn-supervisor">
+        <span class="role-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+        <span>Supervisor<small>Acceso a Hoy y Detalle de tu equipo</small></span>
+      </button>
+      <button class="role-btn admin" id="role-btn-admin">
+        <span class="role-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+        <span>Administrador<small>Acceso completo al dashboard</small></span>
+      </button>
+    </div>
+
+    <div class="access-password-row hidden" id="access-password-row">
+      <label for="access-password-input">Contraseña de administrador</label>
+      <p class="access-error" id="access-error">&nbsp;</p>
+      <input type="password" id="access-password-input" placeholder="Contraseña">
+      <button class="btn" id="access-password-submit" style="width:100%;">Entrar</button>
+      <button class="access-back-btn" id="access-back-btn">‹ Volver</button>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-container">
+
+  <header class="dashboard-header">
+    <div class="header-titles">
+      <div class="header-logo-badge">
+        <img src="logo.png" alt="LECTA" class="header-logo">
+      </div>
+      <div>
+        <div class="header-eyebrow">
+          <svg class="drop-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C12 2 5 10.5 5 15.5C5 19.6 8.1 22 12 22C15.9 22 19 19.6 19 15.5C19 10.5 12 2 12 2Z"/></svg>
+          Inspecciones AAA · Cumplimiento
+        </div>
+        <h1>Dashboard de Cumplimiento — Pregeófono</h1>
+        <div class="header-meta" id="header-meta">Cargando datos en vivo…</div>
+      </div>
+    </div>
+    <div class="header-filter">
+      <label>Mes</label>
+      <div class="msel" id="month-msel">
+        <button type="button" class="msel-toggle" id="month-msel-toggle" disabled>Todos los meses</button>
+        <div class="msel-panel hidden" id="month-msel-panel"></div>
+      </div>
+    </div>
+    <div class="header-filter">
+      <label>Filtrar por supervisor</label>
+      <div class="msel" id="supervisor-msel">
+        <button type="button" class="msel-toggle" id="supervisor-msel-toggle" disabled>Todos los supervisores</button>
+        <div class="msel-panel hidden" id="supervisor-msel-panel"></div>
+      </div>
+    </div>
+    <img src="logo.png" alt="" class="header-logo-watermark" aria-hidden="true">
+    <svg class="header-wave" viewBox="0 0 500 30" preserveAspectRatio="none"><path d="M0 15 Q 62 2 125 15 T 250 15 T 375 15 T 500 15 V30 H0 Z" fill="currentColor"/></svg>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-dot loading" id="status-dot"></span>
+      <span id="status-text">Conectando con Google Sheets…</span>
+    </div>
+    <div class="status-actions">
+      <span class="role-badge" id="role-badge"><span class="role-pill" id="role-pill">—</span><button id="role-switch-btn">Cambiar</button></span>
+      <button class="btn ghost" id="clear-all-filters-btn">✕ Limpiar todo</button>
+      <button class="btn ghost" id="refresh-btn">↻ Actualizar ahora</button>
+      <button class="btn hidden" id="install-btn">＋ Instalar app</button>
+    </div>
+  </div>
+
+  <div class="active-filters-bar hidden" id="active-filters-bar"></div>
+
+  <nav class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-page="hoy">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+      Hoy
+    </button>
+    <button class="tab-btn" data-page="resumen">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg></span>
+      Resumen
+    </button>
+    <button class="tab-btn" data-page="inspectores">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="8" r="3.2"/><path d="M4 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="7" r="2"/><path d="M21 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg></span>
+      Inspectores
+    </button>
+    <button class="tab-btn" data-page="detalle">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6M9 8h3"/></svg></span>
+      Detalle
+    </button>
+  </nav>
+
+  <div class="setup-banner hidden" id="setup-banner"></div>
+  <div class="error-banner hidden" id="error-banner"></div>
+
+  <div class="page-content active" data-page="hoy" id="page-hoy">
+  <section class="hoy-section" id="sec-hoy">
+    <div class="hoy-header">
+      <span class="hoy-badge">● HOY</span>
+      <span class="hoy-fecha" id="hoy-fecha">—</span>
+    </div>
+    <div class="hoy-filter-row">
+      <label for="hoy-inspector-select">Inspector:</label>
+      <select id="hoy-inspector-select" disabled>
+        <option value="ALL">Todos los inspectores</option>
+      </select>
+      <input type="text" id="hoy-inspector-search" placeholder="🔍 Buscar inspector por nombre…">
+    </div>
+    <div class="hoy-empty hidden" id="hoy-empty">Aún no hay órdenes cerradas registradas para hoy.</div>
+    <div class="hoy-kpis" id="hoy-kpis">
+      <div class="hoy-card">
+        <div class="hoy-label">Cerradas hoy</div>
+        <div class="hoy-value" id="hoy-total">—</div>
+        <div class="hoy-delta" id="hoy-total-delta">&nbsp;</div>
+      </div>
+      <div class="hoy-card">
+        <div class="hoy-label">% Efectividad</div>
+        <div class="hoy-value" id="hoy-efectividad">—</div>
+        <div class="hoy-delta" id="hoy-efectividad-delta">&nbsp;</div>
+      </div>
+      <div class="hoy-card">
+        <div class="hoy-label">No efectivas</div>
+        <div class="hoy-value" id="hoy-errores">—</div>
+        <div class="hoy-delta" id="hoy-errores-delta">&nbsp;</div>
+      </div>
+      <div class="hoy-card">
+        <div class="hoy-label">Excluidas</div>
+        <div class="hoy-value" id="hoy-excluidas">—</div>
+        <div class="hoy-delta" id="hoy-excluidas-delta">&nbsp;</div>
+      </div>
+    </div>
+
+    <div class="hoy-track-section" id="hoy-hourly-section">
+      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Cierres por franja horaria</h4>
+      <p class="chart-sub" style="margin:0 0 10px;">Cómo va avanzando el día — se actualiza cada vez que recargas el reporte.</p>
+      <div style="height:190px; position:relative;"><canvas id="hourly-chart"></canvas></div>
+    </div>
+
+    <div class="hoy-track-section" id="hoy-track-section">
+      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Tiempo sin digitación</h4>
+      <p class="chart-sub" style="margin:0 0 10px;">Hace cuánto no registra un cierre cada inspector, desde su última orden de hoy.</p>
+      <div class="hoy-track-empty hidden" id="hoy-track-empty">Aún no hay inspectores con cierres registrados hoy.</div>
+      <div class="table-scroll">
+        <table class="hoy-track-table" id="hoy-track-table">
+          <thead>
+            <tr><th data-key="inspector">Inspector</th><th data-key="ultimaHoraTexto">Última hora</th><th data-key="silencioMs" class="num sorted">Tiempo sin digitar</th><th data-key="total" class="num">Cierres hoy</th><th data-key="pct_efectividad" class="num">% Efectividad hoy</th></tr>
+          </thead>
+          <tbody id="hoy-track-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="hoy-track-section">
+      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Órdenes no efectivas de hoy</h4>
+      <div class="hoy-track-empty hidden" id="hoy-detail-empty">Sin órdenes no efectivas registradas hoy.</div>
+      <div class="table-scroll">
+        <table class="hoy-track-table" id="hoy-detail-table">
+          <thead>
+            <tr><th data-key="orden" class="sorted">Orden</th><th data-key="inspector">Inspector</th><th data-key="ciclo">Tipo de trabajo</th><th data-key="causa_cierre">Causa de cierre</th><th data-key="obs_1">Comentario</th><th data-key="horaTexto">Hora</th></tr>
+          </thead>
+          <tbody id="hoy-detail-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="hoy-track-section">
+      <h4><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Ayer · <span id="ayer-fecha">—</span></h4>
+      <div class="hoy-track-empty hidden" id="ayer-empty">Sin órdenes registradas ayer.</div>
+      <div class="table-scroll">
+        <table class="hoy-track-table" id="ayer-table">
+          <thead>
+            <tr><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num sorted">Cerradas</th><th data-key="con_errores" class="num">No efectivas</th><th data-key="pct_error" class="num">% No efectivas</th><th data-key="pct_efectividad" class="num">% Efectividad</th></tr>
+          </thead>
+          <tbody id="ayer-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+  </div>
+
+  <div class="page-content" data-page="resumen">
+  <div class="date-filter-bar">
+    <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Periodo:</span>
+    <label>Desde <input type="date" id="date-from"></label>
+    <label>Hasta <input type="date" id="date-to"></label>
+    <button class="btn ghost small" id="date-clear-btn">Ver todo</button>
+  </div>
+
+  <section class="chart-row one-col">
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Comparativo mensual <span style="font-weight:500; font-size:11px; color:var(--text-2);">(solo Administrador)</span></h3>
+      <p class="chart-sub">Efectividad y error por mes, uno junto al otro para comparar entre periodos · línea punteada = meta 65%</p>
+      <div id="monthly-comparative-wrap" style="height:200px; position:relative;">
+        <canvas id="monthly-comparative-chart"></canvas>
+      </div>
+      <p class="hoy-track-empty hidden" id="monthly-comparative-empty">Se necesitan al menos 2 meses con datos para poder comparar. Cuando pegues información de otro mes, este gráfico se activa solo.</p>
+    </div>
+  </section>
+
+  <section class="kpi-row" id="sec-kpis">
+    <div class="kpi-card">
+      <div class="kpi-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Órdenes cerradas</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub" id="kpi-total-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Excluidas del conteo</div>
+        <div class="kpi-value" id="kpi-correcto">—</div>
+        <div class="kpi-sub" id="kpi-correcto-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Órdenes no efectivas</div>
+        <div class="kpi-value" id="kpi-errores">—</div>
+        <div class="kpi-sub" id="kpi-errores-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Efectividad</div>
+        <div class="kpi-value" id="kpi-efectividad">—</div>
+        <div class="kpi-sub" id="kpi-efectividad-sub">&nbsp;</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-row one-col" id="sec-tendencias">
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> Evolución diaria de auditorías</h3>
+      <p class="chart-sub">Órdenes correctas vs. con error (barras) y % de efectividad (línea)</p>
+      <canvas id="daily-chart" height="90"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row two-col">
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 8-6-16-3 8H2"/></svg> Línea de tiempo — efectividad diaria</h3>
+      <p class="chart-sub">% de efectividad por día</p>
+      <canvas id="daily-efectividad-chart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Línea de tiempo — errores diarios</h3>
+      <p class="chart-sub">Órdenes con error por día</p>
+      <canvas id="daily-errores-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row two-col">
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg> Distribución de calificación</h3>
+      <p class="chart-sub">Efectiva vs. No efectiva vs. Excluida del conteo</p>
+      <canvas id="estado-chart"></canvas>
+    </div>
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C12 2 5 10.5 5 15.5C5 19.6 8.1 22 12 22C15.9 22 19 19.6 19 15.5C19 10.5 12 2 12 2Z"/></svg> Efectividad de la inspección</h3>
+      <p class="chart-sub">Efectiva vs. no efectiva (sin contar excluidas)</p>
+      <canvas id="efectividad-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row one-col">
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Principales causas de cierre</h3>
+      <p class="chart-sub">Top 10 causas registradas</p>
+      <canvas id="causas-chart"></canvas>
+    </div>
+  </section>
+  </div>
+
+  <div class="page-content" data-page="inspectores">
+  <section class="chart-row two-col" id="sec-inspectores">
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 6l4 4M21 6l-4 4"/></svg> Inspectores con mayor tasa de error</h3>
+      <p class="chart-sub">% de error sobre el total auditado (mínimo 10 órdenes)</p>
+      <canvas id="inspectores-chart"></canvas>
+    </div>
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="5"/><path d="M9 13.5L7.5 21l4.5-2.5L16.5 21 15 13.5"/></svg> Inspectores más efectivos</h3>
+      <p class="chart-sub">% de efectividad sobre el total auditado (mínimo 10 órdenes)</p>
+      <canvas id="inspectores-efectivos-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row one-col">
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg> Efectividad vs. errores por inspector</h3>
+      <p class="chart-sub">Barra verde = % efectividad · barra roja = % error de auditoría · mismos inspectores del gráfico anterior, ordenados de mayor a menor efectividad.</p>
+      <canvas id="inspector-diverging-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row two-col">
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Ciclos con más órdenes en error</h3>
+      <p class="chart-sub">Top 15 ciclos por número de órdenes con error</p>
+      <canvas id="ciclos-chart"></canvas>
+    </div>
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C12 2 5 10.5 5 15.5C5 19.6 8.1 22 12 22C15.9 22 19 19.6 19 15.5C19 10.5 12 2 12 2Z"/><path d="M4 4l16 16"/></svg> Ciclos más inefectivos</h3>
+      <p class="chart-sub">Menor % de efectividad (mínimo 10 órdenes) · top 15</p>
+      <canvas id="ciclos-inefectivos-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2"/><path d="M20 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg> Resumen por inspector</h3>
+      <div class="table-actions">
+        <input type="text" id="inspector-search" placeholder="Buscar inspector…">
+        <button class="btn ghost" id="export-inspector-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 10px;">Efectividad y errores lado a lado, por inspector (<span id="inspector-count">0</span>) · clic en un encabezado para ordenar</p>
+    <div class="table-scroll">
+      <table class="data-table summary-table" id="inspector-table">
+        <thead>
+          <tr>
+            <th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Total</th>
+            <th data-key="correcto" class="num">Efectivas</th><th data-key="con_errores" class="num">No efectivas</th>
+            <th data-key="pct_error" class="num sorted">% Error</th><th data-key="pct_efectividad" class="num">% Efectividad</th>
+          </tr>
+        </thead>
+        <tbody id="inspector-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div class="page-content" data-page="detalle">
+  <div class="date-filter-bar">
+    <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Fecha:</span>
+    <label>Desde <input type="date" id="detail-date-from"></label>
+    <label>Hasta <input type="date" id="detail-date-to"></label>
+    <label>Mes <select id="detail-month-select"><option value="">Todos</option></select></label>
+    <button class="btn ghost small" id="detail-date-clear-btn">Ver todo</button>
+  </div>
+  <div class="date-filter-bar">
+    <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg> Filtros:</span>
+    <label>Inspector <select id="detail-inspector-select"><option value="">Todos</option></select></label>
+    <label>Tipo de trabajo <select id="detail-ciclo-select"><option value="">Todos</option></select></label>
+    <label>Calificación <select id="detail-tipo-select"><option value="">Todas</option></select></label>
+    <label>Supervisor <select id="detail-supervisor-select"><option value="">Todos</option></select></label>
+  </div>
+  <section class="table-section" id="sec-detalle">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Detalle de órdenes con error (<span id="detail-count">0</span>)</h3>
+      <div class="table-actions">
+        <input type="text" id="table-search" placeholder="Buscar por orden, cuenta, inspector o ciclo…">
+        <button class="btn" id="export-detail-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table" id="detail-table">
+        <thead>
+          <tr>
+            <th data-key="fecha">Fecha</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
+            <th data-key="ciclo">Tipo de trabajo</th><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th>
+            <th data-key="causa_cierre">Causa de cierre</th><th data-key="obs_1">Comentario</th><th data-key="horaTexto">Hora</th><th data-key="efectividad">Calificación</th>
+          </tr>
+        </thead>
+        <tbody id="detail-tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination">
+      <button id="prev-page">‹ Anterior</button>
+      <span id="page-info">—</span>
+      <button id="next-page">Siguiente ›</button>
+    </div>
+  </section>
+  </div>
+
+
+  <footer class="dashboard-footer">
+    Fuente: hoja de Google Sheets conectada en vivo · <a id="sheet-link" href="#" target="_blank" rel="noopener">Abrir hoja de datos</a> · Uso interno de control de calidad
+  </footer>
+</div>
+
+<button class="back-to-top hidden" id="back-to-top" aria-label="Volver arriba">↑</button>
+
+<script>
+const SHEET_ID = "1shtZEtdPcPlJS29ejGslWP9vqHEiUtLSt-xHVwCF4Pk";
+
+const SHEET_GID = "0";
+
+const REFRESH_INTERVAL_MS = 5 * 60 * 1e3;
+
+// Columnas necesarias del reporte de Pregeófono, seleccionadas por LETRA
+// porque el reporte trae varias columnas con el mismo nombre (Hora, Usuario,
+// Tipo de trabajo, Atributo Nulo) y por nombre no se podrían distinguir.
+// A=Cuenta, E=Orden, J=Cerrada el, K=Hora (de Cerrada el), P=Comentario de
+// cierre, Z=Causa, AH=Unidad de trabajo (nombre inspector), AN=Tipo de
+// trabajo, AQ=Municipio, AS=Barrio.
+const SHEET_COLUMNS_TQ = "select A,E,J,K,P,Z,AH,AN,AQ,AS";
+
+const ADMIN_PASSWORD = "AAA2026pgadmin";
+
+const ROLE_STORAGE_KEY = "aaa_pregeofono_role";
+
+const SUPERVISOR_HIDDEN_PAGES = [ "resumen", "inspectores" ];
+
+const COLORS = {
+  success: "#1F9D66",
+  danger: "#E4572E",
+  warning: "#F0A93A",
+  teal: "#17A2B8",
+  primary: "#0E6E8C",
+  primaryDark: "#0B3D5C",
+  gray: "#C4CFD6"
+};
+
+const EFECTIVIDAD_META = 70;
+
+const EFECTIVIDAD_META_INDIVIDUAL = 70;
+
+const SUPERVISOR_FIJO = "STANLEY SALAZAR";
+
+// Causa de cierre -> Efectivo / No Efectivo / Excluido del conteo.
+// "Excluido" significa que la orden sí cuenta como cerrada (volumen), pero
+// no suma ni resta en el % de efectividad (ni en el numerador ni en el
+// denominador). Toda causa que no aparezca aquí se trata como Excluido, para
+// no adivinar su clasificación.
+const CAUSA_CALIFICACION = {
+  "AR-AMERITA REVISION DE LABORATORIO": "EFECTIVO",
+  "DH-DESHABITADO": "EFECTIVO",
+  "FN-FUGA IMPERCEPTIBLE": "EFECTIVO",
+  "FP-FUGA PERCEPTIBLE": "EFECTIVO",
+  "FR-FUGA REPARADA": "EFECTIVO",
+  "FS-FUGA SIN REPARAR": "EFECTIVO",
+  "MI-MEDIDOR INVERTIDO": "EFECTIVO",
+  "NF-NO EXISTE FUGA": "EFECTIVO",
+  "NU-FUGA IMPERCEPTIBLE NO UBICADA": "EFECTIVO",
+  "PG-PROGRAMAR GEOFONO": "EFECTIVO",
+  "RI-PREDIO CON RECONEXION ILEGAL": "EFECTIVO",
+  "SD-SERVICIO DIRECTO": "EFECTIVO",
+  "SS-SERVICIO SUSPENDIDO": "EFECTIVO",
+  "ATENDIÓ MENOR DE EDAD": "NO_EFECTIVO",
+  "AUSENTE": "NO_EFECTIVO",
+  "AU-USUARIO AUSENTE": "NO_EFECTIVO",
+  "CB-CAJA REGISTRO OBSTACULIZADA": "NO_EFECTIVO",
+  "CD-PREDIO CERRADO": "NO_EFECTIVO",
+  "CERRADO": "NO_EFECTIVO",
+  "CO-CONSTRUCCION": "NO_EFECTIVO",
+  "IS-INSPECCION SIN CONCLUIR": "NO_EFECTIVO",
+  "LOTE SIN CONSTRUIR, ABANDONADO O DEMOLIDO": "NO_EFECTIVO",
+  "NA-NO ATIENDEN": "NO_EFECTIVO",
+  "ND-NO DEJAN": "NO_EFECTIVO",
+  "NO SE PUDO COMPROBAR INFORMACION": "NO_EFECTIVO",
+  "NP-NO PERMITEN INGRESO AL PREDIO": "NO_EFECTIVO",
+  "NPR-NO PROCEDENTE": "NO_EFECTIVO",
+  "OPOSICIÓN DEL USUARIO": "NO_EFECTIVO",
+  "OR-ORDEN REPROGRAMADA POR EL USUARIO": "NO_EFECTIVO",
+  "OTRAS CAUSAS": "NO_EFECTIVO",
+  "PREDIO NO TIENE SERVICIO": "NO_EFECTIVO",
+  "SP-SECTOR PELIGROSO": "NO_EFECTIVO",
+  "SSA-SECTOR SIN AGUA": "NO_EFECTIVO",
+  "SV-SIN VEHICULO": "NO_EFECTIVO",
+  "VM-VIA EN MAL ESTADO": "NO_EFECTIVO",
+  "ORDEN REPETIDA": "EXCLUIDO",
+  "EA-ERROR EN APERTURA": "EXCLUIDO"
+};
+function calificarCausa(causa) {
+  const key = String(causa || "").trim().toUpperCase();
+  return CAUSA_CALIFICACION[key] || "EXCLUIDO";
+}
+
+let DATA = null;
+
+let currentScopes = [];
+
+let charts = {};
+
+let detailSort = {
+  key: "fecha",
+  dir: "desc"
+};
+
+let detailPage = 0;
+
+const PAGE_SIZE = 50;
+
+let detailFiltered = [];
+
+let inspectorSort = {
+  key: "pct_error",
+  dir: "desc"
+};
+
+let inspectorFiltered = [];
+
+let lastLoadedAt = null;
+
+function fmtInt(n) {
+  return Number(n || 0).toLocaleString("es-CO");
+}
+
+function fmtPct(n) {
+  return String(n).replace(".", ",") + "%";
+}
+
+function semClass(pct) {
+  if (pct < 65) return "sem-rojo";
+  if (pct < 70) return "sem-naranja";
+  return "sem-verde";
+}
+function semColor(pct) {
+  if (pct < 65) return COLORS.danger;
+  if (pct < 70) return "#B97A15";
+  return COLORS.success;
+}
+function semBadge(pct) {
+  return '<span class="sem-badge ' + semClass(pct) + '">' + fmtPct(pct) + "</span>";
+}
+
+function round1(n) {
+  return Math.round(n * 10) / 10;
+}
+
+function formatDateShort(iso) {
+  if (!iso) return "—";
+  const p = String(iso).split("-");
+  return p.length === 3 ? p[2] + "/" + p[1] : iso;
+}
+
+function formatDateLong(iso) {
+  if (!iso) return "—";
+  const p = String(iso).split("-");
+  return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso;
+}
+
+function isoFromDate(d) {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+
+function todayISO() {
+  return isoFromDate(new Date);
+}
+
+function yesterdayISO() {
+  const d = new Date;
+  d.setDate(d.getDate() - 1);
+  return isoFromDate(d);
+}
+
+function lastWorkedDayBefore(beforeISO) {
+  let best = "";
+  ALL_CLEAN_ROWS.forEach(function(r) {
+    if (r.fecha && r.fecha < beforeISO && r.fecha > best) best = r.fecha;
+  });
+  return best;
+}
+
+Chart.defaults.font.family = "'Inter', sans-serif";
+
+Chart.defaults.color = "#5C7284";
+
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+
+Chart.defaults.plugins.legend.labels.boxWidth = 8;
+
+Chart.defaults.plugins.legend.labels.font = {
+  size: 11.5
+};
+
+function setStatus(state, text) {
+  const dot = document.getElementById("status-dot");
+  dot.className = "status-dot " + state;
+  document.getElementById("status-text").textContent = text;
+}
+
+function showSetupBanner() {
+  const b = document.getElementById("setup-banner");
+  b.classList.remove("hidden");
+  b.innerHTML = "Este panel aún no está conectado a una hoja de datos. Reemplaza <code>SHEET_ID</code> en el código " + '(cerca de la línea "CONFIGURACIÓN" al inicio del script) por el ID de tu Google Sheet, y asegúrate de compartirla como ' + '<b>"Cualquier persona con el enlace: Lector"</b>.';
+  setStatus("error", "Falta configurar la hoja de datos");
+}
+
+function showErrorBanner(msg) {
+  const b = document.getElementById("error-banner");
+  b.classList.remove("hidden");
+  b.textContent = msg;
+  setStatus("error", "Error al cargar los datos");
+}
+
+function clearBanners() {
+  document.getElementById("setup-banner").classList.add("hidden");
+  document.getElementById("error-banner").classList.add("hidden");
+}
+
+function loadData(isManualRefresh) {
+  if (!SHEET_ID || SHEET_ID.indexOf("PEGA_AQUI") === 0) {
+    showSetupBanner();
+    return;
+  }
+  clearBanners();
+  setStatus("loading", isManualRefresh ? "Actualizando datos…" : "Cargando datos…");
+  document.getElementById("refresh-btn").disabled = true;
+  window.google = window.google || {};
+  window.google.visualization = window.google.visualization || {};
+  window.google.visualization.Query = window.google.visualization.Query || {};
+  window.google.visualization.Query.setResponse = function(resp) {
+    document.getElementById("refresh-btn").disabled = false;
+    if (!resp || resp.status === "error") {
+      const msg = resp && resp.errors && resp.errors[0] && resp.errors[0].message || "Respuesta inválida";
+      showErrorBanner("No se pudo leer la hoja (" + msg + '). Verifica que esté compartida como "Cualquier persona con el enlace: Lector" y que el SHEET_ID sea correcto.');
+      return;
+    }
+    try {
+      const rows = gvizToObjects(resp);
+      processRawRows(rows);
+      lastLoadedAt = new Date;
+      const fechaDatos = DATA && DATA.meta.fecha_max ? formatDateLong(DATA.meta.fecha_max) : "—";
+      setStatus("ok", "Conectado · última actualización: " + lastLoadedAt.toLocaleTimeString("es-CO") + " · Datos hasta: " + fechaDatos);
+      document.getElementById("sheet-link").href = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit#gid=" + SHEET_GID;
+    } catch (e) {
+      showErrorBanner("Los datos se recibieron pero no se pudieron procesar: " + e.message);
+    }
+  };
+  const script = document.createElement("script");
+  script.src = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json&gid=" + SHEET_GID + (SHEET_COLUMNS_TQ ? "&tq=" + encodeURIComponent(SHEET_COLUMNS_TQ) : "") + "&_=" + Date.now();
+  script.onerror = function() {
+    document.getElementById("refresh-btn").disabled = false;
+    showErrorBanner("No se pudo contactar la hoja de Google Sheets. Revisa tu conexión y que el enlace de la hoja sea público.");
+  };
+  script.onload = function() {
+    script.remove();
+  };
+  document.body.appendChild(script);
+}
+
+function gvizDateToISO(raw) {
+  if (raw === null || raw === undefined) return "";
+  const s = String(raw);
+  const m = /Date\((\d+),\s*(\d+),\s*(\d+)/.exec(s);
+  if (m) {
+    const y = m[1], mo = String(Number(m[2]) + 1).padStart(2, "0"), d = String(Number(m[3])).padStart(2, "0");
+    return y + "-" + mo + "-" + d;
+  }
+  return s.slice(0, 10);
+}
+
+function gvizToObjects(resp) {
+  const cols = resp.table.cols.map(function(c) {
+    return String(c.label || c.id || "").trim();
+  });
+  return (resp.table.rows || []).map(function(row) {
+    const obj = {};
+    cols.forEach(function(label, i) {
+      const cell = row.c[i];
+      if (!cell) {
+        obj[label] = "";
+        return;
+      }
+      const rawVal = cell.v;
+      if (typeof rawVal === "string" && /^Date\(\d+,\s*\d+,\s*\d+/.test(rawVal)) {
+        obj[label] = gvizDateToISO(rawVal);
+      } else if (typeof rawVal === "number" && typeof cell.f === "string" && /e\+?\d/i.test(cell.f)) {
+        // La celda quedó formateada en notación científica en la hoja (ej. "1.11E+08"),
+        // lo que además trunca la precisión de IDs largos como Orden/Cuenta. Usamos el
+        // valor numérico crudo para no perder dígitos ni mostrar valores ambiguos.
+        obj[label] = String(rawVal);
+      } else {
+        obj[label] = cell.f !== undefined && cell.f !== null ? cell.f : rawVal === null || rawVal === undefined ? "" : rawVal;
+      }
+    });
+    return obj;
+  });
+}
+
+// Extrae HH:MM(:SS) de un valor de hora que puede venir como texto plano
+// ("07:34:35"), con sufijo a. m./p. m., o como serial de Google (fracción de
+// día). Devuelve {h, m, s} en formato 24 horas, o null si no se pudo leer.
+function parseHora(raw) {
+  if (raw === null || raw === undefined || raw === "") return null;
+  const s = String(raw).trim();
+  const mDate = /Date\(\d+,\s*\d+,\s*\d+,\s*(\d+),\s*(\d+),\s*(\d+)/.exec(s);
+  if (mDate) return { h: Number(mDate[1]), m: Number(mDate[2]), s: Number(mDate[3]) };
+  const m = /(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(a\.?\s?m\.?|p\.?\s?m\.?)?/i.exec(s);
+  if (m) {
+    let h = Number(m[1]);
+    const min = Number(m[2]);
+    const sec = m[3] ? Number(m[3]) : 0;
+    const ampm = (m[4] || "").toLowerCase().replace(/[.\s]/g, "");
+    if (ampm === "pm" && h < 12) h += 12;
+    if (ampm === "am" && h === 12) h = 0;
+    return { h: h, m: min, s: sec };
+  }
+  if (typeof raw === "number" && raw >= 0 && raw < 1) {
+    const totalSec = Math.round(raw * 86400);
+    return { h: Math.floor(totalSec / 3600), m: Math.floor(totalSec % 3600 / 60), s: totalSec % 60 };
+  }
+  return null;
+}
+
+// Combina una fecha ISO ('YYYY-MM-DD') con una hora ya parseada en un
+// timestamp (ms) para poder calcular diferencias de tiempo.
+function fechaHoraToTimestamp(fechaISO, horaObj) {
+  if (!fechaISO) return null;
+  const p = fechaISO.split("-");
+  if (p.length !== 3) return null;
+  const d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), horaObj ? horaObj.h : 0, horaObj ? horaObj.m : 0, horaObj ? horaObj.s : 0);
+  return d.getTime();
+}
+
+function formatHora(horaObj) {
+  if (!horaObj) return "—";
+  return String(horaObj.h).padStart(2, "0") + ":" + String(horaObj.m).padStart(2, "0");
+}
+
+// La fecha "Cerrada el" puede llegar ya convertida a ISO (si Sheets la
+// detectó como fecha real) o como texto plano "DD-MM-YYYY" (si llegó tal
+// cual la exporta el sistema de origen). Se maneja cualquiera de las dos.
+function parseFechaCerrada(raw) {
+  const s = String(raw || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const m = /^(\d{1,2})-(\d{1,2})-(\d{4})/.exec(s);
+  if (m) {
+    const d = m[1].padStart(2, "0"), mo = m[2].padStart(2, "0"), y = m[3];
+    return y + "-" + mo + "-" + d;
+  }
+  return "";
+}
+
+function formatDuracion(ms) {
+  if (ms === null || ms === undefined || ms < 0) return "—";
+  const totalMin = Math.floor(ms / 60000);
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  if (h <= 0) return m + " min";
+  return h + "h " + m + "min";
+}
+
+function getField(row, name) {
+  if (Object.prototype.hasOwnProperty.call(row, name)) return row[name];
+  const target = name.trim().toUpperCase();
+  for (const k in row) {
+    if (k.trim().toUpperCase() === target) return row[k];
+  }
+  return "";
+}
+
+function groupBy(arr, key) {
+  const m = new Map;
+  arr.forEach(function(x) {
+    const k = x[key];
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(x);
+  });
+  return m;
+}
+
+function kpisBlock(sub) {
+  const total = sub.length;
+  const efectiva = sub.filter(function(r) {
+    return r.efectividad === "Efectiva";
+  }).length;
+  const no_efectiva = sub.filter(function(r) {
+    return r.efectividad === "No Efectivo";
+  }).length;
+  const excluida = sub.filter(function(r) {
+    return r.efectividad === "Excluido";
+  }).length;
+  const base = efectiva + no_efectiva;
+  return {
+    total: total,
+    efectiva: efectiva,
+    no_efectiva: no_efectiva,
+    excluida: excluida,
+    base_calificada: base,
+    pct_efectividad: base ? round1(efectiva / base * 100) : 0,
+    pct_no_efectividad: base ? round1(no_efectiva / base * 100) : 0
+  };
+}
+
+function dailyBlock(sub) {
+  const byDate = groupBy(sub, "fecha");
+  const dates = Array.from(byDate.keys()).filter(Boolean).sort();
+  return dates.map(function(fecha) {
+    const rows = byDate.get(fecha);
+    const efectiva = rows.filter(function(r) {
+      return r.efectividad === "Efectiva";
+    }).length;
+    const no_efectiva = rows.filter(function(r) {
+      return r.efectividad === "No Efectivo";
+    }).length;
+    const excluida = rows.filter(function(r) {
+      return r.efectividad === "Excluido";
+    }).length;
+    return {
+      fecha: fecha,
+      total: rows.length,
+      efectiva: efectiva,
+      no_efectiva: no_efectiva,
+      excluida: excluida,
+      base_calificada: efectiva + no_efectiva
+    };
+  });
+}
+
+function fechaRange(rows) {
+  const fechas = rows.map(function(r) {
+    return r.fecha;
+  }).filter(Boolean).sort();
+  if (!fechas.length) return {
+    min: "",
+    max: ""
+  };
+  return {
+    min: fechas[0],
+    max: fechas[fechas.length - 1]
+  };
+}
+
+function topCiclosBlock(sub, n) {
+  n = n || 15;
+  const by = groupBy(sub, "ciclo");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1], total = rows.length;
+    const noEfectivaRows = rows.filter(function(r) {
+      return r.efectividad === "No Efectivo";
+    });
+    const efectiva = rows.filter(function(r) {
+      return r.efectividad === "Efectiva";
+    }).length;
+    const base = efectiva + noEfectivaRows.length;
+    const rango = fechaRange(noEfectivaRows);
+    return {
+      ciclo: e[0],
+      total: total,
+      con_errores: noEfectivaRows.length,
+      pct_error: base ? round1(noEfectivaRows.length / base * 100) : 0,
+      fecha_min: rango.min,
+      fecha_max: rango.max
+    };
+  });
+  out.sort(function(a, b) {
+    return b.con_errores - a.con_errores;
+  });
+  return out.slice(0, n);
+}
+
+function topCiclosInefectivosBlock(sub, n, minTotal) {
+  n = n || 15;
+  minTotal = minTotal || 10;
+  const by = groupBy(sub, "ciclo");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1], total = rows.length;
+    const efectiva = rows.filter(function(r) {
+      return r.efectividad === "Efectiva";
+    }).length;
+    const noEfectivaRows = rows.filter(function(r) {
+      return r.efectividad === "No Efectivo";
+    });
+    const base = efectiva + noEfectivaRows.length;
+    const rango = fechaRange(noEfectivaRows);
+    return {
+      ciclo: e[0],
+      total: total,
+      efectiva: efectiva,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0,
+      fecha_min: rango.min,
+      fecha_max: rango.max
+    };
+  }).filter(function(x) {
+    return x.total >= minTotal;
+  });
+  out.sort(function(a, b) {
+    return a.pct_efectividad - b.pct_efectividad;
+  });
+  return out.slice(0, n);
+}
+
+function topInspectoresBlock(sub, n, minTotal) {
+  n = n || 12;
+  minTotal = minTotal || 10;
+  const by = groupBy(sub, "inspector");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1], total = rows.length;
+    const con_errores = rows.filter(function(r) {
+      return r.efectividad === "No Efectivo";
+    }).length;
+    const efectiva = rows.filter(function(r) {
+      return r.efectividad === "Efectiva";
+    }).length;
+    const base = efectiva + con_errores;
+    return {
+      inspector: e[0],
+      total: total,
+      con_errores: con_errores,
+      efectiva: efectiva,
+      pct_error: base ? round1(con_errores / base * 100) : 0,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0
+    };
+  }).filter(function(x) {
+    return x.total >= minTotal;
+  });
+  out.sort(function(a, b) {
+    return b.pct_error - a.pct_error;
+  });
+  return out.slice(0, n);
+}
+
+function topInspectoresEfectivosBlock(sub, n, minTotal) {
+  n = n || 12;
+  minTotal = minTotal || 10;
+  const by = groupBy(sub, "inspector");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1], total = rows.length;
+    const con_errores = rows.filter(function(r) {
+      return r.efectividad === "No Efectivo";
+    }).length;
+    const efectiva = rows.filter(function(r) {
+      return r.efectividad === "Efectiva";
+    }).length;
+    const base = efectiva + con_errores;
+    return {
+      inspector: e[0],
+      total: total,
+      con_errores: con_errores,
+      efectiva: efectiva,
+      pct_error: base ? round1(con_errores / base * 100) : 0,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0
+    };
+  }).filter(function(x) {
+    return x.total >= minTotal;
+  });
+  out.sort(function(a, b) {
+    return b.pct_efectividad - a.pct_efectividad;
+  });
+  return out.slice(0, n);
+}
+
+function inspectoresFullBlock(sub, minTotal) {
+  minTotal = minTotal || 1;
+  const by = groupBy(sub, "inspector");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1], total = rows.length;
+    const excluida = rows.filter(function(r) {
+      return r.efectividad === "Excluido";
+    }).length;
+    const con_errores = rows.filter(function(r) {
+      return r.efectividad === "No Efectivo";
+    }).length;
+    const efectiva = rows.filter(function(r) {
+      return r.efectividad === "Efectiva";
+    }).length;
+    const base = efectiva + con_errores;
+    const supervisorMasFrecuente = function() {
+      const counts = {};
+      rows.forEach(function(r) {
+        counts[r.supervisor] = (counts[r.supervisor] || 0) + 1;
+      });
+      let best = "", bestN = -1;
+      Object.keys(counts).forEach(function(k) {
+        if (counts[k] > bestN) {
+          best = k;
+          bestN = counts[k];
+        }
+      });
+      return best;
+    }();
+    return {
+      inspector: e[0],
+      supervisor: supervisorMasFrecuente,
+      total: total,
+      correcto: efectiva,
+      con_errores: con_errores,
+      excluida: excluida,
+      efectiva: efectiva,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0,
+      pct_error: base ? round1(con_errores / base * 100) : 0
+    };
+  }).filter(function(x) {
+    return x.total >= minTotal;
+  });
+  out.sort(function(a, b) {
+    return b.total - a.total;
+  });
+  return out;
+}
+
+function monthlyComparativeBlock(rows) {
+  const by = new Map;
+  rows.forEach(function(r) {
+    const ym = r.fecha.slice(0, 7);
+    if (!ym) return;
+    if (!by.has(ym)) by.set(ym, []);
+    by.get(ym).push(r);
+  });
+  let out = Array.from(by.entries()).map(function(e) {
+    const mrows = e[1], total = mrows.length;
+    const con_errores = mrows.filter(function(r) {
+      return r.efectividad === "No Efectivo";
+    }).length;
+    const efectiva = mrows.filter(function(r) {
+      return r.efectividad === "Efectiva";
+    }).length;
+    const base = efectiva + con_errores;
+    return {
+      mes: e[0],
+      total: total,
+      correcto: efectiva,
+      con_errores: con_errores,
+      efectiva: efectiva,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0,
+      pct_error: base ? round1(con_errores / base * 100) : 0
+    };
+  });
+  out.sort(function(a, b) {
+    return a.mes.localeCompare(b.mes);
+  });
+  return out;
+}
+
+function supervisoresBlock(sub) {
+  const by = groupBy(sub, "supervisor");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1], total = rows.length;
+    const con_errores = rows.filter(function(r) {
+      return r.efectividad === "No Efectivo";
+    }).length;
+    const efectiva = rows.filter(function(r) {
+      return r.efectividad === "Efectiva";
+    }).length;
+    const base = efectiva + con_errores;
+    return {
+      supervisor: e[0],
+      total: total,
+      correcto: efectiva,
+      con_errores: con_errores,
+      efectiva: efectiva,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0,
+      pct_error: base ? round1(con_errores / base * 100) : 0
+    };
+  });
+  out.sort(function(a, b) {
+    return b.total - a.total;
+  });
+  return out;
+}
+
+function topCausasBlock(sub, n) {
+  n = n || 10;
+  const by = groupBy(sub, "causa");
+  let out = Array.from(by.entries()).map(function(e) {
+    return {
+      causa: e[0] || "(sin causa)",
+      count: e[1].length
+    };
+  });
+  out.sort(function(a, b) {
+    return b.count - a.count;
+  });
+  return out.slice(0, n);
+}
+
+function buildScope(sub) {
+  return {
+    kpis: kpisBlock(sub),
+    daily: dailyBlock(sub),
+    top_ciclos: topCiclosBlock(sub),
+    top_inspectores: topInspectoresBlock(sub),
+    top_causas: topCausasBlock(sub),
+    top_inspectores_efectivos: topInspectoresEfectivosBlock(sub),
+    top_ciclos_inefectivos: topCiclosInefectivosBlock(sub),
+    inspector_comparativa: topInspectoresEfectivosBlock(sub, 15, 10),
+    inspectores_full: inspectoresFullBlock(sub, 1)
+  };
+}
+
+let ALL_CLEAN_ROWS = [];
+
+let dateFrom = "";
+
+let dateTo = "";
+
+let filterInspector = "";
+
+let filterCiclo = "";
+
+let filterCausa = "";
+
+let filterTipoError = "";
+
+let filterMonths = [];
+
+function processRawRows(rawRows) {
+  const clean = rawRows.map(function(r) {
+    const fecha = parseFechaCerrada(getField(r, "Cerrada el"));
+    const horaObj = parseHora(getField(r, "Hora"));
+    const causa = getField(r, "Causa");
+    const calif = calificarCausa(causa);
+    return {
+      orden: getField(r, "Orden"),
+      cuenta: getField(r, "Cuenta"),
+      fecha: fecha,
+      hora: horaObj,
+      horaTexto: formatHora(horaObj),
+      fechaHoraTS: fechaHoraToTimestamp(fecha, horaObj),
+      inspector: getField(r, "Unidad de trabajo") || "(Sin asignar)",
+      supervisor: SUPERVISOR_FIJO,
+      causa: causa,
+      calificacion: calif,
+      efectividad: calif === "EFECTIVO" ? "Efectiva" : calif === "NO_EFECTIVO" ? "No Efectivo" : "Excluido",
+      comentario_cierre: getField(r, "Comentario de cierre"),
+      tipo_trabajo: getField(r, "Tipo de trabajo"),
+      ciclo: getField(r, "Tipo de trabajo"),
+      municipio: getField(r, "Municipio"),
+      barrio: getField(r, "Barrio")
+    };
+  }).filter(function(r) {
+    return r.orden !== "" && r.orden !== undefined && r.orden !== null && r.fecha;
+  });
+  ALL_CLEAN_ROWS = clean;
+  populateMonthOptions();
+  rebuildData();
+}
+
+const MESES_ES = [ "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" ];
+
+function monthLabel(ym) {
+  const p = String(ym).split("-");
+  return (MESES_ES[Number(p[1]) - 1] || p[1]) + " " + p[0];
+}
+
+function populateMonthOptions() {
+  const months = Array.from(new Set(ALL_CLEAN_ROWS.map(function(r) {
+    return r.fecha.slice(0, 7);
+  }).filter(Boolean))).sort().reverse();
+
+  const detailSel = document.getElementById("detail-month-select");
+  if (detailSel) {
+    const prev = detailSel.value;
+    detailSel.innerHTML = '<option value="">Todos</option>';
+    months.forEach(function(m) {
+      const o = document.createElement("option");
+      o.value = m;
+      o.textContent = monthLabel(m);
+      detailSel.appendChild(o);
+    });
+    detailSel.value = months.indexOf(prev) !== -1 ? prev : "";
+  }
+
+  filterMonths = filterMonths.filter(function(m) {
+    return months.indexOf(m) !== -1;
+  });
+  const options = months.map(function(m) {
+    return { value: m, label: monthLabel(m) };
+  });
+  renderMultiSelect("month-msel", options, filterMonths, "Todos los meses", function(next) {
+    filterMonths = next;
+    detailPage = 0;
+    rebuildData();
+  });
+}
+
+function positionMselPanel(toggle, panel) {
+  const r = toggle.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  panel.style.minWidth = Math.max(r.width, 240) + "px";
+  const spaceBelow = vh - r.bottom - 12;
+  const spaceAbove = r.top - 12;
+  const openUp = spaceBelow < 200 && spaceAbove > spaceBelow;
+  const maxH = Math.max(160, Math.min(Math.round(vh * .6), openUp ? spaceAbove : spaceBelow));
+  panel.style.maxHeight = maxH + "px";
+  panel.style.top = (openUp ? Math.max(8, r.top - 6 - maxH) : r.bottom + 6) + "px";
+  const pw = panel.offsetWidth || r.width;
+  let left = r.left;
+  if (left + pw > vw - 10) left = Math.max(10, vw - 10 - pw);
+  panel.style.left = left + "px";
+}
+
+function closeAllMselPanels() {
+  document.querySelectorAll(".msel-panel").forEach(function(p) {
+    p.classList.add("hidden");
+  });
+}
+
+function setupMultiSelectToggle(containerId) {
+  const toggle = document.getElementById(containerId + "-toggle");
+  const panel = document.getElementById(containerId + "-panel");
+  if (!toggle || !panel) return;
+  toggle.addEventListener("click", function(e) {
+    e.stopPropagation();
+    const willOpen = panel.classList.contains("hidden");
+    closeAllMselPanels();
+    if (willOpen) {
+      panel.classList.remove("hidden");
+      positionMselPanel(toggle, panel);
+    }
+  });
+  panel.addEventListener("click", function(e) {
+    e.stopPropagation();
+  });
+  window.addEventListener("resize", function() {
+    if (!panel.classList.contains("hidden")) positionMselPanel(toggle, panel);
+  });
+  window.addEventListener("scroll", function() {
+    if (!panel.classList.contains("hidden")) positionMselPanel(toggle, panel);
+  }, true);
+}
+
+function renderMultiSelect(containerId, options, selected, allLabel, onChange) {
+  const toggle = document.getElementById(containerId + "-toggle");
+  const panel = document.getElementById(containerId + "-panel");
+  if (!toggle || !panel) return;
+  toggle.disabled = options.length === 0;
+  const prevScroll = panel.scrollTop;
+  panel.innerHTML = "";
+  const allRow = document.createElement("label");
+  allRow.className = "msel-option msel-all";
+  const allCb = document.createElement("input");
+  allCb.type = "checkbox";
+  allCb.checked = selected.length === 0;
+  allCb.addEventListener("change", function() {
+    onChange([]);
+  });
+  allRow.appendChild(allCb);
+  allRow.appendChild(document.createTextNode(" " + allLabel));
+  panel.appendChild(allRow);
+  options.forEach(function(opt) {
+    const row = document.createElement("label");
+    row.className = "msel-option";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = opt.value;
+    cb.checked = selected.indexOf(opt.value) !== -1;
+    cb.addEventListener("change", function() {
+      let next = selected.slice();
+      if (cb.checked) {
+        if (next.indexOf(opt.value) === -1) next.push(opt.value);
+      } else {
+        next = next.filter(function(v) {
+          return v !== opt.value;
+        });
+      }
+      onChange(next);
+    });
+    row.appendChild(cb);
+    const countTxt = opt.count !== undefined ? " (" + fmtInt(opt.count) + ")" : "";
+    row.appendChild(document.createTextNode(" " + opt.label + countTxt));
+    panel.appendChild(row);
+  });
+  let label;
+  if (selected.length === 0) label = allLabel; else if (selected.length === 1) {
+    const found = options.filter(function(o) {
+      return o.value === selected[0];
+    })[0];
+    label = found ? found.label : selected[0];
+  } else label = selected.length + " seleccionados";
+  toggle.textContent = label;
+  if (!panel.classList.contains("hidden")) {
+    positionMselPanel(toggle, panel);
+    panel.scrollTop = prevScroll;
+  }
+}
+
+function rebuildData() {
+  let clean = ALL_CLEAN_ROWS;
+  if (filterMonths.length) clean = clean.filter(function(r) {
+    return filterMonths.indexOf(r.fecha.slice(0, 7)) !== -1;
+  });
+  if (dateFrom) clean = clean.filter(function(r) {
+    return r.fecha >= dateFrom;
+  });
+  if (dateTo) clean = clean.filter(function(r) {
+    return r.fecha <= dateTo;
+  });
+  if (filterInspector) clean = clean.filter(function(r) {
+    return r.inspector === filterInspector;
+  });
+  if (filterCiclo) clean = clean.filter(function(r) {
+    return r.ciclo === filterCiclo;
+  });
+  if (filterCausa) clean = clean.filter(function(r) {
+    return r.causa === filterCausa;
+  });
+  const cleanForSupervisorCompare = clean;
+  if (currentScopes.length) clean = clean.filter(function(r) {
+    return currentScopes.indexOf(r.supervisor) !== -1;
+  });
+  let cleanForMonthly = ALL_CLEAN_ROWS;
+  if (dateFrom) cleanForMonthly = cleanForMonthly.filter(function(r) {
+    return r.fecha >= dateFrom;
+  });
+  if (dateTo) cleanForMonthly = cleanForMonthly.filter(function(r) {
+    return r.fecha <= dateTo;
+  });
+  if (filterInspector) cleanForMonthly = cleanForMonthly.filter(function(r) {
+    return r.inspector === filterInspector;
+  });
+  if (filterCiclo) cleanForMonthly = cleanForMonthly.filter(function(r) {
+    return r.ciclo === filterCiclo;
+  });
+  if (filterCausa) cleanForMonthly = cleanForMonthly.filter(function(r) {
+    return r.causa === filterCausa;
+  });
+  if (currentScopes.length) cleanForMonthly = cleanForMonthly.filter(function(r) {
+    return currentScopes.indexOf(r.supervisor) !== -1;
+  });
+  const fechas = clean.map(function(r) {
+    return r.fecha;
+  }).filter(Boolean).sort();
+  const newData = {
+    meta: {
+      total_registros: clean.length,
+      fecha_min: fechas[0] || "",
+      fecha_max: fechas[fechas.length - 1] || "",
+      total_supervisores: new Set(clean.map(function(r) {
+        return r.supervisor;
+      })).size,
+      total_inspectores: new Set(clean.map(function(r) {
+        return r.inspector;
+      })).size,
+      total_ciclos: new Set(clean.map(function(r) {
+        return r.ciclo;
+      })).size
+    },
+    overall: buildScope(clean),
+    monthly: monthlyComparativeBlock(cleanForMonthly),
+    errores_detalle: clean.slice().sort(function(a, b) {
+      return b.fecha.localeCompare(a.fecha) || (b.fechaHoraTS || 0) - (a.fechaHoraTS || 0);
+    }).map(function(r) {
+      return {
+        orden: r.orden,
+        cuenta: r.cuenta,
+        ciclo: r.ciclo,
+        inspector: r.inspector,
+        supervisor: r.supervisor,
+        causa_cierre: r.causa,
+        fecha: r.fecha,
+        horaTexto: r.horaTexto,
+        tipo_error: "",
+        efectividad: r.efectividad,
+        obs_1: r.comentario_cierre
+      };
+    })
+  };
+  newData.overall.supervisores = supervisoresBlock(cleanForSupervisorCompare);
+  DATA = newData;
+  currentScopes = currentScopes.filter(function(s) {
+    return newData.overall.supervisores.some(function(x) {
+      return x.supervisor === s;
+    });
+  });
+  populateSupervisorOptions();
+  renderAll();
+}
+
+function getScopeData() {
+  return DATA.overall;
+}
+
+function populateSupervisorOptions() {
+  const list = DATA.overall.supervisores.map(function(s) {
+    return { value: s.supervisor, label: s.supervisor, count: s.total };
+  });
+  renderMultiSelect("supervisor-msel", list, currentScopes, "Todos los supervisores", function(next) {
+    currentScopes = next;
+    detailPage = 0;
+    rebuildData();
+  });
+}
+
+let _lastBarClick = {
+  dim: null,
+  index: null,
+  time: 0
+};
+
+const DBLCLICK_MS = 480;
+
+function makeBarClickHandler(dimension, items) {
+  return function(evt, elements) {
+    if (!elements || !elements.length) return;
+    const idx = elements[0].index;
+    const item = items[idx];
+    if (!item) return;
+    const now = Date.now();
+    const isDouble = _lastBarClick.dim === dimension && _lastBarClick.index === idx && now - _lastBarClick.time < DBLCLICK_MS;
+    _lastBarClick = {
+      dim: dimension,
+      index: idx,
+      time: isDouble ? 0 : now
+    };
+    if (isDouble) {
+      forceDimensionFilter(dimension, item);
+      goToDetallePage();
+    } else {
+      applyDimensionFilter(dimension, item);
+    }
+  };
+}
+
+function forceDimensionFilter(dimension, item) {
+  detailPage = 0;
+  if (dimension === "supervisor") {
+    if (currentScopes.indexOf(item.supervisor) === -1) currentScopes.push(item.supervisor);
+    rebuildData();
+    return;
+  }
+  if (dimension === "inspector") filterInspector = item.inspector; else if (dimension === "ciclo") filterCiclo = item.ciclo; else if (dimension === "causa") filterCausa = item.causa; else if (dimension === "tipoError") filterTipoError = item.key;
+  rebuildData();
+}
+
+function applyDimensionFilter(dimension, item) {
+  detailPage = 0;
+  if (dimension === "supervisor") {
+    const name = item.supervisor;
+    const idx = currentScopes.indexOf(name);
+    if (idx === -1) currentScopes.push(name); else currentScopes.splice(idx, 1);
+    rebuildData();
+    return;
+  }
+  if (dimension === "inspector") {
+    filterInspector = filterInspector === item.inspector ? "" : item.inspector;
+  } else if (dimension === "ciclo") {
+    filterCiclo = filterCiclo === item.ciclo ? "" : item.ciclo;
+  } else if (dimension === "causa") {
+    filterCausa = filterCausa === item.causa ? "" : item.causa;
+  } else if (dimension === "tipoError") {
+    filterTipoError = filterTipoError === item.key ? "" : item.key;
+  }
+  rebuildData();
+}
+
+function goToDetallePage() {
+  const btn = document.querySelector('.tab-bar .tab-btn[data-page="detalle"]');
+  if (btn && !btn.classList.contains("role-hidden")) btn.click();
+}
+
+function clearFilter(which, value) {
+  if (which === "inspector") filterInspector = ""; else if (which === "ciclo") filterCiclo = ""; else if (which === "causa") filterCausa = ""; else if (which === "tipoError") filterTipoError = ""; else if (which === "month") {
+    filterMonths = value !== undefined ? filterMonths.filter(function(m) {
+      return m !== value;
+    }) : [];
+  } else if (which === "supervisor") {
+    currentScopes = value !== undefined ? currentScopes.filter(function(s) {
+      return s !== value;
+    }) : [];
+  }
+  detailPage = 0;
+  rebuildData();
+}
+
+function clearAllFiltersEverywhere() {
+  filterInspector = "";
+  filterCiclo = "";
+  filterCausa = "";
+  filterTipoError = "";
+  filterMonths = [];
+  currentScopes = [];
+  detailDateFrom = "";
+  detailDateTo = "";
+  detailMonthSel = "";
+  detailInspectorSel = "";
+  detailCicloSel = "";
+  detailTipoSel = "";
+  detailSupervisorSel = "";
+  hoyInspectorScope = "ALL";
+  hoySearchTerm = "";
+  [ "detail-date-from", "detail-date-to", "detail-month-select", "detail-inspector-select", "detail-ciclo-select", "detail-tipo-select", "detail-supervisor-select", "table-search", "hoy-inspector-search" ].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  const hoySel = document.getElementById("hoy-inspector-select");
+  if (hoySel) hoySel.value = "ALL";
+  detailPage = 0;
+  rebuildData();
+}
+
+function clearAllCrossFilters() {
+  clearAllFiltersEverywhere();
+}
+
+const TIPO_ERROR_LABELS = {};
+
+function renderActiveFiltersBar() {
+  const bar = document.getElementById("active-filters-bar");
+  if (!bar) return;
+  const chips = [];
+  filterMonths.forEach(function(m) {
+    chips.push({
+      label: "Mes: " + monthLabel(m),
+      clear: "month",
+      value: m
+    });
+  });
+  currentScopes.forEach(function(s) {
+    chips.push({
+      label: "Supervisor: " + s,
+      clear: "supervisor",
+      value: s
+    });
+  });
+  if (filterInspector) chips.push({
+    label: "Inspector: " + filterInspector,
+    clear: "inspector"
+  });
+  if (filterCiclo) chips.push({
+    label: "Ciclo: " + filterCiclo,
+    clear: "ciclo"
+  });
+  if (filterCausa) chips.push({
+    label: "Causa: " + filterCausa,
+    clear: "causa"
+  });
+  if (filterTipoError) chips.push({
+    label: "Tipo de error: " + TIPO_ERROR_LABELS[filterTipoError],
+    clear: "tipoError"
+  });
+  if (!chips.length) {
+    bar.classList.add("hidden");
+    bar.innerHTML = "";
+    return;
+  }
+  bar.classList.remove("hidden");
+  bar.innerHTML = '<span class="af-label">🔎 Filtros activos:</span>' + chips.map(function(c, i) {
+    return '<span class="af-chip" data-idx="' + i + '">' + c.label + " <b>✕</b></span>";
+  }).join("") + '<button class="af-clear-all" id="af-clear-all">Limpiar todo</button>';
+  bar.querySelectorAll(".af-chip").forEach(function(chip) {
+    const c = chips[Number(chip.dataset.idx)];
+    chip.addEventListener("click", function() {
+      clearFilter(c.clear, c.value);
+    });
+  });
+  document.getElementById("af-clear-all").addEventListener("click", clearAllCrossFilters);
+}
+
+function renderAll() {
+  document.getElementById("header-meta").innerHTML = "Periodo <b>" + formatDateLong(DATA.meta.fecha_min) + "</b> – <b>" + formatDateLong(DATA.meta.fecha_max) + "</b> · " + "<b>" + fmtInt(DATA.meta.total_registros) + "</b> órdenes auditadas · " + "<b>" + DATA.meta.total_inspectores + "</b> inspectores · " + "<b>" + DATA.meta.total_supervisores + "</b> supervisores · " + "<b>" + DATA.meta.total_ciclos + "</b> ciclos";
+  const scope = getScopeData();
+  renderActiveFiltersBar();
+  renderHoyBlock();
+  renderKPIs(scope);
+  renderMonthlyComparativeChart();
+  renderDailyChart(scope);
+  renderDailyEfectividadChart(scope);
+  renderDailyErroresChart(scope);
+  renderDoughnuts(scope);
+  renderCiclosChart(scope);
+  renderCiclosInefectivosChart(scope);
+  renderInspectoresChart(scope);
+  renderInspectoresEfectivosChart(scope);
+  renderInspectorDivergingChart(scope);
+  renderCausasChart(scope);
+  computeInspectorFiltered();
+  renderInspectorTable();
+  populateDetailFilterOptions();
+  computeDetailFiltered();
+  renderDetailTable();
+}
+
+let hoyInspectorScope = "ALL";
+
+let hoySearchTerm = "";
+
+function populateHoyInspectorOptions(todayRows) {
+  const sel = document.getElementById("hoy-inspector-select");
+  const prev = hoyInspectorScope;
+  const counts = {};
+  todayRows.forEach(function(r) {
+    counts[r.inspector] = (counts[r.inspector] || 0) + 1;
+  });
+  const names = Object.keys(counts).sort();
+  sel.innerHTML = '<option value="ALL">Todos los inspectores (' + todayRows.length + ")</option>";
+  names.forEach(function(name) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name + " (" + counts[name] + ")";
+    sel.appendChild(opt);
+  });
+  sel.value = counts[prev] !== undefined || prev === "ALL" ? prev : "ALL";
+  if (sel.value !== prev) hoyInspectorScope = sel.value;
+  sel.disabled = names.length === 0;
+}
+
+function renderHoyBlock() {
+  const hoy = todayISO();
+  const ayer = lastWorkedDayBefore(hoy);
+  document.getElementById("hoy-fecha").textContent = formatDateLong(hoy);
+  let baseRows = ALL_CLEAN_ROWS;
+  if (currentScopes.length) baseRows = baseRows.filter(function(r) {
+    return currentScopes.indexOf(r.supervisor) !== -1;
+  });
+  const todayAll = baseRows.filter(function(r) {
+    return r.fecha === hoy;
+  });
+  const yestAll = baseRows.filter(function(r) {
+    return r.fecha === ayer;
+  });
+  populateHoyInspectorOptions(todayAll);
+  const q = hoySearchTerm.trim().toLowerCase();
+  const todayRows = todayAll.filter(function(r) {
+    if (hoyInspectorScope !== "ALL" && r.inspector !== hoyInspectorScope) return false;
+    if (q && r.inspector.toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+  const yestRows = yestAll.filter(function(r) {
+    if (hoyInspectorScope !== "ALL" && r.inspector !== hoyInspectorScope) return false;
+    if (q && r.inspector.toLowerCase().indexOf(q) === -1) return false;
+    return true;
+  });
+  if (todayRows.length === 0) {
+    const emptyEl = document.getElementById("hoy-empty");
+    emptyEl.textContent = todayAll.length === 0 ? "Aún no hay órdenes cerradas registradas para hoy." : "Ningún inspector coincide con ese filtro/búsqueda por ahora.";
+    emptyEl.classList.remove("hidden");
+    document.getElementById("hoy-kpis").classList.add("hidden");
+    document.getElementById("hoy-hourly-section").classList.add("hidden");
+    document.getElementById("hoy-track-section").classList.add("hidden");
+    document.getElementById("hoy-detail-empty").classList.remove("hidden");
+    document.getElementById("hoy-detail-table").classList.add("hidden");
+    renderAyerTable(yestRows, ayer);
+    return;
+  }
+  document.getElementById("hoy-empty").classList.add("hidden");
+  document.getElementById("hoy-kpis").classList.remove("hidden");
+  document.getElementById("hoy-hourly-section").classList.remove("hidden");
+  document.getElementById("hoy-track-section").classList.remove("hidden");
+
+  function calc(rows) {
+    const efectiva = rows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+    const no_efectiva = rows.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+    const excluida = rows.filter(function(r) { return r.efectividad === "Excluido"; }).length;
+    const base = efectiva + no_efectiva;
+    return { total: rows.length, efectiva: efectiva, no_efectiva: no_efectiva, excluida: excluida, pct: base ? round1(efectiva / base * 100) : 0 };
+  }
+  const t = calc(todayRows);
+  const y = yestRows.length === 0 ? null : calc(yestRows);
+
+  document.getElementById("hoy-total").textContent = fmtInt(t.total);
+  document.getElementById("hoy-errores").textContent = fmtInt(t.no_efectiva);
+  document.getElementById("hoy-excluidas").textContent = fmtInt(t.excluida);
+  const efEl = document.getElementById("hoy-efectividad");
+  efEl.textContent = fmtPct(t.pct);
+  efEl.className = "hoy-value " + semClass(t.pct);
+
+  function setDelta(elId, todayVal, yestVal, goodDirection, isPercent) {
+    const el = document.getElementById(elId);
+    if (!y) {
+      el.textContent = "Sin dato de ayer";
+      el.className = "hoy-delta neutral";
+      return;
+    }
+    const diff = round1(todayVal - yestVal);
+    if (diff === 0) {
+      el.textContent = "= vs. ayer";
+      el.className = "hoy-delta neutral";
+      return;
+    }
+    const sign = diff > 0 ? "+" : "";
+    const displayVal = isPercent ? sign + diff + "%" : sign + fmtInt(Math.round(diff));
+    const cls = goodDirection === "neutral" ? "neutral" : diff > 0 === (goodDirection === "up") ? "up" : "down";
+    el.textContent = displayVal + " vs. ayer";
+    el.className = "hoy-delta " + cls;
+  }
+  setDelta("hoy-total-delta", t.total, y ? y.total : 0, "neutral", false);
+  setDelta("hoy-efectividad-delta", t.pct, y ? y.pct : 0, "up", true);
+  setDelta("hoy-errores-delta", t.no_efectiva, y ? y.no_efectiva : 0, "down", false);
+  setDelta("hoy-excluidas-delta", t.excluida, y ? y.excluida : 0, "neutral", false);
+
+  renderHourlyChart(todayRows);
+  renderTiempoSinDigitarTable(todayRows);
+  renderHoyTrackTables(todayRows);
+  renderAyerTable(yestRows, ayer);
+}
+
+// Cierres por franja horaria del día de hoy.
+function renderHourlyChart(todayRows) {
+  const el = document.getElementById("hourly-chart");
+  if (!el) return;
+  const counts = new Array(24).fill(0);
+  todayRows.forEach(function(r) {
+    if (r.hora) counts[r.hora.h] += 1;
+  });
+  let minH = 6, maxH = 19;
+  for (let h = 0; h < 24; h++) {
+    if (counts[h] > 0) {
+      if (h < minH) minH = h;
+      if (h > maxH) maxH = h;
+    }
+  }
+  const labels = [], data = [];
+  for (let h = minH; h <= maxH; h++) {
+    labels.push(String(h).padStart(2, "0") + ":00");
+    data.push(counts[h]);
+  }
+  if (charts.hourly) charts.hourly.destroy();
+  charts.hourly = new Chart(el, {
+    type: "bar",
+    data: { labels: labels, datasets: [ { label: "Cierres", data: data, backgroundColor: COLORS.teal, borderRadius: 4, maxBarThickness: 28 } ] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: function(ctx) { return fmtInt(ctx.raw) + " cierres"; } } } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "#EEF2F5" } } }
+    }
+  });
+}
+
+// Hace cuánto no cierra una orden cada inspector, desde su última orden de hoy.
+function renderTiempoSinDigitarTable(todayRows) {
+  const tbody = document.getElementById("hoy-track-tbody");
+  const empty = document.getElementById("hoy-track-empty");
+  const table = document.getElementById("hoy-track-table");
+  const by = groupBy(todayRows, "inspector");
+  const now = Date.now();
+  let list = Array.from(by.entries()).map(function(e) {
+    const rows = e[1];
+    let ultimoTS = null, ultimaHora = null;
+    rows.forEach(function(r) {
+      if (r.fechaHoraTS !== null && r.fechaHoraTS !== undefined && (ultimoTS === null || r.fechaHoraTS > ultimoTS)) {
+        ultimoTS = r.fechaHoraTS;
+        ultimaHora = r.horaTexto;
+      }
+    });
+    const efectiva = rows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+    const no_efectiva = rows.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+    const base = efectiva + no_efectiva;
+    return {
+      inspector: e[0],
+      ultimaHoraTexto: ultimaHora || "—",
+      silencioMs: ultimoTS !== null ? now - ultimoTS : null,
+      total: rows.length,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0
+    };
+  });
+  list.sort(function(a, b) {
+    return (b.silencioMs || 0) - (a.silencioMs || 0);
+  });
+  tbody.innerHTML = "";
+  if (list.length === 0) {
+    empty.classList.remove("hidden");
+    table.classList.add("hidden");
+  } else {
+    empty.classList.add("hidden");
+    table.classList.remove("hidden");
+    list.forEach(function(r) {
+      const tr = document.createElement("tr");
+      const dur = formatDuracion(r.silencioMs);
+      const warn = r.silencioMs !== null && r.silencioMs > 2 * 3600 * 1000;
+      tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.ultimaHoraTexto + "</td>" + '<td class="num"' + (warn ? ' style="color:var(--danger); font-weight:700;"' : "") + ">" + dur + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
+      tbody.appendChild(tr);
+    });
+  }
+}
+
+let _hoyTrackRows = null;
+
+function renderHoyTrackTables(todayRows) {
+  if (todayRows !== undefined) _hoyTrackRows = todayRows;
+  todayRows = _hoyTrackRows || [];
+  let noEfectivas = todayRows.filter(function(r) {
+    return r.efectividad === "No Efectivo";
+  });
+  const dtbody = document.getElementById("hoy-detail-tbody");
+  dtbody.innerHTML = "";
+  const dEmpty = document.getElementById("hoy-detail-empty");
+  const dTable = document.getElementById("hoy-detail-table");
+  if (noEfectivas.length === 0) {
+    dEmpty.classList.remove("hidden");
+    dTable.classList.add("hidden");
+  } else {
+    dEmpty.classList.add("hidden");
+    dTable.classList.remove("hidden");
+    attachTableSort("hoy-detail-table", "orden", "desc", function() {
+      renderHoyTrackTables();
+    });
+    noEfectivas = sortByState(noEfectivas, getTableSort("hoy-detail-table", "orden", "desc"));
+    noEfectivas.forEach(function(r) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = "<td>" + r.orden + "</td>" + "<td>" + r.inspector + "</td>" + "<td>" + r.ciclo + "</td>" + "<td>" + (r.causa || "—") + "</td>" + "<td>" + (r.comentario_cierre || "—") + "</td>" + "<td>" + (r.horaTexto || "—") + "</td>";
+      dtbody.appendChild(tr);
+    });
+  }
+}
+
+const tableSorts = {};
+
+function getTableSort(tableId, defKey, defDir) {
+  if (!tableSorts[tableId]) tableSorts[tableId] = {
+    key: defKey,
+    dir: defDir || "desc"
+  };
+  return tableSorts[tableId];
+}
+
+function sortByState(list, sort) {
+  return list.slice().sort(function(a, b) {
+    let va = a[sort.key], vb = b[sort.key];
+    if (typeof va === "number" && typeof vb === "number") return sort.dir === "asc" ? va - vb : vb - va;
+    const na = Number(va), nb = Number(vb);
+    if (!isNaN(na) && !isNaN(nb) && String(va).trim() !== "" && String(vb).trim() !== "") {
+      return sort.dir === "asc" ? na - nb : nb - na;
+    }
+    va = String(va === undefined || va === null ? "" : va).toLowerCase();
+    vb = String(vb === undefined || vb === null ? "" : vb).toLowerCase();
+    if (va < vb) return sort.dir === "asc" ? -1 : 1;
+    if (va > vb) return sort.dir === "asc" ? 1 : -1;
+    return 0;
+  });
+}
+
+function markSortedHeader(tableId, sort) {
+  document.querySelectorAll("#" + tableId + " thead th").forEach(function(th) {
+    const active = th.dataset.key === sort.key;
+    th.classList.toggle("sorted", active);
+    th.classList.toggle("asc", active && sort.dir === "asc");
+  });
+}
+
+function attachTableSort(tableId, defKey, defDir, rerender) {
+  const sort = getTableSort(tableId, defKey, defDir);
+  document.querySelectorAll("#" + tableId + " thead th").forEach(function(th) {
+    if (!th.dataset.key || th._sortBound) return;
+    th._sortBound = true;
+    th.addEventListener("click", function() {
+      if (sort.key === th.dataset.key) sort.dir = sort.dir === "asc" ? "desc" : "asc"; else {
+        sort.key = th.dataset.key;
+        sort.dir = "desc";
+      }
+      markSortedHeader(tableId, sort);
+      rerender();
+    });
+  });
+  markSortedHeader(tableId, sort);
+}
+
+let _ayerRows = null;
+let _ayerFecha = "";
+
+function renderAyerTable(rows, fechaISO) {
+  const fechaEl = document.getElementById("ayer-fecha");
+  if (!fechaEl) return;
+  if (rows !== undefined) {
+    _ayerRows = rows;
+    _ayerFecha = fechaISO;
+  }
+  rows = _ayerRows || [];
+  fechaEl.textContent = formatDateLong(_ayerFecha);
+  const tbody = document.getElementById("ayer-tbody");
+  const empty = document.getElementById("ayer-empty");
+  const table = document.getElementById("ayer-table");
+  tbody.innerHTML = "";
+  if (!rows.length) {
+    empty.classList.remove("hidden");
+    table.classList.add("hidden");
+    return;
+  }
+  empty.classList.add("hidden");
+  table.classList.remove("hidden");
+  const by = groupBy(rows, "inspector");
+  let list = Array.from(by.entries()).map(function(e) {
+    const rws = e[1], total = rws.length;
+    const con_errores = rws.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+    const efectiva = rws.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+    const base = efectiva + con_errores;
+    return {
+      inspector: e[0], supervisor: rws[0].supervisor, total: total, con_errores: con_errores,
+      pct_error: base ? round1(con_errores / base * 100) : 0,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0
+    };
+  });
+  attachTableSort("ayer-table", "total", "desc", function() {
+    renderAyerTable();
+  });
+  list = sortByState(list, getTableSort("ayer-table", "total", "desc"));
+  list.forEach(function(r) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
+    tbody.appendChild(tr);
+  });
+  const tot = rows.length;
+  const totErr = rows.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+  const totEf = rows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+  const totBase = totEf + totErr;
+  const trTot = document.createElement("tr");
+  trTot.style.fontWeight = "700";
+  trTot.style.borderTop = "2px solid #C9D6DD";
+  trTot.innerHTML = "<td>Total</td><td>—</td>" + '<td class="num">' + fmtInt(tot) + "</td>" + '<td class="num">' + fmtInt(totErr) + "</td>" + '<td class="num">' + fmtPct(totBase ? round1(totErr / totBase * 100) : 0) + "</td>" + '<td class="num">' + semBadge(totBase ? round1(totEf / totBase * 100) : 0) + "</td>";
+  tbody.appendChild(trTot);
+}
+
+function renderKPIs(scope) {
+  document.getElementById("kpi-total").textContent = fmtInt(scope.kpis.total);
+  document.getElementById("kpi-total-sub").textContent = currentScopes.length === 0 ? "Todos los supervisores" : currentScopes.join(", ");
+  document.getElementById("kpi-correcto").textContent = fmtInt(scope.kpis.excluida);
+  document.getElementById("kpi-correcto-sub").textContent = "no suman ni restan en el %";
+  document.getElementById("kpi-errores").textContent = fmtInt(scope.kpis.no_efectiva);
+  document.getElementById("kpi-errores-sub").textContent = fmtPct(scope.kpis.pct_no_efectividad) + " de lo calificado";
+  const kpiEfEl = document.getElementById("kpi-efectividad");
+  kpiEfEl.textContent = fmtPct(scope.kpis.pct_efectividad);
+  kpiEfEl.className = "kpi-value " + semClass(scope.kpis.pct_efectividad);
+  document.getElementById("kpi-efectividad-sub").textContent = fmtInt(scope.kpis.efectiva) + " órdenes efectivas";
+}
+
+const metaLinePlugin = {
+  id: "metaLinePlugin",
+  afterDatasetsDraw: function(chart) {
+    const xScale = chart.scales.x;
+    const area = chart.chartArea;
+    if (!xScale || !area) return;
+    const x = xScale.getPixelForValue(EFECTIVIDAD_META);
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.strokeStyle = COLORS.primaryDark;
+    ctx.setLineDash([ 6, 4 ]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(x, area.top);
+    ctx.lineTo(x, area.bottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = COLORS.primaryDark;
+    ctx.font = "700 11px 'Inter', sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Meta " + EFECTIVIDAD_META + "%", x, area.top - 6);
+    ctx.restore();
+  }
+};
+
+function renderMonthlyComparativeChart() {
+  const el = document.getElementById("monthly-comparative-chart");
+  if (!el) return;
+  const items = (DATA.monthly || []).filter(function(m) {
+    return m.total > 0;
+  });
+  const wrap = document.getElementById("monthly-comparative-wrap");
+  const empty = document.getElementById("monthly-comparative-empty");
+  if (items.length < 2) {
+    if (wrap) wrap.classList.add("hidden");
+    if (empty) empty.classList.remove("hidden");
+    return;
+  }
+  if (wrap) wrap.classList.remove("hidden");
+  if (empty) empty.classList.add("hidden");
+  if (wrap) wrap.style.height = Math.max(160, 60 + items.length * 64) + "px";
+  if (charts.monthlyComparative) charts.monthlyComparative.destroy();
+  charts.monthlyComparative = new Chart(el, {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) {
+        return monthLabel(i.mes);
+      }),
+      datasets: [ {
+        label: "% Efectividad",
+        data: items.map(function(i) {
+          return i.pct_efectividad;
+        }),
+        backgroundColor: items.map(function(i) {
+          return semColor(i.pct_efectividad);
+        }),
+        borderRadius: 4,
+        maxBarThickness: 22,
+        categoryPercentage: .72,
+        barPercentage: .92
+      }, {
+        label: "% Error",
+        data: items.map(function(i) {
+          return i.pct_error;
+        }),
+        backgroundColor: COLORS.danger,
+        borderRadius: 4,
+        maxBarThickness: 22,
+        categoryPercentage: .72,
+        barPercentage: .92
+      } ]
+    },
+    plugins: [ metaLinePlugin ],
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: {
+        padding: {
+          top: 18
+        }
+      },
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ctx.dataset.label + ": " + fmtPct(ctx.raw);
+            },
+            afterLabel: function(ctx) {
+              const it = items[ctx.dataIndex];
+              if (ctx.datasetIndex === 0) return [ fmtInt(it.efectiva) + " de " + fmtInt(it.total) + " órdenes efectivas" ];
+              return [ fmtInt(it.con_errores) + " de " + fmtInt(it.total) + " órdenes con error" ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          max: 100,
+          grid: {
+            color: "#EEF2F5"
+          },
+          ticks: {
+            callback: function(v) {
+              return v + "%";
+            }
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          },
+          ticks: {
+            font: {
+              weight: "700"
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderDailyChart(scope) {
+  const labels = scope.daily.map(function(d) {
+    return formatDateShort(d.fecha);
+  });
+  const correcto = scope.daily.map(function(d) {
+    return d.efectiva;
+  });
+  const errores = scope.daily.map(function(d) {
+    return d.no_efectiva;
+  });
+  const efect = scope.daily.map(function(d) {
+    return d.base_calificada ? Math.round(d.efectiva / d.base_calificada * 1e3) / 10 : 0;
+  });
+  const meta = scope.daily.map(function() {
+    return EFECTIVIDAD_META;
+  });
+  if (charts.daily) charts.daily.destroy();
+  charts.daily = new Chart(document.getElementById("daily-chart"), {
+    data: {
+      labels: labels,
+      datasets: [ {
+        type: "bar",
+        label: "Efectivas",
+        data: correcto,
+        backgroundColor: COLORS.success,
+        stack: "s",
+        borderRadius: 3,
+        maxBarThickness: 34
+      }, {
+        type: "bar",
+        label: "No efectivas",
+        data: errores,
+        backgroundColor: COLORS.danger,
+        stack: "s",
+        borderRadius: 3,
+        maxBarThickness: 34
+      }, {
+        type: "line",
+        label: "% Efectividad",
+        data: efect,
+        borderColor: COLORS.teal,
+        backgroundColor: COLORS.teal,
+        yAxisID: "y1",
+        tension: .35,
+        pointRadius: 3,
+        pointBackgroundColor: COLORS.teal,
+        borderWidth: 2.5
+      }, {
+        type: "line",
+        label: "Meta " + EFECTIVIDAD_META + "%",
+        data: meta,
+        borderColor: COLORS.warning,
+        yAxisID: "y1",
+        borderDash: [ 6, 4 ],
+        borderWidth: 1.6,
+        pointRadius: 0,
+        fill: false
+      } ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+      scales: {
+        x: {
+          stacked: true,
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: "Órdenes cerradas"
+          },
+          grid: {
+            color: "#EEF2F5"
+          }
+        },
+        y1: {
+          position: "right",
+          beginAtZero: true,
+          max: 100,
+          grid: {
+            drawOnChartArea: false
+          },
+          title: {
+            display: true,
+            text: "% Efectividad"
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const d = scope.daily[ctx.dataIndex];
+              if (ctx.dataset.label === "Efectivas") return "Efectivas: " + fmtInt(ctx.raw) + " (" + fmtPct(d.base_calificada ? round1(ctx.raw / d.base_calificada * 100) : 0) + ")";
+              if (ctx.dataset.label === "No efectivas") return "No efectivas: " + fmtInt(ctx.raw) + " (" + fmtPct(d.base_calificada ? round1(ctx.raw / d.base_calificada * 100) : 0) + ")";
+              if (ctx.dataset.label === "% Efectividad") return "% Efectividad: " + fmtPct(ctx.raw);
+              return ctx.dataset.label + ": " + fmtPct(ctx.raw);
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderDoughnuts(scope) {
+  if (charts.estado) charts.estado.destroy();
+  charts.estado = new Chart(document.getElementById("estado-chart"), {
+    type: "doughnut",
+    data: {
+      labels: [ "Efectiva", "No efectiva", "Excluida" ],
+      datasets: [ {
+        data: [ scope.kpis.efectiva, scope.kpis.no_efectiva, scope.kpis.excluida ],
+        backgroundColor: [ COLORS.success, COLORS.danger, COLORS.gray ],
+        borderWidth: 0
+      } ]
+    },
+    options: {
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const total = scope.kpis.total;
+              return ctx.label + ": " + fmtInt(ctx.raw) + " (" + fmtPct(total ? round1(ctx.raw / total * 100) : 0) + ")";
+            }
+          }
+        }
+      },
+      cutout: "68%"
+    }
+  });
+  if (charts.efect) charts.efect.destroy();
+  charts.efect = new Chart(document.getElementById("efectividad-chart"), {
+    type: "doughnut",
+    data: {
+      labels: [ "Efectiva", "No efectiva" ],
+      datasets: [ {
+        data: [ scope.kpis.efectiva, scope.kpis.no_efectiva ],
+        backgroundColor: [ COLORS.teal, COLORS.warning ],
+        borderWidth: 0
+      } ]
+    },
+    options: {
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const base = scope.kpis.base_calificada;
+              return ctx.label + ": " + fmtInt(ctx.raw) + " (" + fmtPct(base ? round1(ctx.raw / base * 100) : 0) + ")";
+            }
+          }
+        }
+      },
+      cutout: "68%"
+    }
+  });
+}
+
+function renderCiclosChart(scope) {
+  const items = scope.top_ciclos;
+  if (charts.ciclos) charts.ciclos.destroy();
+  charts.ciclos = new Chart(document.getElementById("ciclos-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) {
+        return i.ciclo;
+      }),
+      datasets: [ {
+        label: "Órdenes con error",
+        data: items.map(function(i) {
+          return i.con_errores;
+        }),
+        backgroundColor: COLORS.primaryDark,
+        borderRadius: 4,
+        maxBarThickness: 18
+      } ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: makeBarClickHandler("ciclo", items),
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              const it = items[ctx.dataIndex];
+              return fmtInt(ctx.raw) + " de " + fmtInt(it.total) + " órdenes";
+            },
+            afterLabel: function(ctx) {
+              const it = items[ctx.dataIndex];
+              const rango = it.fecha_min === it.fecha_max ? formatDateShort(it.fecha_min) : formatDateShort(it.fecha_min) + " – " + formatDateShort(it.fecha_max);
+              return [ "% error del ciclo: " + fmtPct(it.pct_error), "Fecha inspección: " + rango ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: {
+            color: "#EEF2F5"
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderInspectoresChart(scope) {
+  const items = scope.top_inspectores;
+  if (charts.inspectores) charts.inspectores.destroy();
+  charts.inspectores = new Chart(document.getElementById("inspectores-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) {
+        return i.inspector;
+      }),
+      datasets: [ {
+        label: "% de error",
+        data: items.map(function(i) {
+          return i.pct_error;
+        }),
+        backgroundColor: COLORS.warning,
+        borderRadius: 4,
+        maxBarThickness: 18
+      } ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: makeBarClickHandler("inspector", items),
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return "% de error: " + fmtPct(ctx.raw);
+            },
+            afterLabel: function(ctx) {
+              const it = items[ctx.dataIndex];
+              return it.con_errores + " de " + it.total + " órdenes con error";
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: {
+            color: "#EEF2F5"
+          },
+          title: {
+            display: true,
+            text: "% de error"
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderInspectoresEfectivosChart(scope) {
+  const items = scope.top_inspectores_efectivos;
+  const metaLine = items.map(function() {
+    return EFECTIVIDAD_META_INDIVIDUAL;
+  });
+  if (charts.inspectoresEfectivos) charts.inspectoresEfectivos.destroy();
+  charts.inspectoresEfectivos = new Chart(document.getElementById("inspectores-efectivos-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) {
+        return i.inspector;
+      }),
+      datasets: [ {
+        label: "% Efectividad",
+        data: items.map(function(i) {
+          return i.pct_efectividad;
+        }),
+        backgroundColor: items.map(function(i) {
+          return semColor(i.pct_efectividad);
+        }),
+        borderRadius: 4,
+        maxBarThickness: 18
+      }, {
+        type: "line",
+        label: "Meta interna " + EFECTIVIDAD_META_INDIVIDUAL + "%",
+        data: metaLine,
+        borderColor: COLORS.primaryDark,
+        borderDash: [ 6, 4 ],
+        borderWidth: 1.6,
+        pointRadius: 0,
+        fill: false
+      } ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: makeBarClickHandler("inspector", items),
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ctx.dataset.label + ": " + fmtPct(ctx.raw);
+            },
+            afterLabel: function(ctx) {
+              if (ctx.datasetIndex !== 0) return "";
+              const it = items[ctx.dataIndex];
+              return it.efectiva + " de " + it.total + " órdenes efectivas";
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          max: 100,
+          grid: {
+            color: "#EEF2F5"
+          },
+          title: {
+            display: true,
+            text: "% Efectividad"
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderInspectorDivergingChart(scope) {
+  const items = scope.inspector_comparativa;
+  if (charts.inspectorDiverging) charts.inspectorDiverging.destroy();
+  charts.inspectorDiverging = new Chart(document.getElementById("inspector-diverging-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) {
+        return i.inspector;
+      }),
+      datasets: [ {
+        label: "% Efectividad",
+        data: items.map(function(i) {
+          return i.pct_efectividad;
+        }),
+        backgroundColor: items.map(function(i) {
+          return semColor(i.pct_efectividad);
+        }),
+        borderRadius: 3,
+        maxBarThickness: 16
+      }, {
+        label: "% Error",
+        data: items.map(function(i) {
+          return i.pct_error;
+        }),
+        backgroundColor: COLORS.danger,
+        borderRadius: 3,
+        maxBarThickness: 16
+      } ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: makeBarClickHandler("inspector", items),
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ctx.dataset.label + ": " + fmtPct(ctx.raw);
+            },
+            afterLabel: function(ctx) {
+              const it = items[ctx.dataIndex];
+              return [ "Órdenes ejecutadas: " + fmtInt(it.total), "Órdenes efectivas: " + fmtInt(it.efectiva), "Órdenes con error: " + fmtInt(it.con_errores) ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          min: 0,
+          max: 100,
+          grid: {
+            color: "#EEF2F5"
+          },
+          ticks: {
+            callback: function(v) {
+              return v + "%";
+            }
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderCiclosInefectivosChart(scope) {
+  const items = scope.top_ciclos_inefectivos;
+  if (charts.ciclosInefectivos) charts.ciclosInefectivos.destroy();
+  charts.ciclosInefectivos = new Chart(document.getElementById("ciclos-inefectivos-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) {
+        return i.ciclo;
+      }),
+      datasets: [ {
+        label: "% Efectividad",
+        data: items.map(function(i) {
+          return i.pct_efectividad;
+        }),
+        backgroundColor: items.map(function(i) {
+          return semColor(i.pct_efectividad);
+        }),
+        borderRadius: 4,
+        maxBarThickness: 18
+      } ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: makeBarClickHandler("ciclo", items),
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return "% Efectividad: " + fmtPct(ctx.raw);
+            },
+            afterLabel: function(ctx) {
+              const it = items[ctx.dataIndex];
+              const rango = it.fecha_min === it.fecha_max ? formatDateShort(it.fecha_min) : formatDateShort(it.fecha_min) + " – " + formatDateShort(it.fecha_max);
+              return [ fmtInt(it.efectiva) + " de " + fmtInt(it.total) + " órdenes efectivas", "Fecha inspección: " + (rango || "sin datos") ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          max: 100,
+          grid: {
+            color: "#EEF2F5"
+          },
+          title: {
+            display: true,
+            text: "% Efectividad"
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderDailyEfectividadChart(scope) {
+  const labels = scope.daily.map(function(d) {
+    return formatDateShort(d.fecha);
+  });
+  const efect = scope.daily.map(function(d) {
+    return d.total ? round1(d.efectiva / d.total * 100) : 0;
+  });
+  const meta = scope.daily.map(function() {
+    return EFECTIVIDAD_META;
+  });
+  if (charts.dailyEfect) charts.dailyEfect.destroy();
+  charts.dailyEfect = new Chart(document.getElementById("daily-efectividad-chart"), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [ {
+        label: "% Efectividad",
+        data: efect,
+        borderColor: COLORS.teal,
+        backgroundColor: "rgba(23,162,184,0.12)",
+        fill: true,
+        tension: .35,
+        pointRadius: 3,
+        pointBackgroundColor: COLORS.teal,
+        borderWidth: 2.5
+      }, {
+        label: "Meta " + EFECTIVIDAD_META + "%",
+        data: meta,
+        borderColor: COLORS.warning,
+        borderDash: [ 6, 4 ],
+        borderWidth: 1.6,
+        pointRadius: 0,
+        fill: false
+      } ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ctx.dataset.label + ": " + fmtPct(ctx.raw);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          beginAtZero: true,
+          max: 100,
+          grid: {
+            color: "#EEF2F5"
+          },
+          title: {
+            display: true,
+            text: "% Efectividad"
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderDailyErroresChart(scope) {
+  const labels = scope.daily.map(function(d) {
+    return formatDateShort(d.fecha);
+  });
+  const errores = scope.daily.map(function(d) {
+    return d.con_errores;
+  });
+  if (charts.dailyErrores) charts.dailyErrores.destroy();
+  charts.dailyErrores = new Chart(document.getElementById("daily-errores-chart"), {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [ {
+        label: "Órdenes con error",
+        data: errores,
+        borderColor: COLORS.danger,
+        backgroundColor: "rgba(228,87,46,0.12)",
+        fill: true,
+        tension: .35,
+        pointRadius: 3,
+        pointBackgroundColor: COLORS.danger,
+        borderWidth: 2.5
+      } ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            afterLabel: function(ctx) {
+              const d = scope.daily[ctx.dataIndex];
+              return "% del día: " + fmtPct(d.total ? round1(d.con_errores / d.total * 100) : 0);
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: {
+            display: false
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: "#EEF2F5"
+          },
+          title: {
+            display: true,
+            text: "Órdenes con error"
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderSupervisoresChart() {
+  const items = DATA.overall.supervisores;
+  const colors = items.map(function(i) {
+    const base = semColor(i.pct_efectividad);
+    if (currentScopes.length === 0) return base;
+    return currentScopes.indexOf(i.supervisor) !== -1 ? base : COLORS.gray;
+  });
+  const metaLine = items.map(function() {
+    return EFECTIVIDAD_META_INDIVIDUAL;
+  });
+  if (charts.supervisores) charts.supervisores.destroy();
+  charts.supervisores = new Chart(document.getElementById("supervisores-chart"), {
+    data: {
+      labels: items.map(function(i) {
+        return i.supervisor;
+      }),
+      datasets: [ {
+        type: "bar",
+        label: "% Efectividad",
+        data: items.map(function(i) {
+          return i.pct_efectividad;
+        }),
+        backgroundColor: colors,
+        borderRadius: 5,
+        maxBarThickness: 30
+      }, {
+        type: "line",
+        label: "Meta interna " + EFECTIVIDAD_META_INDIVIDUAL + "%",
+        data: metaLine,
+        borderColor: COLORS.primaryDark,
+        borderDash: [ 6, 4 ],
+        borderWidth: 1.6,
+        pointRadius: 0,
+        fill: false
+      } ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: makeBarClickHandler("supervisor", items),
+      plugins: {
+        legend: {
+          position: "bottom"
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return ctx.dataset.label + ": " + fmtPct(ctx.raw);
+            },
+            afterLabel: function(ctx) {
+              if (ctx.datasetIndex !== 0) return "";
+              const it = items[ctx.dataIndex];
+              return [ fmtInt(it.efectiva) + " de " + fmtInt(it.total) + " órdenes efectivas", "% error: " + fmtPct(it.pct_error) ];
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          grid: {
+            color: "#EEF2F5"
+          },
+          title: {
+            display: true,
+            text: "% Efectividad"
+          }
+        },
+        x: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderCausasChart(scope) {
+  const items = scope.top_causas;
+  const totalErr = scope.kpis.total;
+  if (charts.causas) charts.causas.destroy();
+  charts.causas = new Chart(document.getElementById("causas-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) {
+        return i.causa;
+      }),
+      datasets: [ {
+        data: items.map(function(i) {
+          return i.count;
+        }),
+        backgroundColor: COLORS.primary,
+        borderRadius: 4,
+        maxBarThickness: 18
+      } ]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      maintainAspectRatio: false,
+      onClick: makeBarClickHandler("causa", items),
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) {
+              return fmtInt(ctx.raw) + " órdenes (" + fmtPct(totalErr ? round1(ctx.raw / totalErr * 100) : 0) + " del total cerrado)";
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: {
+            color: "#EEF2F5"
+          }
+        },
+        y: {
+          grid: {
+            display: false
+          }
+        }
+      }
+    }
+  });
+}
+
+function scopeLabelText() {
+  if (currentScopes.length === 0) return "todos";
+  return currentScopes.join("_").replace(/\s+/g, "_");
+}
+
+function renderSummaryTable() {
+  const tbody = document.getElementById("summary-tbody");
+  tbody.innerHTML = "";
+  attachTableSort("summary-table", "total", "desc", renderSummaryTable);
+  const list = sortByState(DATA.overall.supervisores, getTableSort("summary-table", "total", "desc"));
+  list.forEach(function(s) {
+    const tr = document.createElement("tr");
+    if (currentScopes.indexOf(s.supervisor) !== -1) tr.className = "active-row";
+    tr.innerHTML = "<td>" + s.supervisor + "</td>" + '<td class="num">' + fmtInt(s.total) + "</td>" + '<td class="num">' + fmtInt(s.correcto) + "</td>" + '<td class="num">' + fmtInt(s.con_errores) + "</td>" + '<td class="num">' + fmtPct(s.pct_error) + "</td>" + '<td class="num">' + fmtInt(s.efectiva) + "</td>" + '<td class="num">' + semBadge(s.pct_efectividad) + "</td>";
+    tbody.appendChild(tr);
+  });
+}
+
+function computeInspectorFiltered() {
+  const q = document.getElementById("inspector-search").value.trim().toLowerCase();
+  let rows = DATA.overall.inspectores_full.filter(function(r) {
+    if (currentScopes.length && currentScopes.indexOf(r.supervisor) === -1) return false;
+    if (!q) return true;
+    return r.inspector.toLowerCase().indexOf(q) !== -1;
+  });
+  rows = rows.slice().sort(function(a, b) {
+    const k = inspectorSort.key;
+    let va = a[k], vb = b[k];
+    if (typeof va === "number" && typeof vb === "number") return inspectorSort.dir === "asc" ? va - vb : vb - va;
+    va = String(va);
+    vb = String(vb);
+    if (va < vb) return inspectorSort.dir === "asc" ? -1 : 1;
+    if (va > vb) return inspectorSort.dir === "asc" ? 1 : -1;
+    return 0;
+  });
+  inspectorFiltered = rows;
+}
+
+function onSortInspector(key) {
+  if (inspectorSort.key === key) inspectorSort.dir = inspectorSort.dir === "asc" ? "desc" : "asc"; else {
+    inspectorSort.key = key;
+    inspectorSort.dir = "desc";
+  }
+  document.querySelectorAll("#inspector-table thead th").forEach(function(th) {
+    th.classList.toggle("sorted", th.dataset.key === key);
+  });
+  computeInspectorFiltered();
+  renderInspectorTable();
+}
+
+function renderInspectorTable() {
+  document.getElementById("inspector-count").textContent = fmtInt(inspectorFiltered.length);
+  const tbody = document.getElementById("inspector-tbody");
+  tbody.innerHTML = "";
+  inspectorFiltered.forEach(function(r) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
+    tbody.appendChild(tr);
+  });
+}
+
+function exportInspectorCSV() {
+  const headers = [ {
+    key: "inspector",
+    label: "Inspector"
+  }, {
+    key: "supervisor",
+    label: "Supervisor"
+  }, {
+    key: "total",
+    label: "Total"
+  }, {
+    key: "correcto",
+    label: "Correctas"
+  }, {
+    key: "con_errores",
+    label: "Con error"
+  }, {
+    key: "pct_error",
+    label: "% Error"
+  }, {
+    key: "pct_efectividad",
+    label: "% Efectividad"
+  } ];
+  const scopeLabel = scopeLabelText();
+  downloadCSV("resumen_por_inspector_" + scopeLabel + ".csv", inspectorFiltered, headers);
+}
+
+let detailDateFrom = "";
+
+let detailDateTo = "";
+
+let detailMonthSel = "";
+
+let detailInspectorSel = "";
+
+let detailCicloSel = "";
+
+let detailTipoSel = "";
+
+let detailSupervisorSel = "";
+
+function populateDetailFilterOptions() {
+  const rows = DATA ? DATA.errores_detalle : [];
+  const cfgs = [ [ "detail-inspector-select", "inspector" ], [ "detail-ciclo-select", "ciclo" ], [ "detail-supervisor-select", "supervisor" ] ];
+  cfgs.forEach(function(cfg) {
+    const sel = document.getElementById(cfg[0]);
+    if (!sel) return;
+    const prev = sel.value;
+    const vals = Array.from(new Set(rows.map(function(r) {
+      return r[cfg[1]];
+    }).filter(Boolean))).sort();
+    sel.innerHTML = '<option value="">Todos</option>';
+    vals.forEach(function(v) {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = v;
+      sel.appendChild(o);
+    });
+    sel.value = vals.indexOf(prev) !== -1 ? prev : "";
+  });
+  const tipoSel = document.getElementById("detail-tipo-select");
+  if (tipoSel && tipoSel.options.length <= 1) {
+    [ "Efectiva", "No Efectivo", "Excluido" ].forEach(function(k) {
+      const o = document.createElement("option");
+      o.value = k;
+      o.textContent = k;
+      tipoSel.appendChild(o);
+    });
+  }
+  detailInspectorSel = document.getElementById("detail-inspector-select") ? document.getElementById("detail-inspector-select").value : "";
+  detailCicloSel = document.getElementById("detail-ciclo-select") ? document.getElementById("detail-ciclo-select").value : "";
+  detailSupervisorSel = document.getElementById("detail-supervisor-select") ? document.getElementById("detail-supervisor-select").value : "";
+}
+
+function computeDetailFiltered() {
+  const q = document.getElementById("table-search").value.trim().toLowerCase();
+  let rows = DATA.errores_detalle.filter(function(r) {
+    if (currentScopes.length && currentScopes.indexOf(r.supervisor) === -1) return false;
+    if (detailDateFrom && r.fecha < detailDateFrom) return false;
+    if (detailDateTo && r.fecha > detailDateTo) return false;
+    if (detailMonthSel && r.fecha.slice(0, 7) !== detailMonthSel) return false;
+    if (detailInspectorSel && r.inspector !== detailInspectorSel) return false;
+    if (detailCicloSel && r.ciclo !== detailCicloSel) return false;
+    if (detailSupervisorSel && r.supervisor !== detailSupervisorSel) return false;
+    if (detailTipoSel && r.efectividad !== detailTipoSel) return false;
+    if (!q) return true;
+    return String(r.orden).toLowerCase().indexOf(q) !== -1 || String(r.cuenta).toLowerCase().indexOf(q) !== -1 || String(r.inspector).toLowerCase().indexOf(q) !== -1 || String(r.ciclo).toLowerCase().indexOf(q) !== -1;
+  });
+  rows = rows.slice().sort(function(a, b) {
+    const k = detailSort.key;
+    let va = a[k], vb = b[k];
+    if (typeof va === "number" && typeof vb === "number") return detailSort.dir === "asc" ? va - vb : vb - va;
+    va = String(va);
+    vb = String(vb);
+    if (va < vb) return detailSort.dir === "asc" ? -1 : 1;
+    if (va > vb) return detailSort.dir === "asc" ? 1 : -1;
+    return 0;
+  });
+  detailFiltered = rows;
+}
+
+function onSort(key) {
+  if (detailSort.key === key) detailSort.dir = detailSort.dir === "asc" ? "desc" : "asc"; else {
+    detailSort.key = key;
+    detailSort.dir = "asc";
+  }
+  document.querySelectorAll("#detail-table thead th").forEach(function(th) {
+    th.classList.toggle("sorted", th.dataset.key === key);
+  });
+  computeDetailFiltered();
+  detailPage = 0;
+  renderDetailTable();
+}
+
+function changePage(delta) {
+  const maxPage = Math.max(0, Math.ceil(detailFiltered.length / PAGE_SIZE) - 1);
+  detailPage = Math.min(maxPage, Math.max(0, detailPage + delta));
+  renderDetailTable();
+}
+
+function renderDetailTable() {
+  document.getElementById("detail-count").textContent = fmtInt(detailFiltered.length);
+  const start = detailPage * PAGE_SIZE;
+  const pageRows = detailFiltered.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById("detail-tbody");
+  tbody.innerHTML = "";
+  pageRows.forEach(function(r) {
+    const tr = document.createElement("tr");
+    const efBadge = r.efectividad === "Efectiva" ? '<span class="badge efectiva">Efectiva</span>' : r.efectividad === "No Efectivo" ? '<span class="badge no-efectiva">No efectiva</span>' : '<span class="badge" style="background:#EEF1F3;color:#5C7182;">Excluido</span>';
+    tr.innerHTML = "<td>" + formatDateShort(r.fecha) + "</td>" + "<td>" + r.orden + "</td>" + "<td>" + r.cuenta + "</td>" + "<td>" + r.ciclo + "</td>" + "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + "<td>" + (r.causa_cierre || "—") + "</td>" + "<td>" + (r.obs_1 || "—") + "</td>" + "<td>" + (r.horaTexto || "—") + "</td>" + "<td>" + efBadge + "</td>";
+    tbody.appendChild(tr);
+  });
+  const total = detailFiltered.length;
+  const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+  const from = total === 0 ? 0 : start + 1;
+  const to = Math.min(start + PAGE_SIZE, total);
+  document.getElementById("page-info").textContent = "Mostrando " + from + "–" + to + " de " + total;
+  document.getElementById("prev-page").disabled = detailPage <= 0;
+  document.getElementById("next-page").disabled = detailPage >= maxPage;
+}
+
+function csvEscape(val) {
+  const s = String(val === undefined || val === null ? "" : val);
+  if (/[",\n;]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+  return s;
+}
+
+function downloadCSV(filename, rows, headers) {
+  const lines = [ headers.map(function(h) {
+    return csvEscape(h.label);
+  }).join(",") ];
+  rows.forEach(function(r) {
+    lines.push(headers.map(function(h) {
+      return csvEscape(r[h.key]);
+    }).join(","));
+  });
+  const csv = "\ufeff" + lines.join("\r\n");
+  const blob = new Blob([ csv ], {
+    type: "text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportDetailCSV() {
+  const headers = [ {
+    key: "fecha",
+    label: "Fecha"
+  }, {
+    key: "orden",
+    label: "Orden"
+  }, {
+    key: "cuenta",
+    label: "Cuenta"
+  }, {
+    key: "ciclo",
+    label: "Tipo de trabajo"
+  }, {
+    key: "inspector",
+    label: "Inspector"
+  }, {
+    key: "supervisor",
+    label: "Supervisor"
+  }, {
+    key: "causa_cierre",
+    label: "Causa de cierre"
+  }, {
+    key: "obs_1",
+    label: "Comentario"
+  }, {
+    key: "horaTexto",
+    label: "Hora"
+  }, {
+    key: "efectividad",
+    label: "Calificación"
+  } ];
+  const scopeLabel = scopeLabelText();
+  downloadCSV("detalle_ordenes_" + scopeLabel + ".csv", detailFiltered, headers);
+}
+
+function exportSummaryCSV() {
+  const headers = [ {
+    key: "supervisor",
+    label: "Supervisor"
+  }, {
+    key: "total",
+    label: "Total"
+  }, {
+    key: "correcto",
+    label: "Correctas"
+  }, {
+    key: "con_errores",
+    label: "Con error"
+  }, {
+    key: "pct_error",
+    label: "% Error"
+  }, {
+    key: "efectiva",
+    label: "Efectivas"
+  }, {
+    key: "pct_efectividad",
+    label: "% Efectividad"
+  } ];
+  downloadCSV("resumen_por_supervisor.csv", DATA.overall.supervisores, headers);
+}
+
+let currentRole = null;
+
+function applyRoleRestrictions(role) {
+  currentRole = role;
+  const isAdmin = role === "admin";
+  document.querySelectorAll(".tab-bar .tab-btn").forEach(function(btn) {
+    const hidden = !isAdmin && SUPERVISOR_HIDDEN_PAGES.indexOf(btn.dataset.page) !== -1;
+    btn.classList.toggle("role-hidden", hidden);
+  });
+  const activeBtn = document.querySelector(".tab-bar .tab-btn.active");
+  if (activeBtn && activeBtn.classList.contains("role-hidden")) {
+    const hoyBtn = document.querySelector('.tab-bar .tab-btn[data-page="hoy"]');
+    if (hoyBtn) hoyBtn.click();
+  }
+  const badge = document.getElementById("role-badge");
+  const pill = document.getElementById("role-pill");
+  badge.classList.toggle("admin-pill", isAdmin);
+  pill.textContent = isAdmin ? "Administrador" : "Supervisor";
+}
+
+function unlockDashboard(role) {
+  try {
+    localStorage.setItem(ROLE_STORAGE_KEY, role);
+  } catch (e) {}
+  document.getElementById("access-gate").classList.add("hidden");
+  applyRoleRestrictions(role);
+}
+
+function initAccessGate() {
+  let storedRole = null;
+  try {
+    storedRole = localStorage.getItem(ROLE_STORAGE_KEY);
+  } catch (e) {}
+  if (storedRole === "admin" || storedRole === "supervisor") {
+    unlockDashboard(storedRole);
+  }
+  document.getElementById("role-btn-supervisor").addEventListener("click", function() {
+    unlockDashboard("supervisor");
+  });
+  document.getElementById("role-btn-admin").addEventListener("click", function() {
+    document.getElementById("role-choices").classList.add("hidden");
+    document.getElementById("access-password-row").classList.remove("hidden");
+    document.getElementById("access-password-input").focus();
+  });
+  document.getElementById("access-back-btn").addEventListener("click", function() {
+    document.getElementById("access-password-row").classList.add("hidden");
+    document.getElementById("role-choices").classList.remove("hidden");
+    document.getElementById("access-error").textContent = " ";
+    document.getElementById("access-password-input").value = "";
+  });
+  function trySubmitPassword() {
+    const val = document.getElementById("access-password-input").value;
+    if (val === ADMIN_PASSWORD) {
+      unlockDashboard("admin");
+    } else {
+      document.getElementById("access-error").textContent = "Contraseña incorrecta.";
+      document.getElementById("access-password-input").value = "";
+      document.getElementById("access-password-input").focus();
+    }
+  }
+  document.getElementById("access-password-submit").addEventListener("click", trySubmitPassword);
+  document.getElementById("access-password-input").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") trySubmitPassword();
+  });
+  document.getElementById("role-switch-btn").addEventListener("click", function() {
+    try {
+      localStorage.removeItem(ROLE_STORAGE_KEY);
+    } catch (e) {}
+    document.getElementById("access-gate").classList.remove("hidden");
+    document.getElementById("role-choices").classList.remove("hidden");
+    document.getElementById("access-password-row").classList.add("hidden");
+    document.getElementById("access-password-input").value = "";
+    document.getElementById("access-error").textContent = " ";
+  });
+}
+
+function init() {
+  setupMultiSelectToggle("supervisor-msel");
+  setupMultiSelectToggle("month-msel");
+  document.addEventListener("click", closeAllMselPanels);
+  document.getElementById("table-search").addEventListener("input", function() {
+    detailPage = 0;
+    computeDetailFiltered();
+    renderDetailTable();
+  });
+  document.getElementById("prev-page").addEventListener("click", function() {
+    changePage(-1);
+  });
+  document.getElementById("next-page").addEventListener("click", function() {
+    changePage(1);
+  });
+  document.getElementById("export-detail-btn").addEventListener("click", exportDetailCSV);
+  document.getElementById("export-inspector-btn").addEventListener("click", exportInspectorCSV);
+  document.getElementById("refresh-btn").addEventListener("click", function() {
+    loadData(true);
+  });
+  document.getElementById("clear-all-filters-btn").addEventListener("click", clearAllFiltersEverywhere);
+  document.querySelectorAll("#detail-table thead th").forEach(function(th) {
+    th.addEventListener("click", function() {
+      onSort(th.dataset.key);
+    });
+  });
+  document.getElementById("inspector-search").addEventListener("input", function() {
+    computeInspectorFiltered();
+    renderInspectorTable();
+  });
+  document.querySelectorAll("#inspector-table thead th").forEach(function(th) {
+    th.addEventListener("click", function() {
+      onSortInspector(th.dataset.key);
+    });
+  });
+  document.querySelectorAll(".tab-bar .tab-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      const page = btn.dataset.page;
+      document.querySelectorAll(".tab-bar .tab-btn").forEach(function(b) {
+        b.classList.toggle("active", b === btn);
+      });
+      document.querySelectorAll(".page-content").forEach(function(p) {
+        p.classList.toggle("active", p.dataset.page === page);
+      });
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    });
+  });
+  initAccessGate();
+  document.getElementById("date-from").addEventListener("change", function(e) {
+    dateFrom = e.target.value || "";
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById("date-to").addEventListener("change", function(e) {
+    dateTo = e.target.value || "";
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById("date-clear-btn").addEventListener("click", function() {
+    dateFrom = "";
+    dateTo = "";
+    document.getElementById("date-from").value = "";
+    document.getElementById("date-to").value = "";
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById("hoy-inspector-select").addEventListener("change", function(e) {
+    hoyInspectorScope = e.target.value;
+    renderHoyBlock();
+  });
+  document.getElementById("hoy-inspector-search").addEventListener("input", function(e) {
+    hoySearchTerm = e.target.value || "";
+    renderHoyBlock();
+  });
+  document.getElementById("detail-date-from").addEventListener("change", function(e) {
+    detailDateFrom = e.target.value || "";
+    detailPage = 0;
+    if (DATA) {
+      computeDetailFiltered();
+      renderDetailTable();
+    }
+  });
+  document.getElementById("detail-date-to").addEventListener("change", function(e) {
+    detailDateTo = e.target.value || "";
+    detailPage = 0;
+    if (DATA) {
+      computeDetailFiltered();
+      renderDetailTable();
+    }
+  });
+  document.getElementById("detail-date-clear-btn").addEventListener("click", function() {
+    detailDateFrom = "";
+    detailDateTo = "";
+    detailMonthSel = "";
+    detailInspectorSel = "";
+    detailCicloSel = "";
+    detailTipoSel = "";
+    detailSupervisorSel = "";
+    [ "detail-date-from", "detail-date-to", "detail-month-select", "detail-inspector-select", "detail-ciclo-select", "detail-tipo-select", "detail-supervisor-select" ].forEach(function(id) {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
+    detailPage = 0;
+    if (DATA) {
+      computeDetailFiltered();
+      renderDetailTable();
+    }
+  });
+  [ [ "detail-month-select", function(v) {
+    detailMonthSel = v;
+  } ], [ "detail-inspector-select", function(v) {
+    detailInspectorSel = v;
+  } ], [ "detail-ciclo-select", function(v) {
+    detailCicloSel = v;
+  } ], [ "detail-tipo-select", function(v) {
+    detailTipoSel = v;
+  } ], [ "detail-supervisor-select", function(v) {
+    detailSupervisorSel = v;
+  } ] ].forEach(function(cfg) {
+    document.getElementById(cfg[0]).addEventListener("change", function(e) {
+      cfg[1](e.target.value || "");
+      detailPage = 0;
+      if (DATA) {
+        computeDetailFiltered();
+        renderDetailTable();
+      }
+    });
+  });
+  const backTop = document.getElementById("back-to-top");
+  window.addEventListener("scroll", function() {
+    backTop.classList.toggle("hidden", window.scrollY < 500);
+  });
+  backTop.addEventListener("click", function() {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  });
+  loadData(false);
+  setInterval(function() {
+    loadData(false);
+  }, REFRESH_INTERVAL_MS);
+  if ("serviceWorker" in navigator) {
+    let swRefreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function() {
+      if (swRefreshing) return;
+      swRefreshing = true;
+      window.location.reload();
+    });
+    window.addEventListener("load", function() {
+      navigator.serviceWorker.register("sw.js", {
+        updateViaCache: "none"
+      }).then(function(reg) {
+        reg.update();
+      }).catch(function() {});
+    });
+  }
+  let deferredPrompt;
+  window.addEventListener("beforeinstallprompt", function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById("install-btn").classList.remove("hidden");
+  });
+  document.getElementById("install-btn").addEventListener("click", async function() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    document.getElementById("install-btn").classList.add("hidden");
+  });
+}
+
+init();
+</script>
+</body>
+</html>
