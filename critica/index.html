@@ -3378,7 +3378,9 @@ function renderDailyErroresChart(scope) {
 }
 
 function renderSupervisoresChart() {
-  const items = DATA.overall.supervisores;
+  const items = DATA.overall.supervisores.slice().sort(function(a, b) {
+    return b.pct_efectividad - a.pct_efectividad;
+  });
   const colors = items.map(function(i) {
     const base = semColor(i.pct_efectividad);
     if (currentScopes.length === 0) return base;
