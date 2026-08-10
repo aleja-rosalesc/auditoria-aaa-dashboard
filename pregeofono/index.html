@@ -3468,7 +3468,7 @@ function renderDailyErroresChart(scope) {
     return formatDateShort(d.fecha);
   });
   const errores = scope.daily.map(function(d) {
-    return d.con_errores;
+    return d.no_efectiva;
   });
   if (charts.dailyErrores) charts.dailyErrores.destroy();
   charts.dailyErrores = new Chart(document.getElementById("daily-errores-chart"), {
@@ -3498,7 +3498,7 @@ function renderDailyErroresChart(scope) {
           callbacks: {
             afterLabel: function(ctx) {
               const d = scope.daily[ctx.dataIndex];
-              return "% del día: " + fmtPct(d.total ? round1(d.con_errores / d.total * 100) : 0);
+              return "% del día: " + fmtPct(d.total ? round1(d.no_efectiva / d.total * 100) : 0);
             }
           }
         }
