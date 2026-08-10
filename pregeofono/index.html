@@ -760,7 +760,7 @@
   <section class="chart-row one-col">
     <div class="chart-container">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Comparativo mensual <span style="font-weight:500; font-size:11px; color:var(--text-2);">(solo Administrador)</span></h3>
-      <p class="chart-sub">Efectividad y error por mes, uno junto al otro para comparar entre periodos · línea punteada = meta 65%</p>
+      <p class="chart-sub">Efectividad y no efectividad por mes, uno junto al otro para comparar entre periodos · línea punteada = meta 65%</p>
       <div id="monthly-comparative-wrap" style="height:200px; position:relative;">
         <canvas id="monthly-comparative-chart"></canvas>
       </div>
@@ -813,8 +813,8 @@
 
   <section class="chart-row one-col" id="sec-tendencias">
     <div class="chart-container">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> Evolución diaria de auditorías</h3>
-      <p class="chart-sub">Órdenes correctas vs. con error (barras) y % de efectividad (línea)</p>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> Evolución diaria de cierres</h3>
+      <p class="chart-sub">Órdenes efectivas vs. no efectivas (barras) y % de efectividad (línea)</p>
       <canvas id="daily-chart" height="90"></canvas>
     </div>
   </section>
@@ -826,8 +826,8 @@
       <canvas id="daily-efectividad-chart"></canvas>
     </div>
     <div class="chart-container">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Línea de tiempo — errores diarios</h3>
-      <p class="chart-sub">Órdenes con error por día</p>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Línea de tiempo — no efectivas diarias</h3>
+      <p class="chart-sub">Órdenes no efectivas por día</p>
       <canvas id="daily-errores-chart"></canvas>
     </div>
   </section>
@@ -857,29 +857,29 @@
   <div class="page-content" data-page="inspectores">
   <section class="chart-row two-col" id="sec-inspectores">
     <div class="chart-container tall">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 6l4 4M21 6l-4 4"/></svg> Inspectores con mayor tasa de error</h3>
-      <p class="chart-sub">% de error sobre el total auditado (mínimo 10 órdenes)</p>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/><path d="M17 6l4 4M21 6l-4 4"/></svg> Inspectores con mayor tasa de no efectividad</h3>
+      <p class="chart-sub">% no efectivas sobre el total gestionado (mínimo 10 órdenes)</p>
       <canvas id="inspectores-chart"></canvas>
     </div>
     <div class="chart-container tall">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="5"/><path d="M9 13.5L7.5 21l4.5-2.5L16.5 21 15 13.5"/></svg> Inspectores más efectivos</h3>
-      <p class="chart-sub">% de efectividad sobre el total auditado (mínimo 10 órdenes)</p>
+      <p class="chart-sub">% de efectividad sobre el total gestionado (mínimo 10 órdenes)</p>
       <canvas id="inspectores-efectivos-chart"></canvas>
     </div>
   </section>
 
   <section class="chart-row one-col">
     <div class="chart-container tall">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg> Efectividad vs. errores por inspector</h3>
-      <p class="chart-sub">Barra verde = % efectividad · barra roja = % error de auditoría · mismos inspectores del gráfico anterior, ordenados de mayor a menor efectividad.</p>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg> Efectividad vs. no efectivas por inspector</h3>
+      <p class="chart-sub">Barra verde = % efectividad · barra roja = % no efectivas · mismos inspectores del gráfico anterior, ordenados de mayor a menor efectividad.</p>
       <canvas id="inspector-diverging-chart"></canvas>
     </div>
   </section>
 
   <section class="chart-row two-col">
     <div class="chart-container tall">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Ciclos con más órdenes en error</h3>
-      <p class="chart-sub">Top 15 ciclos por número de órdenes con error</p>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Ciclos con más órdenes no efectivas</h3>
+      <p class="chart-sub">Top 15 ciclos por número de órdenes no efectivas</p>
       <canvas id="ciclos-chart"></canvas>
     </div>
     <div class="chart-container tall">
@@ -897,14 +897,14 @@
         <button class="btn ghost" id="export-inspector-btn">Exportar CSV</button>
       </div>
     </div>
-    <p class="chart-sub" style="margin:-4px 0 10px;">Efectividad y errores lado a lado, por inspector (<span id="inspector-count">0</span>) · clic en un encabezado para ordenar</p>
+    <p class="chart-sub" style="margin:-4px 0 10px;">Efectividad y no efectivas lado a lado, por inspector (<span id="inspector-count">0</span>) · clic en un encabezado para ordenar</p>
     <div class="table-scroll">
       <table class="data-table summary-table" id="inspector-table">
         <thead>
           <tr>
             <th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Total</th>
             <th data-key="correcto" class="num">Efectivas</th><th data-key="con_errores" class="num">No efectivas</th>
-            <th data-key="pct_error" class="num sorted">% Error</th><th data-key="pct_efectividad" class="num">% Efectividad</th>
+            <th data-key="pct_error" class="num sorted">% No efectivas</th><th data-key="pct_efectividad" class="num">% Efectividad</th>
           </tr>
         </thead>
         <tbody id="inspector-tbody"></tbody>
@@ -930,7 +930,7 @@
   </div>
   <section class="table-section" id="sec-detalle">
     <div class="table-header">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Detalle de órdenes con error (<span id="detail-count">0</span>)</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Detalle de órdenes no efectivas (<span id="detail-count">0</span>)</h3>
       <div class="table-actions">
         <input type="text" id="table-search" placeholder="Buscar por orden, cuenta, inspector o ciclo…">
         <button class="btn" id="export-detail-btn">Exportar CSV</button>
@@ -1667,8 +1667,6 @@ let filterCiclo = "";
 
 let filterCausa = "";
 
-let filterTipoError = "";
-
 let filterMonths = [];
 
 function processRawRows(rawRows) {
@@ -1917,7 +1915,6 @@ function rebuildData() {
         causa_cierre: r.causa,
         fecha: r.fecha,
         horaTexto: r.horaTexto,
-        tipo_error: "",
         efectividad: r.efectividad,
         obs_1: r.comentario_cierre
       };
@@ -1986,7 +1983,7 @@ function forceDimensionFilter(dimension, item) {
     rebuildData();
     return;
   }
-  if (dimension === "inspector") filterInspector = item.inspector; else if (dimension === "ciclo") filterCiclo = item.ciclo; else if (dimension === "causa") filterCausa = item.causa; else if (dimension === "tipoError") filterTipoError = item.key;
+  if (dimension === "inspector") filterInspector = item.inspector; else if (dimension === "ciclo") filterCiclo = item.ciclo; else if (dimension === "causa") filterCausa = item.causa;
   rebuildData();
 }
 
@@ -2005,8 +2002,6 @@ function applyDimensionFilter(dimension, item) {
     filterCiclo = filterCiclo === item.ciclo ? "" : item.ciclo;
   } else if (dimension === "causa") {
     filterCausa = filterCausa === item.causa ? "" : item.causa;
-  } else if (dimension === "tipoError") {
-    filterTipoError = filterTipoError === item.key ? "" : item.key;
   }
   rebuildData();
 }
@@ -2017,7 +2012,7 @@ function goToDetallePage() {
 }
 
 function clearFilter(which, value) {
-  if (which === "inspector") filterInspector = ""; else if (which === "ciclo") filterCiclo = ""; else if (which === "causa") filterCausa = ""; else if (which === "tipoError") filterTipoError = ""; else if (which === "month") {
+  if (which === "inspector") filterInspector = ""; else if (which === "ciclo") filterCiclo = ""; else if (which === "causa") filterCausa = ""; else if (which === "month") {
     filterMonths = value !== undefined ? filterMonths.filter(function(m) {
       return m !== value;
     }) : [];
@@ -2034,7 +2029,6 @@ function clearAllFiltersEverywhere() {
   filterInspector = "";
   filterCiclo = "";
   filterCausa = "";
-  filterTipoError = "";
   filterMonths = [];
   currentScopes = [];
   detailDateFrom = "";
@@ -2059,8 +2053,6 @@ function clearAllFiltersEverywhere() {
 function clearAllCrossFilters() {
   clearAllFiltersEverywhere();
 }
-
-const TIPO_ERROR_LABELS = {};
 
 function renderActiveFiltersBar() {
   const bar = document.getElementById("active-filters-bar");
@@ -2092,10 +2084,6 @@ function renderActiveFiltersBar() {
     label: "Causa: " + filterCausa,
     clear: "causa"
   });
-  if (filterTipoError) chips.push({
-    label: "Tipo de error: " + TIPO_ERROR_LABELS[filterTipoError],
-    clear: "tipoError"
-  });
   if (!chips.length) {
     bar.classList.add("hidden");
     bar.innerHTML = "";
@@ -2115,7 +2103,7 @@ function renderActiveFiltersBar() {
 }
 
 function renderAll() {
-  document.getElementById("header-meta").innerHTML = "Periodo <b>" + formatDateLong(DATA.meta.fecha_min) + "</b> – <b>" + formatDateLong(DATA.meta.fecha_max) + "</b> · " + "<b>" + fmtInt(DATA.meta.total_registros) + "</b> órdenes auditadas · " + "<b>" + DATA.meta.total_inspectores + "</b> inspectores · " + "<b>" + DATA.meta.total_supervisores + "</b> supervisores · " + "<b>" + DATA.meta.total_ciclos + "</b> ciclos";
+  document.getElementById("header-meta").innerHTML = "Periodo <b>" + formatDateLong(DATA.meta.fecha_min) + "</b> – <b>" + formatDateLong(DATA.meta.fecha_max) + "</b> · " + "<b>" + fmtInt(DATA.meta.total_registros) + "</b> órdenes gestionadas · " + "<b>" + DATA.meta.total_inspectores + "</b> inspectores · " + "<b>" + DATA.meta.total_supervisores + "</b> supervisores · " + "<b>" + DATA.meta.total_ciclos + "</b> ciclos";
   const scope = getScopeData();
   renderActiveFiltersBar();
   renderHoyBlock();
@@ -2541,7 +2529,7 @@ function renderMonthlyComparativeChart() {
         categoryPercentage: .72,
         barPercentage: .92
       }, {
-        label: "% Error",
+        label: "% No efectivas",
         data: items.map(function(i) {
           return i.pct_error;
         }),
@@ -2574,7 +2562,7 @@ function renderMonthlyComparativeChart() {
             afterLabel: function(ctx) {
               const it = items[ctx.dataIndex];
               if (ctx.datasetIndex === 0) return [ fmtInt(it.efectiva) + " de " + fmtInt(it.total) + " órdenes efectivas" ];
-              return [ fmtInt(it.con_errores) + " de " + fmtInt(it.total) + " órdenes con error" ];
+              return [ fmtInt(it.con_errores) + " de " + fmtInt(it.total) + " órdenes no efectivas" ];
             }
           }
         }
@@ -2793,7 +2781,7 @@ function renderCiclosChart(scope) {
         return i.ciclo;
       }),
       datasets: [ {
-        label: "Órdenes con error",
+        label: "Órdenes no efectivas",
         data: items.map(function(i) {
           return i.con_errores;
         }),
@@ -2820,7 +2808,7 @@ function renderCiclosChart(scope) {
             afterLabel: function(ctx) {
               const it = items[ctx.dataIndex];
               const rango = it.fecha_min === it.fecha_max ? formatDateShort(it.fecha_min) : formatDateShort(it.fecha_min) + " – " + formatDateShort(it.fecha_max);
-              return [ "% error del ciclo: " + fmtPct(it.pct_error), "Fecha inspección: " + rango ];
+              return [ "% no efectivas del ciclo: " + fmtPct(it.pct_error), "Fecha inspección: " + rango ];
             }
           }
         }
@@ -2852,7 +2840,7 @@ function renderInspectoresChart(scope) {
         return i.inspector;
       }),
       datasets: [ {
-        label: "% de error",
+        label: "% no efectivas",
         data: items.map(function(i) {
           return i.pct_error;
         }),
@@ -2873,11 +2861,11 @@ function renderInspectoresChart(scope) {
         tooltip: {
           callbacks: {
             label: function(ctx) {
-              return "% de error: " + fmtPct(ctx.raw);
+              return "% no efectivas: " + fmtPct(ctx.raw);
             },
             afterLabel: function(ctx) {
               const it = items[ctx.dataIndex];
-              return it.con_errores + " de " + it.total + " órdenes con error";
+              return it.con_errores + " de " + it.total + " órdenes no efectivas";
             }
           }
         }
@@ -2890,7 +2878,7 @@ function renderInspectoresChart(scope) {
           },
           title: {
             display: true,
-            text: "% de error"
+            text: "% no efectivas"
           }
         },
         y: {
@@ -3000,7 +2988,7 @@ function renderInspectorDivergingChart(scope) {
         borderRadius: 3,
         maxBarThickness: 16
       }, {
-        label: "% Error",
+        label: "% No efectivas",
         data: items.map(function(i) {
           return i.pct_error;
         }),
@@ -3025,7 +3013,7 @@ function renderInspectorDivergingChart(scope) {
             },
             afterLabel: function(ctx) {
               const it = items[ctx.dataIndex];
-              return [ "Órdenes ejecutadas: " + fmtInt(it.total), "Órdenes efectivas: " + fmtInt(it.efectiva), "Órdenes con error: " + fmtInt(it.con_errores) ];
+              return [ "Órdenes ejecutadas: " + fmtInt(it.total), "Órdenes efectivas: " + fmtInt(it.efectiva), "Órdenes no efectivas: " + fmtInt(it.con_errores) ];
             }
           }
         }
@@ -3203,7 +3191,7 @@ function renderDailyErroresChart(scope) {
     data: {
       labels: labels,
       datasets: [ {
-        label: "Órdenes con error",
+        label: "Órdenes no efectivas",
         data: errores,
         borderColor: COLORS.danger,
         backgroundColor: "rgba(228,87,46,0.12)",
@@ -3243,7 +3231,7 @@ function renderDailyErroresChart(scope) {
           },
           title: {
             display: true,
-            text: "Órdenes con error"
+            text: "Órdenes no efectivas"
           }
         }
       }
@@ -3303,7 +3291,7 @@ function renderSupervisoresChart() {
             afterLabel: function(ctx) {
               if (ctx.datasetIndex !== 0) return "";
               const it = items[ctx.dataIndex];
-              return [ fmtInt(it.efectiva) + " de " + fmtInt(it.total) + " órdenes efectivas", "% error: " + fmtPct(it.pct_error) ];
+              return [ fmtInt(it.efectiva) + " de " + fmtInt(it.total) + " órdenes efectivas", "% no efectivas: " + fmtPct(it.pct_error) ];
             }
           }
         }
@@ -3456,13 +3444,13 @@ function exportInspectorCSV() {
     label: "Total"
   }, {
     key: "correcto",
-    label: "Correctas"
+    label: "Efectivas"
   }, {
     key: "con_errores",
-    label: "Con error"
+    label: "No efectivas"
   }, {
     key: "pct_error",
-    label: "% Error"
+    label: "% No efectivas"
   }, {
     key: "pct_efectividad",
     label: "% Efectividad"
@@ -3662,10 +3650,10 @@ function exportSummaryCSV() {
     label: "Correctas"
   }, {
     key: "con_errores",
-    label: "Con error"
+    label: "No efectivas"
   }, {
     key: "pct_error",
-    label: "% Error"
+    label: "% No efectivas"
   }, {
     key: "efectiva",
     label: "Efectivas"
