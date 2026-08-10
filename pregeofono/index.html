@@ -1306,6 +1306,14 @@ function formatFechaHora(iso, horaObj) {
   return formatDateShort(iso) + (horaObj ? " " + formatHora(horaObj) : "");
 }
 
+// El "Unidad de trabajo" del reporte trae el nombre seguido de la empresa
+// contratista (ej. "NOMBRE - LECTA CONTINGENCIA"). Solo nos interesa el
+// personal de LECTA (processRawRows ya filtra el resto), así que una vez
+// filtrado no hace falta seguir mostrando esa etiqueta en el nombre.
+function cleanInspectorName(name) {
+  return String(name || "").replace(/\s*-\s*LECTA.*$/i, "").trim();
+}
+
 function lastWorkedDayBefore(beforeISO) {
   let best = "";
   ALL_CLEAN_ROWS.forEach(function(r) {
@@ -1866,6 +1874,7 @@ function processRawRows(rawRows) {
     const vencimientoTS = vencimiento ? vencimiento.getTime() : null;
     const causa = getField(r, "Causa");
     const calif = calificarCausa(causa);
+    const inspectorRaw = getField(r, "Unidad de trabajo") || "(Sin asignar)";
     return {
       orden: getField(r, "Orden"),
       cuenta: getField(r, "Cuenta"),
@@ -1878,7 +1887,8 @@ function processRawRows(rawRows) {
       vencimiento: vencimiento,
       vencimientoTS: vencimientoTS,
       cumpleSla: fecha && vencimientoTS !== null ? fechaHoraTS <= vencimientoTS : null,
-      inspector: getField(r, "Unidad de trabajo") || "(Sin asignar)",
+      inspectorRaw: inspectorRaw,
+      inspector: cleanInspectorName(inspectorRaw),
       supervisor: SUPERVISOR_FIJO,
       causa: causa,
       calificacion: calif,
@@ -1890,7 +1900,7 @@ function processRawRows(rawRows) {
       barrio: getField(r, "Barrio")
     };
   }).filter(function(r) {
-    return r.orden !== "" && r.orden !== undefined && r.orden !== null;
+    return r.orden !== "" && r.orden !== undefined && r.orden !== null && /lecta/i.test(r.inspectorRaw);
   });
   ALL_CLEAN_ROWS = all.filter(function(r) {
     return !!r.fecha;
