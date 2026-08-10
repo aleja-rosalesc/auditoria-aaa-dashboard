@@ -872,14 +872,6 @@
     </div>
   </section>
 
-  <section class="chart-row one-col">
-    <div class="chart-container tall">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg> Efectividad vs. no efectivas por inspector</h3>
-      <p class="chart-sub">Barra verde = % efectividad · barra roja = % no efectivas · mismos inspectores del gráfico anterior, ordenados de mayor a menor efectividad.</p>
-      <canvas id="inspector-diverging-chart"></canvas>
-    </div>
-  </section>
-
   <section class="chart-row two-col">
     <div class="chart-container tall">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Ciclos con más órdenes no efectivas</h3>
@@ -1065,11 +1057,13 @@ const REFRESH_INTERVAL_MS = 5 * 60 * 1e3;
 // Tipo de trabajo, Atributo Nulo) y por nombre no se podrían distinguir.
 // A=Cuenta, E=Orden, F=Creada el, G=Hora (de Creada el), J=Cerrada el,
 // K=Hora (de Cerrada el), P=Comentario de cierre, Z=Causa, AH=Unidad de
-// trabajo (nombre inspector), AN=Tipo de trabajo, AQ=Municipio, AS=Barrio.
+// trabajo (nombre inspector), AN=Tipo de trabajo, AQ=Municipio, AS=Barrio,
+// AT=Ciclo de facturación (distinto de "Tipo de trabajo": AN trae cosas
+// como "ALTO CONSUMO (ALT)", AT trae el ciclo real como "Z57 - BQ").
 // F y G ya tienen etiqueta propia ("Creada el"); G y K se renombran con
 // "label" porque de otro modo las dos columnas "Hora" del reporte (creación
 // y cierre) colisionarían bajo el mismo nombre al leerlas por encabezado.
-const SHEET_COLUMNS_TQ = "select A,E,F,G,J,K,P,Z,AH,AN,AQ,AS label G 'Hora creación', K 'Hora cierre'";
+const SHEET_COLUMNS_TQ = "select A,E,F,G,J,K,P,Z,AH,AN,AQ,AS,AT label G 'Hora creación', K 'Hora cierre'";
 
 const ADMIN_PASSWORD = "AAA2026admin";
 
@@ -1592,7 +1586,7 @@ function fechaRange(rows) {
 
 function topCiclosBlock(sub, n) {
   n = n || 15;
-  const by = groupBy(sub, "ciclo");
+  const by = groupBy(sub, "ciclo_facturacion");
   let out = Array.from(by.entries()).map(function(e) {
     const rows = e[1], total = rows.length;
     const noEfectivaRows = rows.filter(function(r) {
@@ -1604,7 +1598,7 @@ function topCiclosBlock(sub, n) {
     const base = efectiva + noEfectivaRows.length;
     const rango = fechaRange(noEfectivaRows);
     return {
-      ciclo: e[0],
+      ciclo_facturacion: e[0],
       total: total,
       con_errores: noEfectivaRows.length,
       pct_error: base ? round1(noEfectivaRows.length / base * 100) : 0,
@@ -1621,7 +1615,7 @@ function topCiclosBlock(sub, n) {
 function topCiclosInefectivosBlock(sub, n, minTotal) {
   n = n || 15;
   minTotal = minTotal || 10;
-  const by = groupBy(sub, "ciclo");
+  const by = groupBy(sub, "ciclo_facturacion");
   let out = Array.from(by.entries()).map(function(e) {
     const rows = e[1], total = rows.length;
     const efectiva = rows.filter(function(r) {
@@ -1633,7 +1627,7 @@ function topCiclosInefectivosBlock(sub, n, minTotal) {
     const base = efectiva + noEfectivaRows.length;
     const rango = fechaRange(noEfectivaRows);
     return {
-      ciclo: e[0],
+      ciclo_facturacion: e[0],
       total: total,
       efectiva: efectiva,
       pct_efectividad: base ? round1(efectiva / base * 100) : 0,
@@ -1842,7 +1836,6 @@ function buildScope(sub) {
     top_causas: topCausasBlock(sub),
     top_inspectores_efectivos: topInspectoresEfectivosBlock(sub),
     top_ciclos_inefectivos: topCiclosInefectivosBlock(sub),
-    inspector_comparativa: topInspectoresEfectivosBlock(sub, 15, 10),
     inspectores_full: inspectoresFullBlock(sub, 1)
   };
 }
@@ -1858,6 +1851,8 @@ let dateTo = "";
 let filterInspector = "";
 
 let filterCiclo = "";
+
+let filterCicloFacturacion = "";
 
 let filterCausa = "";
 
@@ -1896,6 +1891,7 @@ function processRawRows(rawRows) {
       comentario_cierre: getField(r, "Comentario de cierre"),
       tipo_trabajo: getField(r, "Tipo de trabajo"),
       ciclo: getField(r, "Tipo de trabajo"),
+      ciclo_facturacion: getField(r, "Ciclo de facturación"),
       municipio: getField(r, "Municipio"),
       barrio: getField(r, "Barrio")
     };
@@ -2068,6 +2064,9 @@ function rebuildData() {
   if (filterCiclo) clean = clean.filter(function(r) {
     return r.ciclo === filterCiclo;
   });
+  if (filterCicloFacturacion) clean = clean.filter(function(r) {
+    return r.ciclo_facturacion === filterCicloFacturacion;
+  });
   if (filterCausa) clean = clean.filter(function(r) {
     return r.causa === filterCausa;
   });
@@ -2087,6 +2086,9 @@ function rebuildData() {
   });
   if (filterCiclo) cleanForMonthly = cleanForMonthly.filter(function(r) {
     return r.ciclo === filterCiclo;
+  });
+  if (filterCicloFacturacion) cleanForMonthly = cleanForMonthly.filter(function(r) {
+    return r.ciclo_facturacion === filterCicloFacturacion;
   });
   if (filterCausa) cleanForMonthly = cleanForMonthly.filter(function(r) {
     return r.causa === filterCausa;
@@ -2194,7 +2196,7 @@ function forceDimensionFilter(dimension, item) {
     rebuildData();
     return;
   }
-  if (dimension === "inspector") filterInspector = item.inspector; else if (dimension === "ciclo") filterCiclo = item.ciclo; else if (dimension === "causa") filterCausa = item.causa;
+  if (dimension === "inspector") filterInspector = item.inspector; else if (dimension === "ciclo") filterCiclo = item.ciclo; else if (dimension === "cicloFacturacion") filterCicloFacturacion = item.ciclo_facturacion; else if (dimension === "causa") filterCausa = item.causa;
   rebuildData();
 }
 
@@ -2211,6 +2213,8 @@ function applyDimensionFilter(dimension, item) {
     filterInspector = filterInspector === item.inspector ? "" : item.inspector;
   } else if (dimension === "ciclo") {
     filterCiclo = filterCiclo === item.ciclo ? "" : item.ciclo;
+  } else if (dimension === "cicloFacturacion") {
+    filterCicloFacturacion = filterCicloFacturacion === item.ciclo_facturacion ? "" : item.ciclo_facturacion;
   } else if (dimension === "causa") {
     filterCausa = filterCausa === item.causa ? "" : item.causa;
   }
@@ -2223,7 +2227,7 @@ function goToDetallePage() {
 }
 
 function clearFilter(which, value) {
-  if (which === "inspector") filterInspector = ""; else if (which === "ciclo") filterCiclo = ""; else if (which === "causa") filterCausa = ""; else if (which === "month") {
+  if (which === "inspector") filterInspector = ""; else if (which === "ciclo") filterCiclo = ""; else if (which === "cicloFacturacion") filterCicloFacturacion = ""; else if (which === "causa") filterCausa = ""; else if (which === "month") {
     filterMonths = value !== undefined ? filterMonths.filter(function(m) {
       return m !== value;
     }) : [];
@@ -2239,6 +2243,7 @@ function clearFilter(which, value) {
 function clearAllFiltersEverywhere() {
   filterInspector = "";
   filterCiclo = "";
+  filterCicloFacturacion = "";
   filterCausa = "";
   filterMonths = [];
   currentScopes = [];
@@ -2288,8 +2293,12 @@ function renderActiveFiltersBar() {
     clear: "inspector"
   });
   if (filterCiclo) chips.push({
-    label: "Ciclo: " + filterCiclo,
+    label: "Tipo de trabajo: " + filterCiclo,
     clear: "ciclo"
+  });
+  if (filterCicloFacturacion) chips.push({
+    label: "Ciclo de facturación: " + filterCicloFacturacion,
+    clear: "cicloFacturacion"
   });
   if (filterCausa) chips.push({
     label: "Causa: " + filterCausa,
@@ -2328,7 +2337,6 @@ function renderAll() {
   renderCiclosInefectivosChart(scope);
   renderInspectoresChart(scope);
   renderInspectoresEfectivosChart(scope);
-  renderInspectorDivergingChart(scope);
   renderCausasChart(scope);
   computeInspectorFiltered();
   renderInspectorTable();
@@ -3063,7 +3071,7 @@ function renderCiclosChart(scope) {
     type: "bar",
     data: {
       labels: items.map(function(i) {
-        return i.ciclo;
+        return i.ciclo_facturacion;
       }),
       datasets: [ {
         label: "Órdenes no efectivas",
@@ -3079,7 +3087,7 @@ function renderCiclosChart(scope) {
       indexAxis: "y",
       responsive: true,
       maintainAspectRatio: false,
-      onClick: makeBarClickHandler("ciclo", items),
+      onClick: makeBarClickHandler("cicloFacturacion", items),
       plugins: {
         legend: {
           display: false
@@ -3253,79 +3261,6 @@ function renderInspectoresEfectivosChart(scope) {
   });
 }
 
-function renderInspectorDivergingChart(scope) {
-  const items = scope.inspector_comparativa;
-  if (charts.inspectorDiverging) charts.inspectorDiverging.destroy();
-  charts.inspectorDiverging = new Chart(document.getElementById("inspector-diverging-chart"), {
-    type: "bar",
-    data: {
-      labels: items.map(function(i) {
-        return i.inspector;
-      }),
-      datasets: [ {
-        label: "% Efectividad",
-        data: items.map(function(i) {
-          return i.pct_efectividad;
-        }),
-        backgroundColor: items.map(function(i) {
-          return semColor(i.pct_efectividad);
-        }),
-        borderRadius: 3,
-        maxBarThickness: 16
-      }, {
-        label: "% No efectivas",
-        data: items.map(function(i) {
-          return i.pct_error;
-        }),
-        backgroundColor: COLORS.danger,
-        borderRadius: 3,
-        maxBarThickness: 16
-      } ]
-    },
-    options: {
-      indexAxis: "y",
-      responsive: true,
-      maintainAspectRatio: false,
-      onClick: makeBarClickHandler("inspector", items),
-      plugins: {
-        legend: {
-          position: "bottom"
-        },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) {
-              return ctx.dataset.label + ": " + fmtPct(ctx.raw);
-            },
-            afterLabel: function(ctx) {
-              const it = items[ctx.dataIndex];
-              return [ "Órdenes ejecutadas: " + fmtInt(it.total), "Órdenes efectivas: " + fmtInt(it.efectiva), "Órdenes no efectivas: " + fmtInt(it.con_errores) ];
-            }
-          }
-        }
-      },
-      scales: {
-        x: {
-          min: 0,
-          max: 100,
-          grid: {
-            color: "#EEF2F5"
-          },
-          ticks: {
-            callback: function(v) {
-              return v + "%";
-            }
-          }
-        },
-        y: {
-          grid: {
-            display: false
-          }
-        }
-      }
-    }
-  });
-}
-
 function renderCiclosInefectivosChart(scope) {
   const items = scope.top_ciclos_inefectivos;
   if (charts.ciclosInefectivos) charts.ciclosInefectivos.destroy();
@@ -3333,7 +3268,7 @@ function renderCiclosInefectivosChart(scope) {
     type: "bar",
     data: {
       labels: items.map(function(i) {
-        return i.ciclo;
+        return i.ciclo_facturacion;
       }),
       datasets: [ {
         label: "% Efectividad",
@@ -3351,7 +3286,7 @@ function renderCiclosInefectivosChart(scope) {
       indexAxis: "y",
       responsive: true,
       maintainAspectRatio: false,
-      onClick: makeBarClickHandler("ciclo", items),
+      onClick: makeBarClickHandler("cicloFacturacion", items),
       plugins: {
         legend: {
           display: false
