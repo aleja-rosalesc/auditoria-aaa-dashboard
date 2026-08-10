@@ -1416,7 +1416,14 @@ function gvizToObjects(resp) {
         return;
       }
       const rawVal = cell.v;
-      if (typeof rawVal === "string" && /^Date\(\d+,\s*\d+,\s*\d+/.test(rawVal)) {
+      // Google codifica una celda de solo-HORA como un "Date(1899,11,30,H,M,S)"
+      // (el 30 de diciembre de 1899 es el "día cero" que usa Sheets/Excel para
+      // representar horas sueltas). Si tratáramos ese valor como fecha real
+      // perderíamos la hora por completo (quedaría siempre "1899-12-30"), así
+      // que estas celdas se dejan pasar sin convertir para que parseHora() las
+      // interprete correctamente más adelante.
+      const isTimeOnlyEpoch = typeof rawVal === "string" && /^Date\(1899,\s*11,\s*30,/.test(rawVal);
+      if (typeof rawVal === "string" && !isTimeOnlyEpoch && /^Date\(\d+,\s*\d+,\s*\d+/.test(rawVal)) {
         obj[label] = gvizDateToISO(rawVal);
       } else if (typeof rawVal === "number" && typeof cell.f === "string" && /e\+?\d/i.test(cell.f)) {
         // La celda quedó formateada en notación científica en la hoja (ej. "1.11E+08"),
