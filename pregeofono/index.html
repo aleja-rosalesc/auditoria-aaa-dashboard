@@ -659,6 +659,10 @@
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6M9 8h3"/></svg></span>
       Detalle
     </button>
+    <button class="tab-btn" data-page="vencimientos">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v6l4 2"/><path d="M3 3l2 2M21 3l-2 2"/></svg><span class="tab-dot hidden" id="venc-tab-dot"></span></span>
+      Vencimientos
+    </button>
   </nav>
 
   <div class="setup-banner hidden" id="setup-banner"></div>
@@ -956,6 +960,91 @@
   </section>
   </div>
 
+  <div class="page-content" data-page="vencimientos">
+  <section class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">% Cumplimiento SLA (4 días hábiles)</div>
+        <div class="kpi-value" id="kpi-venc-cumplimiento">—</div>
+        <div class="kpi-sub" id="kpi-venc-cumplimiento-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Órdenes ya vencidas</div>
+        <div class="kpi-value" id="kpi-venc-vencidas">—</div>
+        <div class="kpi-sub">Pendientes, fuera del plazo de 4 días hábiles</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Próximas a vencer</div>
+        <div class="kpi-value" id="kpi-venc-proximas">—</div>
+        <div class="kpi-sub">A 1 día hábil o menos del vencimiento</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Pendientes a tiempo</div>
+        <div class="kpi-value" id="kpi-venc-atiempo">—</div>
+        <div class="kpi-sub">Todavía dentro del plazo</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg> Órdenes ya vencidas (<span id="venc-vencidas-count">0</span>)</h3>
+      <div class="table-actions">
+        <button class="btn ghost" id="export-vencidas-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 10px;">Pendientes de cierre, superaron los 4 días hábiles desde que se crearon · ordenadas de la más vencida a la más reciente</p>
+    <div class="table-scroll">
+      <table class="data-table" id="venc-vencidas-table">
+        <thead>
+          <tr>
+            <th>Orden</th><th>Cuenta</th><th>Inspector</th><th>Tipo de trabajo</th><th>Creada el</th><th>Venció el</th><th class="num">Días vencida</th>
+          </tr>
+        </thead>
+        <tbody id="venc-vencidas-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Próximas a vencer (<span id="venc-proximas-count">0</span>)</h3>
+      <div class="table-actions">
+        <button class="btn ghost" id="export-proximas-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 10px;">Pendientes de cierre, a 1 día hábil o menos de vencer · priorízalas hoy</p>
+    <div class="table-scroll">
+      <table class="data-table" id="venc-proximas-table">
+        <thead>
+          <tr>
+            <th>Orden</th><th>Cuenta</th><th>Inspector</th><th>Tipo de trabajo</th><th>Creada el</th><th>Vence el</th><th class="num">Vence en</th>
+          </tr>
+        </thead>
+        <tbody id="venc-proximas-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
 
   <footer class="dashboard-footer">
     Fuente: hoja de Google Sheets conectada en vivo · <a id="sheet-link" href="#" target="_blank" rel="noopener">Abrir hoja de datos</a> · Uso interno de control de calidad
@@ -974,10 +1063,13 @@ const REFRESH_INTERVAL_MS = 5 * 60 * 1e3;
 // Columnas necesarias del reporte de Pregeófono, seleccionadas por LETRA
 // porque el reporte trae varias columnas con el mismo nombre (Hora, Usuario,
 // Tipo de trabajo, Atributo Nulo) y por nombre no se podrían distinguir.
-// A=Cuenta, E=Orden, J=Cerrada el, K=Hora (de Cerrada el), P=Comentario de
-// cierre, Z=Causa, AH=Unidad de trabajo (nombre inspector), AN=Tipo de
-// trabajo, AQ=Municipio, AS=Barrio.
-const SHEET_COLUMNS_TQ = "select A,E,J,K,P,Z,AH,AN,AQ,AS";
+// A=Cuenta, E=Orden, F=Creada el, G=Hora (de Creada el), J=Cerrada el,
+// K=Hora (de Cerrada el), P=Comentario de cierre, Z=Causa, AH=Unidad de
+// trabajo (nombre inspector), AN=Tipo de trabajo, AQ=Municipio, AS=Barrio.
+// F y G ya tienen etiqueta propia ("Creada el"); G y K se renombran con
+// "label" porque de otro modo las dos columnas "Hora" del reporte (creación
+// y cierre) colisionarían bajo el mismo nombre al leerlas por encabezado.
+const SHEET_COLUMNS_TQ = "select A,E,F,G,J,K,P,Z,AH,AN,AQ,AS label G 'Hora creación', K 'Hora cierre'";
 
 const ADMIN_PASSWORD = "AAA2026admin";
 
@@ -1127,6 +1219,91 @@ function yesterdayISO() {
   const d = new Date;
   d.setDate(d.getDate() - 1);
   return isoFromDate(d);
+}
+
+// --- Vencimiento SLA (4 días hábiles: lunes a sábado, sin festivos) ---
+
+// Domingo de Pascua vía el algoritmo de Meeus/Jones/Butcher, base para
+// ubicar los festivos móviles de Semana Santa y los que la Ley 51 de 1983
+// ("Ley Emiliani") traslada al lunes siguiente (Ascensión, Corpus Christi,
+// Sagrado Corazón, entre otros).
+function easterSunday(year) {
+  const a = year % 19, b = Math.floor(year / 100), c = year % 100;
+  const d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = (h + l - 7 * m + 114) % 31 + 1;
+  return new Date(year, month - 1, day);
+}
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function nextMonday(date) {
+  const dow = date.getDay();
+  const diff = (8 - dow) % 7;
+  return addDays(date, diff);
+}
+
+const HOLIDAY_CACHE = {};
+
+function colombianHolidays(year) {
+  if (HOLIDAY_CACHE[year]) return HOLIDAY_CACHE[year];
+  const easter = easterSunday(year);
+  const fijos = [ new Date(year, 0, 1), new Date(year, 4, 1), new Date(year, 6, 20), new Date(year, 7, 7), new Date(year, 11, 8), new Date(year, 11, 25) ];
+  const semanaSanta = [ addDays(easter, -3), addDays(easter, -2) ];
+  const trasladables = [ new Date(year, 0, 6), new Date(year, 2, 19), addDays(easter, 39), addDays(easter, 60), addDays(easter, 68), new Date(year, 5, 29), new Date(year, 7, 15), new Date(year, 9, 12), new Date(year, 10, 1), new Date(year, 10, 11) ].map(nextMonday);
+  const set = new Set(fijos.concat(semanaSanta, trasladables).map(isoFromDate));
+  HOLIDAY_CACHE[year] = set;
+  return set;
+}
+
+function isBusinessDay(date) {
+  if (date.getDay() === 0) return false;
+  return !colombianHolidays(date.getFullYear()).has(isoFromDate(date));
+}
+
+// Suma N días hábiles (lunes a sábado, sin festivos) a una fecha/hora de
+// partida. El día de partida no cuenta como día hábil transcurrido; se
+// empieza a contar desde el día calendario siguiente.
+function addBusinessDays(date, n) {
+  let d = new Date(date);
+  let added = 0;
+  while (added < n) {
+    d = addDays(d, 1);
+    if (isBusinessDay(d)) added++;
+  }
+  return d;
+}
+
+// Fecha de vencimiento de una orden: 4 días hábiles después de creada,
+// conservando la hora de creación para poder comparar con precisión contra
+// la hora real de cierre (o contra "ahora" si sigue pendiente).
+function computeVencimiento(creadaISO, horaObj) {
+  if (!creadaISO) return null;
+  const p = creadaISO.split("-");
+  if (p.length !== 3) return null;
+  const start = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]), horaObj ? horaObj.h : 0, horaObj ? horaObj.m : 0, horaObj ? horaObj.s : 0);
+  return addBusinessDays(start, 4);
+}
+
+// Clasifica una orden pendiente según qué tan cerca está de su vencimiento.
+function estadoVencimiento(vencimientoTS) {
+  if (vencimientoTS === null || vencimientoTS === undefined) return "SIN_FECHA";
+  const now = Date.now();
+  if (vencimientoTS <= now) return "VENCIDA";
+  const limite = addBusinessDays(new Date(now), 1).getTime();
+  return vencimientoTS <= limite ? "PROXIMA_A_VENCER" : "A_TIEMPO";
+}
+
+function formatFechaHora(iso, horaObj) {
+  if (!iso) return "—";
+  return formatDateShort(iso) + (horaObj ? " " + formatHora(horaObj) : "");
 }
 
 function lastWorkedDayBefore(beforeISO) {
@@ -1657,6 +1834,8 @@ function buildScope(sub) {
 
 let ALL_CLEAN_ROWS = [];
 
+let ALL_PENDING_ROWS = [];
+
 let dateFrom = "";
 
 let dateTo = "";
@@ -1670,9 +1849,14 @@ let filterCausa = "";
 let filterMonths = [];
 
 function processRawRows(rawRows) {
-  const clean = rawRows.map(function(r) {
+  const all = rawRows.map(function(r) {
     const fecha = parseFechaCerrada(getField(r, "Cerrada el"));
-    const horaObj = parseHora(getField(r, "Hora"));
+    const horaObj = parseHora(getField(r, "Hora cierre"));
+    const creadaEl = parseFechaCerrada(getField(r, "Creada el"));
+    const horaCreacionObj = parseHora(getField(r, "Hora creación"));
+    const vencimiento = computeVencimiento(creadaEl, horaCreacionObj);
+    const fechaHoraTS = fechaHoraToTimestamp(fecha, horaObj);
+    const vencimientoTS = vencimiento ? vencimiento.getTime() : null;
     const causa = getField(r, "Causa");
     const calif = calificarCausa(causa);
     return {
@@ -1681,7 +1865,12 @@ function processRawRows(rawRows) {
       fecha: fecha,
       hora: horaObj,
       horaTexto: formatHora(horaObj),
-      fechaHoraTS: fechaHoraToTimestamp(fecha, horaObj),
+      fechaHoraTS: fechaHoraTS,
+      creadaEl: creadaEl,
+      horaCreacion: horaCreacionObj,
+      vencimiento: vencimiento,
+      vencimientoTS: vencimientoTS,
+      cumpleSla: fecha && vencimientoTS !== null ? fechaHoraTS <= vencimientoTS : null,
       inspector: getField(r, "Unidad de trabajo") || "(Sin asignar)",
       supervisor: SUPERVISOR_FIJO,
       causa: causa,
@@ -1694,9 +1883,14 @@ function processRawRows(rawRows) {
       barrio: getField(r, "Barrio")
     };
   }).filter(function(r) {
-    return r.orden !== "" && r.orden !== undefined && r.orden !== null && r.fecha;
+    return r.orden !== "" && r.orden !== undefined && r.orden !== null;
   });
-  ALL_CLEAN_ROWS = clean;
+  ALL_CLEAN_ROWS = all.filter(function(r) {
+    return !!r.fecha;
+  });
+  ALL_PENDING_ROWS = all.filter(function(r) {
+    return !r.fecha && !!r.creadaEl;
+  });
   populateMonthOptions();
   rebuildData();
 }
@@ -2124,7 +2318,81 @@ function renderAll() {
   populateDetailFilterOptions();
   computeDetailFiltered();
   renderDetailTable();
+  renderVencimientos();
 }
+
+function buildVencimientoData() {
+  const pendientes = ALL_PENDING_ROWS.map(function(r) {
+    return Object.assign({}, r, { estadoVenc: estadoVencimiento(r.vencimientoTS) });
+  });
+  const vencidas = pendientes.filter(function(r) {
+    return r.estadoVenc === "VENCIDA";
+  }).sort(function(a, b) {
+    return a.vencimientoTS - b.vencimientoTS;
+  });
+  const proximas = pendientes.filter(function(r) {
+    return r.estadoVenc === "PROXIMA_A_VENCER";
+  }).sort(function(a, b) {
+    return a.vencimientoTS - b.vencimientoTS;
+  });
+  const aTiempo = pendientes.filter(function(r) {
+    return r.estadoVenc === "A_TIEMPO";
+  });
+  const evaluadas = ALL_CLEAN_ROWS.filter(function(r) {
+    return r.cumpleSla !== null;
+  });
+  const cumplen = evaluadas.filter(function(r) {
+    return r.cumpleSla;
+  }).length;
+  return {
+    vencidas: vencidas,
+    proximas: proximas,
+    aTiempoCount: aTiempo.length,
+    evaluadasCount: evaluadas.length,
+    cumplenCount: cumplen,
+    pctCumplimiento: evaluadas.length ? round1(cumplen / evaluadas.length * 100) : null
+  };
+}
+
+function diasVencida(vencimientoTS) {
+  return Math.max(1, Math.ceil((Date.now() - vencimientoTS) / 86400000));
+}
+
+function tiempoRestanteTexto(vencimientoTS) {
+  const ms = vencimientoTS - Date.now();
+  if (ms <= 0) return "vence ahora";
+  const horas = Math.round(ms / 3600000);
+  if (horas < 24) return horas + " h";
+  return Math.round(horas / 24) + " d";
+}
+
+function renderVencimientos() {
+  const v = buildVencimientoData();
+  document.getElementById("kpi-venc-cumplimiento").textContent = v.pctCumplimiento === null ? "—" : fmtPct(v.pctCumplimiento);
+  document.getElementById("kpi-venc-cumplimiento-sub").textContent = v.evaluadasCount ? v.cumplenCount + " de " + v.evaluadasCount + " cerradas dentro del plazo" : "Sin órdenes cerradas con fecha de creación";
+  document.getElementById("kpi-venc-vencidas").textContent = fmtInt(v.vencidas.length);
+  document.getElementById("kpi-venc-proximas").textContent = fmtInt(v.proximas.length);
+  document.getElementById("kpi-venc-atiempo").textContent = fmtInt(v.aTiempoCount);
+
+  const dot = document.getElementById("venc-tab-dot");
+  if (dot) dot.classList.toggle("hidden", v.vencidas.length === 0 && v.proximas.length === 0);
+
+  document.getElementById("venc-vencidas-count").textContent = fmtInt(v.vencidas.length);
+  const vencidasBody = document.getElementById("venc-vencidas-tbody");
+  vencidasBody.innerHTML = v.vencidas.length ? v.vencidas.map(function(r) {
+    return "<tr><td>" + r.orden + "</td><td>" + r.cuenta + "</td><td>" + r.inspector + "</td><td>" + (r.tipo_trabajo || "—") + "</td><td>" + formatFechaHora(r.creadaEl, r.horaCreacion) + "</td><td>" + formatFechaHora(isoFromDate(r.vencimiento), null) + "</td>" + '<td class="num">' + diasVencida(r.vencimientoTS) + "</td></tr>";
+  }).join("") : '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Ninguna orden vencida — al día.</td></tr>';
+
+  document.getElementById("venc-proximas-count").textContent = fmtInt(v.proximas.length);
+  const proximasBody = document.getElementById("venc-proximas-tbody");
+  proximasBody.innerHTML = v.proximas.length ? v.proximas.map(function(r) {
+    return "<tr><td>" + r.orden + "</td><td>" + r.cuenta + "</td><td>" + r.inspector + "</td><td>" + (r.tipo_trabajo || "—") + "</td><td>" + formatFechaHora(r.creadaEl, r.horaCreacion) + "</td><td>" + formatFechaHora(isoFromDate(r.vencimiento), null) + "</td>" + '<td class="num">' + tiempoRestanteTexto(r.vencimientoTS) + "</td></tr>";
+  }).join("") : '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Ninguna orden próxima a vencer.</td></tr>';
+
+  VENCIMIENTOS_CACHE = v;
+}
+
+let VENCIMIENTOS_CACHE = null;
 
 let hoyInspectorScope = "ALL";
 
@@ -3432,6 +3700,44 @@ function renderInspectorTable() {
   });
 }
 
+function exportVencimientosCSV(rows, filename, extraKey) {
+  const prepared = rows.map(function(r) {
+    return {
+      orden: r.orden,
+      cuenta: r.cuenta,
+      inspector: r.inspector,
+      tipo_trabajo: r.tipo_trabajo || "",
+      creada_el: formatFechaHora(r.creadaEl, r.horaCreacion),
+      vence_el: formatFechaHora(isoFromDate(r.vencimiento), null),
+      diasVencida: extraKey === "diasVencida" ? diasVencida(r.vencimientoTS) : undefined,
+      tiempoRestante: extraKey === "tiempoRestante" ? tiempoRestanteTexto(r.vencimientoTS) : undefined
+    };
+  });
+  const headers = [ {
+    key: "orden",
+    label: "Orden"
+  }, {
+    key: "cuenta",
+    label: "Cuenta"
+  }, {
+    key: "inspector",
+    label: "Inspector"
+  }, {
+    key: "tipo_trabajo",
+    label: "Tipo de trabajo"
+  }, {
+    key: "creada_el",
+    label: "Creada el"
+  }, {
+    key: "vence_el",
+    label: "Vence el"
+  }, {
+    key: extraKey,
+    label: extraKey === "diasVencida" ? "Días vencida" : "Vence en"
+  } ];
+  downloadCSV(filename, prepared, headers);
+}
+
 function exportInspectorCSV() {
   const headers = [ {
     key: "inspector",
@@ -3757,6 +4063,12 @@ function init() {
   });
   document.getElementById("export-detail-btn").addEventListener("click", exportDetailCSV);
   document.getElementById("export-inspector-btn").addEventListener("click", exportInspectorCSV);
+  document.getElementById("export-vencidas-btn").addEventListener("click", function() {
+    exportVencimientosCSV(VENCIMIENTOS_CACHE ? VENCIMIENTOS_CACHE.vencidas : [], "ordenes_vencidas.csv", "diasVencida");
+  });
+  document.getElementById("export-proximas-btn").addEventListener("click", function() {
+    exportVencimientosCSV(VENCIMIENTOS_CACHE ? VENCIMIENTOS_CACHE.proximas : [], "ordenes_proximas_a_vencer.csv", "tiempoRestante");
+  });
   document.getElementById("refresh-btn").addEventListener("click", function() {
     loadData(true);
   });
