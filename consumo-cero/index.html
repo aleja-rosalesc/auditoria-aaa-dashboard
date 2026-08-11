@@ -566,7 +566,7 @@
       <div class="table-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg> Cierres de hoy por inspector</h3></div>
       <div class="table-scroll">
         <table class="data-table" id="hoy-inspector-table">
-          <thead><tr><th>Inspector</th><th class="num">Cerradas</th><th class="num">Efectivas</th><th class="num">No efectivas</th><th class="num">% Efectividad</th></tr></thead>
+          <thead><tr><th>Inspector</th><th class="num">Cerradas</th><th class="num">Efectivas</th><th class="num">No efectivas</th><th class="num">% Efectividad</th><th class="num">Asignadas hoy</th><th class="num">Asignadas antes</th></tr></thead>
           <tbody id="hoy-inspector-tbody"></tbody>
         </table>
       </div>
@@ -1352,6 +1352,20 @@ function inspectoresBlock(sub) {
   return out;
 }
 
+// Igual que inspectoresBlock, pero además cruza cada cierre con su fecha de
+// asignación: cuántas de las cerradas hoy por cada inspector corresponden a
+// órdenes asignadas hoy mismo vs. a órdenes asignadas en días anteriores
+// (backlog que se está poniendo al día).
+function inspectoresConAsignacionBlock(sub) {
+  const hoy = todayISO();
+  const byInsp = groupBy(sub, "inspector");
+  return inspectoresBlock(sub).map(function(b) {
+    const rows = byInsp.get(b.inspector) || [];
+    const delDia = rows.filter(function(r) { return r.asignadaFecha === hoy; }).length;
+    return Object.assign({}, b, { asignadas_hoy: delDia, asignadas_antes: rows.length - delDia });
+  });
+}
+
 function topInspectoresEfectivosBlock(sub, n, minTotal) {
   n = n || 10;
   minTotal = minTotal || 5;
@@ -1497,7 +1511,7 @@ function renderHoyBlock() {
   if (todayRows.length === 0) {
     empty.classList.remove("hidden");
     content.classList.add("hidden");
-    document.getElementById("hoy-inspector-tbody").innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
+    document.getElementById("hoy-inspector-tbody").innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
     document.getElementById("hoy-causas-tbody").innerHTML = '<tr><td colspan="2" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
     return;
   }
@@ -1512,10 +1526,10 @@ function renderHoyBlock() {
   setHoyDelta("hoy-efectividad-delta", t.pct, y ? y.pct : null, "up");
   setHoyDelta("hoy-no-efectivas-delta", t.no_efectiva, y ? y.no_efectiva : null, "down");
 
-  const inspRows = inspectoresBlock(todayRows);
+  const inspRows = inspectoresConAsignacionBlock(todayRows);
   document.getElementById("hoy-inspector-tbody").innerHTML = inspRows.map(function(r) {
-    return "<tr><td>" + r.inspector + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + fmtInt(r.no_efectiva) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td></tr>";
-  }).join("") || '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
+    return "<tr><td>" + r.inspector + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + fmtInt(r.no_efectiva) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>" + '<td class="num">' + fmtInt(r.asignadas_hoy) + "</td>" + '<td class="num">' + fmtInt(r.asignadas_antes) + "</td></tr>";
+  }).join("") || '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
 
   const causaRows = hallazgosBlock(todayRows);
   document.getElementById("hoy-causas-tbody").innerHTML = causaRows.map(function(r) {
