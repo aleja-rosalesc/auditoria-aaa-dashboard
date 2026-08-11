@@ -211,16 +211,23 @@
   }
   .table-pagination button:disabled{ opacity:0.4; cursor:not-allowed; }
 
-  .filter-bar{
+  .filter-bar, .date-filter-bar{
     background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
     box-shadow: var(--shadow); padding: 12px 18px; margin-bottom: 16px;
     display:flex; align-items:center; gap:14px; flex-wrap:wrap;
   }
-  .filter-bar label{ font-size:12px; color: var(--text-2); font-weight:600; display:flex; align-items:center; gap:6px; }
-  .filter-bar select{
+  .filter-bar label, .date-filter-bar label{ font-size:12px; color: var(--text-2); font-weight:600; display:flex; align-items:center; gap:6px; }
+  .filter-bar select, .date-filter-bar select{
     padding:7px 12px; border-radius:8px; border:1px solid var(--border);
     font-size:12.8px; font-family: var(--font-body); background:#F7FAFB; color:var(--navy); min-width:220px;
   }
+  .date-filter-bar .df-label{ font-size:12px; font-weight:700; color: var(--text-2); display:flex; align-items:center; gap:6px; }
+  .date-filter-bar input[type="date"]{
+    padding:7px 10px; border-radius:8px; border:1px solid var(--border); font-size:12.8px;
+    font-family: var(--font-body); background:#F7FAFB; color: var(--text);
+  }
+  .btn.ghost.small{ padding:6px 12px; font-size:12px; }
+  .pend-summary-row{ display:grid; grid-template-columns: repeat(2, 1fr); gap:12px; margin-bottom:14px; }
 
   .dashboard-footer{ text-align:center; font-size:12px; color: var(--text-2); padding: 14px 0 4px; }
   .dashboard-footer a{ color: var(--teal-dark); }
@@ -268,6 +275,7 @@
   .hoy-empty{ font-size:13px; color: var(--text-2); padding: 4px 0 2px; }
   .hoy-kpis{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
   .hoy-kpis.three{ grid-template-columns: repeat(3, 1fr); }
+  .hoy-kpis.two{ grid-template-columns: repeat(2, 1fr); }
   .hoy-card{ background: rgba(255,255,255,0.75); border-radius:10px; padding:12px 14px; }
   .hoy-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
   .hoy-value{ font-family: var(--font-display); font-size:22px; font-weight:700; color:var(--text); line-height:1.1; }
@@ -484,6 +492,10 @@
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8"/><circle cx="12" cy="12" r="3"/></svg><span class="tab-dot hidden" id="ef-tab-dot"></span></span>
       Eficiencia
     </button>
+    <button class="tab-btn" data-page="pendientes">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11H3v10h6V11zM21 3h-6v18h6V3zM15 15H9v6h6v-6z"/></svg></span>
+      Pendientes
+    </button>
     <button class="tab-btn" data-page="matriz">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></span>
       Matriz
@@ -523,7 +535,7 @@
         <span class="hoy-badge alert">⚠ CONTROL</span>
         <span class="hoy-fecha">Asignadas pendientes por digitar — no debería quedar nada de días anteriores</span>
       </div>
-      <div class="hoy-kpis three">
+      <div class="hoy-kpis two">
         <div class="hoy-card">
           <div class="hoy-label">Atrasadas (días anteriores)</div>
           <div class="hoy-value alert" id="cc-pend-atrasadas">—</div>
@@ -534,20 +546,18 @@
           <div class="hoy-value" id="cc-pend-hoy">—</div>
           <div class="hoy-delta neutral">Asignadas hoy, aún sin cerrar</div>
         </div>
-        <div class="hoy-card">
-          <div class="hoy-label">Asignadas hoy: cerradas / pendientes</div>
-          <div class="hoy-value" id="cc-pend-ratio" style="font-size:18px;">—</div>
-          <div class="hoy-delta neutral">&nbsp;</div>
-        </div>
       </div>
     </section>
 
     <section class="table-section">
-      <div class="table-header"><h3>⚠ Órdenes atrasadas — pendientes de días anteriores (<span id="cc-atrasadas-count">0</span>)</h3></div>
+      <div class="table-header">
+        <h3>Pendientes por inspector</h3>
+        <span class="chart-sub" style="margin:0;">Detalle orden por orden en la pestaña <b>Pendientes</b></span>
+      </div>
       <div class="table-scroll">
-        <table class="data-table">
-          <thead><tr><th>Orden</th><th>Cuenta</th><th>Inspector</th><th>Creada el</th><th class="num">Días de atraso</th></tr></thead>
-          <tbody id="cc-atrasadas-tbody"></tbody>
+        <table class="data-table" id="cc-pend-insp-table">
+          <thead><tr><th data-key="inspector">Inspector</th><th data-key="atrasadas" class="num sorted">Atrasadas</th><th data-key="pendientes_hoy" class="num">De hoy</th><th data-key="total" class="num">Total pendientes</th><th data-key="fecha_mas_antigua">Más antigua</th></tr></thead>
+          <tbody id="cc-pend-insp-tbody"></tbody>
         </table>
       </div>
     </section>
@@ -777,17 +787,6 @@
     </section>
 
     <section class="table-section">
-      <div class="table-header"><h3>Por tipo de eficiencia</h3></div>
-      <p class="chart-sub" style="margin:-4px 0 12px;">Investigación, Pérdida de Precios, Edificios — según la columna Comentario del reporte.</p>
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead><tr><th>Categoría</th><th class="num">Cantidad</th></tr></thead>
-          <tbody id="ef-tipo-tbody"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="table-section">
       <div class="table-header"><h3>Resumen de hallazgos por causa</h3></div>
       <div class="table-scroll">
         <table class="data-table">
@@ -812,7 +811,7 @@
         <span class="hoy-badge alert">⚠ CONTROL</span>
         <span class="hoy-fecha">Asignadas pendientes por digitar — Eficiencia Hidráulica</span>
       </div>
-      <div class="hoy-kpis three">
+      <div class="hoy-kpis two">
         <div class="hoy-card">
           <div class="hoy-label">Atrasadas (días anteriores)</div>
           <div class="hoy-value alert" id="ef-pend-atrasadas">—</div>
@@ -823,21 +822,58 @@
           <div class="hoy-value" id="ef-pend-hoy">—</div>
           <div class="hoy-delta neutral">Asignadas hoy, aún sin cerrar</div>
         </div>
-        <div class="hoy-card">
-          <div class="hoy-label">Asignadas hoy: cerradas / pendientes</div>
-          <div class="hoy-value" id="ef-pend-ratio" style="font-size:18px;">—</div>
-          <div class="hoy-delta neutral">&nbsp;</div>
-        </div>
       </div>
     </section>
 
     <section class="table-section">
-      <div class="table-header"><h3>⚠ Órdenes atrasadas — pendientes de días anteriores (<span id="ef-atrasadas-count">0</span>)</h3></div>
+      <div class="table-header">
+        <h3>Pendientes por inspector</h3>
+        <span class="chart-sub" style="margin:0;">Detalle orden por orden en la pestaña <b>Pendientes</b></span>
+      </div>
       <div class="table-scroll">
-        <table class="data-table">
-          <thead><tr><th>Orden</th><th>Cuenta</th><th>Inspector</th><th>Creada el</th><th class="num">Días de atraso</th></tr></thead>
-          <tbody id="ef-atrasadas-tbody"></tbody>
+        <table class="data-table" id="ef-pend-insp-table">
+          <thead><tr><th data-key="inspector">Inspector</th><th data-key="atrasadas" class="num sorted">Atrasadas</th><th data-key="pendientes_hoy" class="num">De hoy</th><th data-key="total" class="num">Total pendientes</th><th data-key="fecha_mas_antigua">Más antigua</th></tr></thead>
+          <tbody id="ef-pend-insp-tbody"></tbody>
         </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="page-content" data-page="pendientes">
+    <div class="date-filter-bar">
+      <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Fecha asignada:</span>
+      <label>Desde <input type="date" id="pend-date-from"></label>
+      <label>Hasta <input type="date" id="pend-date-to"></label>
+      <label>Mes <select id="pend-month-select"><option value="">Todos</option></select></label>
+      <button class="btn ghost small" id="pend-date-clear-btn">Ver todo</button>
+    </div>
+    <div class="filter-bar">
+      <label>Categoría <select id="pend-categoria-select"><option value="">Todas</option><option value="cc">Consumo Cero</option><option value="ef">Eficiencia Hidráulica</option></select></label>
+      <label>Inspector <select id="pend-inspector-select"><option value="">Todos</option></select></label>
+    </div>
+    <section class="table-section">
+      <div class="table-header">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg> Órdenes asignadas pendientes por cerrar (<span id="pend-count">0</span>)</h3>
+        <div class="table-actions">
+          <input type="text" id="pend-search" placeholder="Buscar por orden, cuenta o inspector…">
+          <button class="btn" id="export-pend-btn">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table" id="pend-table">
+          <thead>
+            <tr>
+              <th data-key="creadaFecha" class="sorted">Fecha asignada</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
+              <th data-key="inspector">Inspector</th><th data-key="procesoLabel">Categoría</th><th data-key="diasAtraso" class="num">Días de atraso</th>
+            </tr>
+          </thead>
+          <tbody id="pend-tbody"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination">
+        <button id="pend-prev-page">‹ Anterior</button>
+        <span id="pend-page-info">—</span>
+        <button id="pend-next-page">Siguiente ›</button>
       </div>
     </section>
   </div>
@@ -972,6 +1008,8 @@ let ALL_EF_CLEAN_ROWS = [];
 
 let ALL_EF_PENDING_ROWS = [];
 
+let ALL_PENDING_ALL = [];
+
 let DATA = null;
 
 let DATA_EF = null;
@@ -995,6 +1033,34 @@ let searchTerm = "";
 let filterInspectorSel = "";
 
 let filterCausaSel = "";
+
+let ccPendInspSort = { key: "atrasadas", dir: "desc" };
+
+let efPendInspSort = { key: "atrasadas", dir: "desc" };
+
+let ccPendInspSortAttached = false;
+
+let efPendInspSortAttached = false;
+
+let pendSort = { key: "creadaFecha", dir: "asc" };
+
+let pendSortAttached = false;
+
+let pendPage = 0;
+
+let pendFiltered = [];
+
+let pendFilterInspector = "";
+
+let pendFilterCategoria = "";
+
+let pendFilterMonth = "";
+
+let pendFilterDateFrom = "";
+
+let pendFilterDateTo = "";
+
+let pendSearchTerm = "";
 
 let lastLoadedAt = null;
 
@@ -1207,6 +1273,7 @@ function processRawRows(rawRows) {
     const calif = calificarCausa(causa);
     const inspectorRaw = getField(r, "UNIDAD_OPERATIVA") || "(Sin asignar)";
     const categoria = getField(r, "COMENTARIO");
+    const esEf = esEficiencia(categoria);
     return {
       orden: getField(r, "ORDEN"),
       cuenta: getField(r, "CUENTA"),
@@ -1220,7 +1287,8 @@ function processRawRows(rawRows) {
       calificacion: calif,
       efectividad: calif === "EFECTIVO" ? "Efectiva" : calif === "NO_EFECTIVO" ? "No Efectivo" : "Excluido",
       categoria: categoria,
-      esEficiencia: esEficiencia(categoria),
+      esEficiencia: esEf,
+      procesoLabel: esEf ? "Eficiencia Hidráulica" : "Consumo Cero",
       comentario_cierre: getField(r, "COMENTARIO_CIERRE"),
       municipio: getField(r, "MUNICIPIO"),
       barrio: getField(r, "BARRIO"),
@@ -1298,13 +1366,32 @@ function hallazgosBlock(sub) {
   return out;
 }
 
-function porCategoriaBlock(sub) {
-  const by = groupBy(sub, "categoria");
+// Resume las órdenes pendientes por inspector para el control de asignadas:
+// cuántas están atrasadas (creadas antes de hoy) vs. pendientes normales de
+// hoy, y la fecha de asignación más antigua sin cerrar de cada inspector.
+function pendientesPorInspectorBlock(pendingRows) {
+  const hoy = todayISO();
+  const by = groupBy(pendingRows, "inspector");
   let out = Array.from(by.entries()).map(function(e) {
-    return { categoria: e[0] || "(sin categoría)", count: e[1].length };
+    const rows = e[1];
+    const atrasadas = rows.filter(function(r) { return r.creadaFecha && r.creadaFecha < hoy; }).length;
+    const fechas = rows.map(function(r) { return r.creadaFecha; }).filter(Boolean).sort();
+    return {
+      inspector: e[0],
+      atrasadas: atrasadas,
+      pendientes_hoy: rows.length - atrasadas,
+      total: rows.length,
+      fecha_mas_antigua: fechas[0] || ""
+    };
   });
-  out.sort(function(a, b) { return b.count - a.count; });
+  out.sort(function(a, b) { return b.atrasadas - a.atrasadas || b.total - a.total; });
   return out;
+}
+
+const MESES_ES = [ "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" ];
+function monthLabel(ym) {
+  const p = String(ym).split("-");
+  return (MESES_ES[Number(p[1]) - 1] || p[1]) + " " + p[0];
 }
 
 function buildScopeData(cleanRows) {
@@ -1330,9 +1417,11 @@ function buildScopeData(cleanRows) {
 function rebuildData() {
   DATA = buildScopeData(ALL_CLEAN_ROWS);
   DATA_EF = buildScopeData(ALL_EF_CLEAN_ROWS);
-  DATA_EF.porCategoria = porCategoriaBlock(ALL_EF_CLEAN_ROWS);
+  ALL_PENDING_ALL = ALL_PENDING_ROWS.concat(ALL_EF_PENDING_ROWS);
   populateDetailFilterOptions();
   populateDetailFiltered();
+  populatePendFilterOptions();
+  computePendFiltered();
   renderAll();
 }
 
@@ -1348,8 +1437,9 @@ function renderAll() {
   renderInspectoresEfectivosChart();
   renderInspectorTable();
   renderDetailTable();
-  const cc = renderPendingControl("cc", "hoy-tab-dot", ALL_PENDING_ROWS, ALL_CLEAN_ROWS);
+  renderPendingSummary("cc", "hoy-tab-dot", ccPendInspSort, ALL_PENDING_ROWS);
   renderEficienciaAll();
+  renderPendTable();
 }
 
 function renderKPIs() {
@@ -1430,33 +1520,35 @@ function renderHoyBlock() {
 
 // Control de asignadas: separa lo pendiente en "atrasadas" (creadas antes de
 // hoy y aún sin cerrar — no debería haber ninguna) y "pendientes de hoy"
-// (normal, siguen en curso). `prefix` selecciona el juego de elementos del
-// DOM a actualizar ("cc" = Consumo Cero en Hoy, "ef" = Eficiencia).
-function renderPendingControl(prefix, dotId, pendingRows, closedRows) {
+// (normal, siguen en curso), resumido por inspector. `prefix` selecciona el
+// juego de elementos del DOM a actualizar ("cc" = Consumo Cero en Hoy,
+// "ef" = Eficiencia). El detalle orden por orden vive en la pestaña Pendientes.
+function renderPendingSummary(prefix, dotId, sortState, pendingRows) {
   const hoy = todayISO();
-  const atrasadas = pendingRows.filter(function(r) { return r.creadaFecha && r.creadaFecha < hoy; }).sort(function(a, b) { return a.creadaFecha.localeCompare(b.creadaFecha); });
-  const pendientesHoy = pendingRows.filter(function(r) { return r.creadaFecha === hoy; });
-  const cerradasHoy = closedRows.filter(function(r) { return r.creadaFecha === hoy; }).length;
+  const atrasadasTotal = pendingRows.filter(function(r) { return r.creadaFecha && r.creadaFecha < hoy; }).length;
+  const hoyTotal = pendingRows.length - atrasadasTotal;
 
-  const countEl = document.getElementById(prefix + "-atrasadas-count");
-  if (countEl) countEl.textContent = fmtInt(atrasadas.length);
   const kpiAtrasadasEl = document.getElementById(prefix + "-pend-atrasadas");
-  if (kpiAtrasadasEl) kpiAtrasadasEl.textContent = fmtInt(atrasadas.length);
+  if (kpiAtrasadasEl) kpiAtrasadasEl.textContent = fmtInt(atrasadasTotal);
   const kpiHoyEl = document.getElementById(prefix + "-pend-hoy");
-  if (kpiHoyEl) kpiHoyEl.textContent = fmtInt(pendientesHoy.length);
-  const ratioEl = document.getElementById(prefix + "-pend-ratio");
-  if (ratioEl) ratioEl.textContent = fmtInt(cerradasHoy) + " / " + fmtInt(pendientesHoy.length);
+  if (kpiHoyEl) kpiHoyEl.textContent = fmtInt(hoyTotal);
 
   const dotEl = document.getElementById(dotId);
-  if (dotEl) dotEl.classList.toggle("hidden", atrasadas.length === 0);
+  if (dotEl) dotEl.classList.toggle("hidden", atrasadasTotal === 0);
 
-  const tbody = document.getElementById(prefix + "-atrasadas-tbody");
-  if (tbody) {
-    tbody.innerHTML = atrasadas.map(function(r) {
-      return "<tr><td>" + r.orden + "</td><td>" + r.cuenta + "</td><td>" + r.inspector + "</td><td>" + formatDateShort(r.creadaFecha) + "</td>" + '<td class="num">' + diasAtraso(r.creadaFecha) + "</td></tr>";
-    }).join("") || '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Ninguna — al día.</td></tr>';
+  const tableId = prefix + "-pend-insp-table";
+  const alreadyAttached = prefix === "cc" ? ccPendInspSortAttached : efPendInspSortAttached;
+  if (!alreadyAttached) {
+    attachTableSort(tableId, sortState, function() { renderPendingSummary(prefix, dotId, sortState, pendingRows); });
+    if (prefix === "cc") ccPendInspSortAttached = true; else efPendInspSortAttached = true;
   }
-  return { atrasadas: atrasadas, pendientesHoy: pendientesHoy, cerradasHoy: cerradasHoy };
+  const rows = sortRows(pendientesPorInspectorBlock(pendingRows), sortState);
+  const tbody = document.getElementById(prefix + "-pend-insp-tbody");
+  if (tbody) {
+    tbody.innerHTML = rows.map(function(r) {
+      return "<tr><td>" + r.inspector + "</td>" + '<td class="num">' + fmtInt(r.atrasadas) + "</td>" + '<td class="num">' + fmtInt(r.pendientes_hoy) + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td><td>" + formatDateShort(r.fecha_mas_antigua) + "</td></tr>";
+    }).join("") || '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin pendientes.</td></tr>';
+  }
 }
 
 function renderDailyChart() {
@@ -1637,6 +1729,66 @@ function renderDetailTable() {
   document.getElementById("next-page").disabled = detailPage >= totalPages - 1;
 }
 
+function populatePendFilterOptions() {
+  const inspSel = document.getElementById("pend-inspector-select");
+  const monthSel = document.getElementById("pend-month-select");
+  const inspectores = Array.from(new Set(ALL_PENDING_ALL.map(function(r) { return r.inspector; }))).sort();
+  const months = Array.from(new Set(ALL_PENDING_ALL.map(function(r) { return r.creadaFecha ? r.creadaFecha.slice(0, 7) : ""; }).filter(Boolean))).sort().reverse();
+  const prevInsp = inspSel.value, prevMonth = monthSel.value;
+  inspSel.innerHTML = '<option value="">Todos</option>' + inspectores.map(function(i) { return '<option value="' + i.replace(/"/g, "&quot;") + '">' + i + "</option>"; }).join("");
+  monthSel.innerHTML = '<option value="">Todos</option>' + months.map(function(m) { return '<option value="' + m + '">' + monthLabel(m) + "</option>"; }).join("");
+  inspSel.value = inspectores.indexOf(prevInsp) !== -1 ? prevInsp : "";
+  monthSel.value = months.indexOf(prevMonth) !== -1 ? prevMonth : "";
+}
+
+function computePendFiltered() {
+  const q = pendSearchTerm.trim().toLowerCase();
+  pendFiltered = ALL_PENDING_ALL.filter(function(r) {
+    if (pendFilterCategoria === "cc" && r.esEficiencia) return false;
+    if (pendFilterCategoria === "ef" && !r.esEficiencia) return false;
+    if (pendFilterInspector && r.inspector !== pendFilterInspector) return false;
+    if (pendFilterMonth && r.creadaFecha.slice(0, 7) !== pendFilterMonth) return false;
+    if (pendFilterDateFrom && (!r.creadaFecha || r.creadaFecha < pendFilterDateFrom)) return false;
+    if (pendFilterDateTo && (!r.creadaFecha || r.creadaFecha > pendFilterDateTo)) return false;
+    if (!q) return true;
+    return String(r.orden).toLowerCase().indexOf(q) !== -1 || String(r.cuenta).toLowerCase().indexOf(q) !== -1 || String(r.inspector).toLowerCase().indexOf(q) !== -1;
+  });
+  pendPage = 0;
+}
+
+function pendRowsWithDias() {
+  return pendFiltered.map(function(r) {
+    return Object.assign({}, r, { diasAtraso: r.creadaFecha ? diasAtraso(r.creadaFecha) : 0 });
+  });
+}
+
+function renderPendTable() {
+  if (!pendSortAttached) {
+    attachTableSort("pend-table", pendSort, function() { renderPendTable(); });
+    pendSortAttached = true;
+  }
+  const sorted = sortRows(pendRowsWithDias(), pendSort);
+  document.getElementById("pend-count").textContent = fmtInt(sorted.length);
+  const start = pendPage * PAGE_SIZE;
+  const pageRows = sorted.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById("pend-tbody");
+  tbody.innerHTML = pageRows.map(function(r) {
+    return "<tr><td>" + formatDateShort(r.creadaFecha) + "</td><td>" + r.orden + "</td><td>" + r.cuenta + "</td><td>" + r.inspector + "</td><td>" + r.procesoLabel + "</td>" + '<td class="num">' + r.diasAtraso + "</td></tr>";
+  }).join("") || '<tr><td colspan="6" style="text-align:center; color:var(--text-2);">Sin pendientes.</td></tr>';
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  document.getElementById("pend-page-info").textContent = "Página " + (pendPage + 1) + " de " + totalPages;
+  document.getElementById("pend-prev-page").disabled = pendPage === 0;
+  document.getElementById("pend-next-page").disabled = pendPage >= totalPages - 1;
+}
+
+function exportPendCSV() {
+  const rows = sortRows(pendRowsWithDias(), pendSort);
+  downloadCSV("pendientes_consumo_cero.csv", rows, [
+    { key: "creadaFecha", label: "Fecha asignada" }, { key: "orden", label: "Orden" }, { key: "cuenta", label: "Cuenta" },
+    { key: "inspector", label: "Inspector" }, { key: "procesoLabel", label: "Categoría" }, { key: "diasAtraso", label: "Días de atraso" }
+  ]);
+}
+
 function renderMatrizTable() {
   const items = MATRIZ_CAUSAS.slice().sort(function(a, b) { return a.prioridad - b.prioridad; });
   const tbody = document.getElementById("matriz-tbody");
@@ -1664,15 +1816,11 @@ function renderEficienciaAll() {
   renderDailyChartInto("ef-daily-chart", "efDaily", DATA_EF.daily);
   renderHallazgosTable("ef-hallazgos-tbody", DATA_EF.hallazgos);
 
-  document.getElementById("ef-tipo-tbody").innerHTML = DATA_EF.porCategoria.map(function(r) {
-    return "<tr><td>" + r.categoria + "</td>" + '<td class="num">' + fmtInt(r.count) + "</td></tr>";
-  }).join("") || '<tr><td colspan="2" style="text-align:center; color:var(--text-2);">Sin datos.</td></tr>';
-
   document.getElementById("ef-inspector-tbody").innerHTML = DATA_EF.inspectores.map(function(r) {
     return "<tr><td>" + r.inspector + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + fmtInt(r.no_efectiva) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td></tr>";
   }).join("") || '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin datos.</td></tr>';
 
-  renderPendingControl("ef", "ef-tab-dot", ALL_EF_PENDING_ROWS, ALL_EF_CLEAN_ROWS);
+  renderPendingSummary("ef", "ef-tab-dot", efPendInspSort, ALL_EF_PENDING_ROWS);
 }
 
 function csvEscape(v) {
@@ -1793,6 +1941,59 @@ document.addEventListener("DOMContentLoaded", function() {
     filterCausaSel = e.target.value;
     populateDetailFiltered();
     renderDetailTable();
+  });
+  document.getElementById("export-pend-btn").addEventListener("click", exportPendCSV);
+  document.getElementById("pend-search").addEventListener("input", function(e) {
+    pendSearchTerm = e.target.value;
+    computePendFiltered();
+    renderPendTable();
+  });
+  document.getElementById("pend-inspector-select").addEventListener("change", function(e) {
+    pendFilterInspector = e.target.value;
+    computePendFiltered();
+    renderPendTable();
+  });
+  document.getElementById("pend-categoria-select").addEventListener("change", function(e) {
+    pendFilterCategoria = e.target.value;
+    computePendFiltered();
+    renderPendTable();
+  });
+  document.getElementById("pend-month-select").addEventListener("change", function(e) {
+    pendFilterMonth = e.target.value;
+    document.getElementById("pend-date-from").value = "";
+    document.getElementById("pend-date-to").value = "";
+    pendFilterDateFrom = "";
+    pendFilterDateTo = "";
+    computePendFiltered();
+    renderPendTable();
+  });
+  document.getElementById("pend-date-from").addEventListener("change", function(e) {
+    pendFilterDateFrom = e.target.value;
+    document.getElementById("pend-month-select").value = "";
+    pendFilterMonth = "";
+    computePendFiltered();
+    renderPendTable();
+  });
+  document.getElementById("pend-date-to").addEventListener("change", function(e) {
+    pendFilterDateTo = e.target.value;
+    document.getElementById("pend-month-select").value = "";
+    pendFilterMonth = "";
+    computePendFiltered();
+    renderPendTable();
+  });
+  document.getElementById("pend-date-clear-btn").addEventListener("click", function() {
+    pendFilterDateFrom = ""; pendFilterDateTo = ""; pendFilterMonth = "";
+    document.getElementById("pend-date-from").value = "";
+    document.getElementById("pend-date-to").value = "";
+    document.getElementById("pend-month-select").value = "";
+    computePendFiltered();
+    renderPendTable();
+  });
+  document.getElementById("pend-prev-page").addEventListener("click", function() {
+    if (pendPage > 0) { pendPage--; renderPendTable(); }
+  });
+  document.getElementById("pend-next-page").addEventListener("click", function() {
+    pendPage++; renderPendTable();
   });
   document.getElementById("matriz-search").addEventListener("input", function(e) {
     const q = e.target.value.trim().toLowerCase();
