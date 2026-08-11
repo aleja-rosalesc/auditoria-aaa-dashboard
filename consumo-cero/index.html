@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard de Cierres — Consumo Cero</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B3D5C">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Consumo Cero">
+<meta name="mobile-web-app-capable" content="yes">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --navy: #0B3D5C;
+    --navy-2: #0E547A;
+    --teal: #17A2B8;
+    --teal-dark: #0E6E8C;
+    --success: #1F9D66;
+    --success-bg: #E5F5EE;
+    --danger: #E4572E;
+    --danger-bg: #FCEAE3;
+    --warning: #F0A93A;
+    --warning-bg: #FDF1DD;
+    --gray: #A9B7C2;
+    --bg: #EFF4F7;
+    --card: #FFFFFF;
+    --text: #142B3C;
+    --text-2: #5C7284;
+    --border: #E2E9EE;
+    --radius: 14px;
+    --shadow: 0 2px 14px rgba(11, 61, 92, 0.07);
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-display: 'Space Grotesk', 'Inter', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background: var(--bg);
+    font-family: var(--font-body);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .dashboard-container{
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 20px 22px 50px;
+  }
+
+  .dashboard-header{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 55%, var(--teal-dark) 100%);
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 24px 30px 34px;
+    margin-bottom: 14px;
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dashboard-header::after{
+    content:"";
+    position:absolute; right:-60px; top:-60px;
+    width:220px; height:220px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0) 70%);
+  }
+  .header-logo-watermark{
+    position:absolute; right:18px; bottom:-10px; height:130px; width:auto;
+    opacity:0.08; filter: brightness(0) invert(1); pointer-events:none; z-index:0;
+  }
+  .header-wave{
+    position:absolute; left:0; right:0; bottom:-1px; height:22px; opacity:0.5;
+    color: rgba(255,255,255,0.5);
+  }
+  .header-titles{ display:flex; align-items:center; gap:14px; position:relative; z-index:1; }
+  .header-logo-badge{
+    background:#fff; border-radius:13px; padding:8px 13px; box-shadow:0 3px 14px rgba(0,0,0,0.18);
+    flex-shrink:0; display:flex; align-items:center; line-height:0;
+  }
+  .header-logo{ height:26px; width:auto; display:block; }
+  .header-eyebrow{
+    font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase;
+    color: rgba(255,255,255,0.75); margin-bottom: 6px; display:flex; align-items:center; gap:6px;
+  }
+  .drop-icon{ animation: dropFall 1.7s ease-in infinite; display:inline-block; transform-origin:center top; }
+  @keyframes dropFall{
+    0%{ transform: translateY(-1px) scale(1); opacity: 0; }
+    12%{ opacity: 1; }
+    75%{ opacity: 1; transform: translateY(9px) scale(1); }
+    90%{ opacity: 0; transform: translateY(11px) scale(0.85); }
+    100%{ opacity: 0; transform: translateY(-1px) scale(1); }
+  }
+  .dashboard-header h1{
+    font-family: var(--font-display); font-size: 25px; font-weight: 700;
+    margin: 0 0 8px 0; letter-spacing: -0.2px;
+  }
+  .header-meta{ font-size: 13px; color: rgba(255,255,255,0.82); }
+  .header-meta b{ color:#fff; font-weight:600; }
+
+  .status-bar{
+    background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+    border: 1px solid var(--border); padding: 12px 20px; margin-bottom: 18px;
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;
+    font-size: 12.8px; color: var(--text-2);
+  }
+  .status-left{ display:flex; align-items:center; gap:8px; }
+  .status-dot{ width:9px; height:9px; border-radius:50%; background: var(--gray); flex-shrink:0; }
+  .status-dot.ok{ background: var(--success); }
+  .status-dot.loading{ background: var(--warning); animation: pulse 1.2s infinite; }
+  .status-dot.error{ background: var(--danger); }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  .status-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+  .btn{
+    padding: 10px 17px; border-radius:9px; border:1px solid var(--teal-dark);
+    background: var(--teal-dark); color:#fff; font-size:13.5px; font-weight:600;
+    cursor:pointer; white-space:nowrap; font-family: var(--font-body); text-decoration:none; display:inline-flex; align-items:center;
+  }
+  .btn:hover{ background: var(--navy); }
+  .btn.ghost{ background:#fff; color:var(--teal-dark); }
+  .btn:disabled{ opacity:0.5; cursor:not-allowed; }
+  .setup-banner{
+    background: var(--warning-bg); border: 1px solid #F0D9A8; color:#7A5714;
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; font-size:13.5px; line-height:1.6;
+  }
+  .setup-banner code{ background:#fff; padding:1px 6px; border-radius:4px; font-size:12.5px; }
+  .error-banner{
+    background: var(--danger-bg); border: 1px solid #F3B7A2; color:#8A3216;
+    border-radius: var(--radius); padding: 16px 20px; margin-bottom: 18px; font-size:13.5px; line-height:1.6;
+  }
+
+  .kpi-row{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 18px; }
+  .kpi-card{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border); display:flex; align-items:flex-start; gap:14px;
+  }
+  .kpi-icon{ width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .kpi-icon svg{ width:20px; height:20px; }
+  .kpi-icon.blue{ background:#E4F1F6; color:var(--teal-dark); }
+  .kpi-icon.green{ background:var(--success-bg); color:var(--success); }
+  .kpi-icon.red{ background:var(--danger-bg); color:var(--danger); }
+  .kpi-icon.amber{ background:var(--warning-bg); color:#FF7A00; }
+  .kpi-label{ font-size: 12px; color: var(--text-2); font-weight:600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom:4px; }
+  .kpi-value{ font-family: var(--font-display); font-size: 26px; font-weight:700; color: var(--text); line-height:1.1; }
+  .kpi-sub{ font-size:12px; color:var(--text-2); margin-top:3px; }
+
+  .sem-badge{
+    display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px;
+    font-weight:700; font-size:0.92em; line-height:1.5;
+  }
+  .sem-badge::before{ content:''; width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .sem-badge.sem-rojo{ background:var(--danger-bg); color:var(--danger); }
+  .sem-badge.sem-naranja{ background:var(--warning-bg); color:#FF7A00; }
+  .sem-badge.sem-verde{ background:var(--success-bg); color:var(--success); }
+
+  .chart-row{ display:grid; gap:16px; margin-bottom:16px; }
+  .chart-row.two-col{ grid-template-columns: 1.3fr 1fr; }
+  .chart-row.one-col{ grid-template-columns: 1fr; }
+  .chart-container{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px 14px;
+    box-shadow: var(--shadow); border: 1px solid var(--border);
+  }
+  .chart-container h3{ font-size: 13.5px; font-weight:700; color: var(--text); margin: 0 0 4px 0; }
+  .chart-sub{ font-size:11.5px; color:var(--text-2); margin: 0 0 12px 0; }
+  .chart-container canvas{ max-height: 270px; }
+  .chart-container.tall canvas{ max-height: 340px; }
+
+  .table-section{
+    background: var(--card); border-radius: var(--radius); padding: 18px 20px 20px;
+    box-shadow: var(--shadow); border: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .table-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+  .table-header h3{ font-size:14.5px; font-weight:700; margin:0; color:var(--text); }
+  .table-actions{ display:flex; gap:8px; align-items:center; }
+  #table-search{
+    padding: 8px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:13px; font-family: var(--font-body); min-width:260px; background:#F7FAFB;
+  }
+  .table-scroll{ overflow-x:auto; }
+  .data-table{ width:100%; border-collapse: collapse; font-size:12.8px; }
+  .data-table thead th{
+    text-align:left; padding: 10px 12px; border-bottom: 2px solid var(--border);
+    color: var(--text-2); font-weight:700; font-size:11px; text-transform:uppercase;
+    letter-spacing:0.4px; white-space:nowrap; user-select:none; cursor:pointer; background:#F7FAFB;
+  }
+  .data-table thead th:hover{ color: var(--teal-dark); }
+  .data-table thead th.sorted::after{ content:" ▾"; font-size:9px; }
+  .data-table thead th.sorted.asc::after{ content:" ▴"; }
+  .data-table tbody td{ padding: 9px 12px; border-bottom:1px solid #F0F3F5; white-space:nowrap; }
+  .data-table tbody tr:hover{ background:#F7FBFC; }
+  .data-table td.num{ text-align:right; font-variant-numeric: tabular-nums; }
+  .table-pagination{ display:flex; align-items:center; justify-content:flex-end; gap:12px; margin-top:12px; font-size:12.5px; color:var(--text-2); }
+  .table-pagination button{
+    padding:6px 12px; border-radius:7px; border:1px solid var(--border);
+    background:#fff; cursor:pointer; font-size:12px; font-weight:600; color:var(--text);
+  }
+  .table-pagination button:disabled{ opacity:0.4; cursor:not-allowed; }
+
+  .dashboard-footer{ text-align:center; font-size:12px; color: var(--text-2); padding: 14px 0 4px; }
+  .dashboard-footer a{ color: var(--teal-dark); }
+
+  .hidden{ display:none !important; }
+  html{ scroll-behavior:smooth; }
+
+  .access-gate{
+    position: fixed; inset:0; z-index: 200;
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy-2) 55%, var(--teal-dark) 100%);
+    display:flex; align-items:center; justify-content:center; padding:24px;
+  }
+  .access-card{
+    background:#fff; border-radius:18px; padding:30px 28px; max-width:380px; width:100%;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.28); text-align:center;
+  }
+  .access-card .header-logo-badge{ box-shadow:none; border:1px solid var(--border); margin:0 auto 16px; display:inline-flex; }
+  .access-card h2{ font-family: var(--font-display); font-size:18px; margin:0 0 6px; color:var(--text); }
+  .access-card p{ font-size:13px; color:var(--text-2); margin:0 0 20px; }
+  .role-choices{ display:flex; flex-direction:column; gap:10px; }
+  .role-btn{
+    display:flex; align-items:center; gap:12px; padding:14px 16px; border-radius:12px;
+    border:1.5px solid var(--border); background:#F7FAFB; cursor:pointer; text-align:left;
+    font-family: var(--font-body); font-size:14px; font-weight:600; color:var(--text);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .role-btn:hover{ border-color:var(--teal-dark); background:#EDF6F9; }
+  .role-btn .role-icon{
+    width:38px; height:38px; border-radius:10px; background:var(--success-bg); color:var(--success);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .role-btn.admin .role-icon{ background: var(--warning-bg); color:#FF7A00; }
+  .role-btn small{ display:block; font-weight:400; color:var(--text-2); font-size:11.5px; margin-top:2px; }
+  .access-password-row{ margin-top:16px; text-align:left; }
+  .access-password-row label{ font-size:12px; font-weight:700; color:var(--text-2); display:block; margin-bottom:6px; }
+  .access-password-row input{
+    width:100%; padding:11px 14px; border-radius:10px; border:1.5px solid var(--border);
+    font-size:14px; font-family: var(--font-body); box-sizing:border-box; margin-bottom:10px;
+  }
+  .access-error{ color:var(--danger); font-size:12.5px; margin:0 0 10px; min-height:1px; }
+  .access-back-btn{ font-size:12px; color:var(--text-2); background:none; border:none; cursor:pointer; margin-top:6px; text-decoration:underline; }
+
+  .role-badge{ display:flex; align-items:center; gap:6px; font-size:11.5px; font-weight:700; color:var(--text-2); }
+  .role-badge .role-pill{ padding:3px 10px; border-radius:20px; background:var(--success-bg); color:var(--success); }
+  .role-badge.admin-pill .role-pill{ background:var(--warning-bg); color:#FF7A00; }
+  .role-badge button{
+    background:none; border:none; color:var(--teal-dark); font-size:11.5px; font-weight:700;
+    cursor:pointer; text-decoration:underline; padding:0;
+  }
+
+  .chart-container h3 svg, .table-section h3 svg{
+    width:15px; height:15px; color:var(--teal-dark); vertical-align:-2px; margin-right:5px;
+    display:inline-block;
+  }
+  .chart-container, .table-section{ transition: transform .18s ease, box-shadow .18s ease; }
+  .chart-container:hover, .table-section:hover{ transform: translateY(-2px); box-shadow: 0 6px 22px rgba(11,61,92,0.13); }
+
+  .back-to-top{
+    position: fixed; bottom: 24px; right: 22px; width:46px; height:46px; border-radius:50%;
+    background: var(--teal-dark); color:#fff; border:none; font-size:20px; cursor:pointer;
+    box-shadow: 0 4px 16px rgba(11,61,92,0.28); z-index: 40;
+  }
+  .back-to-top:hover{ background: var(--navy); }
+
+  @media (max-width: 1080px){
+    .kpi-row{ grid-template-columns: repeat(2, 1fr); }
+    .chart-row.two-col{ grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px){
+    .dashboard-container{ padding-left: 10px; padding-right: 10px; }
+    .chart-container, .table-section{ padding-left: 12px; padding-right: 12px; }
+    .kpi-row{ grid-template-columns: 1fr 1fr; gap:10px; }
+    .dashboard-header{ flex-direction:column; align-items:stretch; padding: 16px 16px 26px; gap:12px; }
+    .dashboard-header h1{ font-size: 19px; margin-bottom: 5px; }
+    .header-eyebrow{ font-size: 10.5px; letter-spacing: 1px; }
+    .header-meta{ font-size: 12px; }
+    .header-logo-badge{ padding:6px 10px; border-radius:10px; }
+    .header-logo{ height:20px; }
+    .header-logo-watermark{ height:90px; right:8px; }
+    .status-bar{ flex-direction:column; align-items:stretch; gap:10px; }
+    .status-actions{ flex-wrap: wrap; row-gap:8px; }
+    .status-actions .btn{ flex:1; min-width: 130px; padding: 9px 10px; font-size:12.3px; }
+    .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin: 0 -12px; padding: 0 12px; }
+    .data-table{ min-width: 640px; }
+    .back-to-top{ width:42px; height:42px; bottom:16px; right:16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="access-gate" id="access-gate">
+  <div class="access-card">
+    <div class="header-logo-badge"><img src="logo.png" alt="LECTA" class="header-logo"></div>
+    <h2>Cierres — Consumo Cero</h2>
+    <p>Selecciona tu rol para continuar</p>
+
+    <div class="role-choices" id="role-choices">
+      <button class="role-btn" id="role-btn-supervisor">
+        <span class="role-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>
+        <span>Supervisor<small>Acceso de consulta</small></span>
+      </button>
+      <button class="role-btn admin" id="role-btn-admin">
+        <span class="role-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+        <span>Administrador<small>Acceso completo, requiere contraseña</small></span>
+      </button>
+    </div>
+
+    <div class="access-password-row hidden" id="access-password-row">
+      <label for="access-password-input">Contraseña de administrador</label>
+      <p class="access-error" id="access-error">&nbsp;</p>
+      <input type="password" id="access-password-input" placeholder="Contraseña">
+      <button class="btn" id="access-password-submit" style="width:100%;">Entrar</button>
+      <button class="access-back-btn" id="access-back-btn">← Volver</button>
+    </div>
+  </div>
+</div>
+
+<div class="dashboard-container">
+  <header class="dashboard-header">
+    <div class="header-titles">
+      <div class="header-logo-badge"><img src="logo.png" alt="LECTA" class="header-logo"></div>
+      <div>
+        <div class="header-eyebrow">
+          <svg class="drop-icon" width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C12 2 5 10.5 5 15.5C5 19.6 8.1 22 12 22C15.9 22 19 19.6 19 15.5C19 10.5 12 2 12 2Z"/></svg>
+          Inspecciones AAA · Control de Pérdidas
+        </div>
+        <h1>Dashboard de Cierres — Consumo Cero</h1>
+        <div class="header-meta" id="header-meta">Cargando datos en vivo…</div>
+      </div>
+    </div>
+    <img src="logo.png" alt="" class="header-logo-watermark" aria-hidden="true">
+    <svg class="header-wave" viewBox="0 0 500 30" preserveAspectRatio="none"><path d="M0 15 Q 62 2 125 15 T 250 15 T 375 15 T 500 15 V30 H0 Z" fill="currentColor"/></svg>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-dot loading" id="status-dot"></span>
+      <span id="status-text">Conectando con Google Sheets…</span>
+    </div>
+    <div class="status-actions">
+      <span class="role-badge" id="role-badge"><span class="role-pill" id="role-pill">—</span><button id="role-switch-btn">Cambiar</button></span>
+      <a class="btn ghost" href="../index.html">🏠 Cambiar de área</a>
+      <button class="btn ghost" id="refresh-btn">↻ Actualizar ahora</button>
+    </div>
+  </div>
+
+  <div class="setup-banner hidden" id="setup-banner"></div>
+  <div class="error-banner hidden" id="error-banner"></div>
+
+  <section class="kpi-row">
+    <div class="kpi-card">
+      <div class="kpi-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Órdenes cerradas</div>
+        <div class="kpi-value" id="kpi-total">—</div>
+        <div class="kpi-sub" id="kpi-total-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">% Efectividad</div>
+        <div class="kpi-value" id="kpi-efectividad">—</div>
+        <div class="kpi-sub" id="kpi-efectividad-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">No efectivas</div>
+        <div class="kpi-value" id="kpi-no-efectivas">—</div>
+        <div class="kpi-sub" id="kpi-no-efectivas-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Inspectores activos</div>
+        <div class="kpi-value" id="kpi-inspectores">—</div>
+        <div class="kpi-sub">&nbsp;</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-row one-col">
+    <div class="chart-container">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> Cierres por día</h3>
+      <p class="chart-sub">Órdenes efectivas vs. no efectivas (barras) y % de efectividad (línea)</p>
+      <canvas id="daily-chart" height="90"></canvas>
+    </div>
+  </section>
+
+  <section class="chart-row two-col">
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Causas de cierre</h3>
+      <p class="chart-sub">Todas las causas registradas, de mayor a menor</p>
+      <canvas id="causas-chart"></canvas>
+    </div>
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg> Efectiva vs. No efectiva</h3>
+      <p class="chart-sub">Distribución general</p>
+      <canvas id="efectividad-chart"></canvas>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2"/><path d="M20 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg> Resumen por inspector</h3>
+      <div class="table-actions">
+        <button class="btn ghost" id="export-inspector-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table" id="inspector-table">
+        <thead>
+          <tr>
+            <th data-key="inspector">Inspector</th><th data-key="total" class="num sorted">Cerradas</th>
+            <th data-key="efectiva" class="num">Efectivas</th><th data-key="no_efectiva" class="num">No efectivas</th>
+            <th data-key="pct_efectividad" class="num">% Efectividad</th>
+          </tr>
+        </thead>
+        <tbody id="inspector-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Detalle de órdenes (<span id="detail-count">0</span>)</h3>
+      <div class="table-actions">
+        <input type="text" id="table-search" placeholder="Buscar por orden, cuenta, inspector o causa…">
+        <button class="btn" id="export-detail-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table class="data-table" id="detail-table">
+        <thead>
+          <tr>
+            <th data-key="fecha" class="sorted">Fecha</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
+            <th data-key="inspector">Inspector</th><th data-key="causa">Causa de cierre</th><th data-key="comentario">Comentario</th>
+            <th data-key="ciclo">Ciclo</th><th data-key="efectividad">Calificación</th>
+          </tr>
+        </thead>
+        <tbody id="detail-tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination">
+      <button id="prev-page">‹ Anterior</button>
+      <span id="page-info">—</span>
+      <button id="next-page">Siguiente ›</button>
+    </div>
+  </section>
+
+  <footer class="dashboard-footer">
+    Fuente: hoja de Google Sheets conectada en vivo · <a id="sheet-link" href="#" target="_blank" rel="noopener">Abrir hoja de datos</a> · Uso interno de control de calidad
+  </footer>
+</div>
+
+<button class="back-to-top hidden" id="back-to-top" aria-label="Volver arriba">↑</button>
+
+<script>
+const SHEET_ID = "PEGA_AQUI_EL_ID_DE_TU_HOJA_DE_CONSUMO_CERO";
+
+const SHEET_GID = "0";
+
+const REFRESH_INTERVAL_MS = 5 * 60 * 1e3;
+
+// Columnas necesarias del reporte de Consumo Cero, seleccionadas por LETRA
+// según la posición real del export (a diferencia de Crítica/Pregeófono,
+// este reporte trae encabezados únicos y limpios, así que no hace falta
+// "label" para desambiguar nada).
+// A=CUENTA, E=ORDEN, I=FEC_CREACION, K=FEC_CIERRE, O=COMENTARIO_CIERRE,
+// T=CAUSA_CIERRE, X=UNIDAD_OPERATIVA, AA=MUNICIPIO, AB=BARRIO, AC=CICLO.
+const SHEET_COLUMNS_TQ = "select A,E,I,K,O,T,X,AA,AB,AC";
+
+const ADMIN_PASSWORD = "AAA2026admin";
+
+const ROLE_STORAGE_KEY = "aaa_consumocero_role";
+
+const COLORS = {
+  success: "#1F9D66",
+  danger: "#E4572E",
+  warning: "#F0A93A",
+  teal: "#17A2B8",
+  primary: "#0E6E8C",
+  primaryDark: "#0B3D5C",
+  gray: "#C4CFD6"
+};
+
+const EFECTIVIDAD_META = 65;
+
+// Causa de cierre -> Efectivo / No Efectivo, según el Manual de Cierres
+// Operativos de Consumo Cero: Efectivo = la visita concluyó algo concreto
+// sobre el predio; No Efectivo = quedó bloqueada o sin resolver. Toda causa
+// que no aparezca aquí se trata como Excluido, para no adivinar.
+const CAUSA_CALIFICACION = {
+  "AR-AMERITA REVISION DE LABORATORIO": "EFECTIVO",
+  "CO-CONSTRUCCION": "EFECTIVO",
+  "DH-DESHABITADO": "EFECTIVO",
+  "NORMAL": "EFECTIVO",
+  "PA-PARADO": "EFECTIVO",
+  "POSIBLE IRREGULARIDAD": "EFECTIVO",
+  "RI-PREDIO CON RECONEXION ILEGAL": "EFECTIVO",
+  "RO-ROTO": "EFECTIVO",
+  "SD-SERVICIO DIRECTO": "EFECTIVO",
+  "SIN MEDIDOR EN TERRENO": "EFECTIVO",
+  "SS-SERVICIO SUSPENDIDO": "EFECTIVO",
+  "AUSENTE": "NO_EFECTIVO",
+  "NO SE PUEDE REVISAR": "NO_EFECTIVO",
+  "NP-NO PERMITEN INGRESO AL PREDIO": "NO_EFECTIVO",
+  "SP-SECTOR PELIGROSO": "NO_EFECTIVO",
+  "SSA-SECTOR SIN AGUA": "NO_EFECTIVO"
+};
+function calificarCausa(causa) {
+  const key = String(causa || "").trim().toUpperCase();
+  return CAUSA_CALIFICACION[key] || "EXCLUIDO";
+}
+
+let ALL_CLEAN_ROWS = [];
+
+let DATA = null;
+
+let charts = {};
+
+let detailSort = { key: "fecha", dir: "desc" };
+
+let detailPage = 0;
+
+const PAGE_SIZE = 50;
+
+let detailFiltered = [];
+
+let inspectorSort = { key: "total", dir: "desc" };
+
+let searchTerm = "";
+
+let lastLoadedAt = null;
+
+function fmtInt(n) {
+  return Number(n || 0).toLocaleString("es-CO");
+}
+
+function fmtPct(n) {
+  return String(n).replace(".", ",") + "%";
+}
+
+function round1(n) {
+  return Math.round(n * 10) / 10;
+}
+
+function semClass(pct) {
+  if (pct < 60) return "sem-rojo";
+  if (pct < 65) return "sem-naranja";
+  return "sem-verde";
+}
+function semColor(pct) {
+  if (pct < 60) return COLORS.danger;
+  if (pct < 65) return "#FF7A00";
+  return COLORS.success;
+}
+function semBadge(pct) {
+  return '<span class="sem-badge ' + semClass(pct) + '">' + fmtPct(pct) + "</span>";
+}
+
+function isoFromDate(d) {
+  const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
+  return y + "-" + m + "-" + day;
+}
+
+function formatDateShort(iso) {
+  if (!iso) return "—";
+  const p = String(iso).split("-");
+  return p.length === 3 ? p[2] + "/" + p[1] : iso;
+}
+
+function formatDateLong(iso) {
+  if (!iso) return "—";
+  const p = String(iso).split("-");
+  return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso;
+}
+
+// El reporte trae FEC_CREACION/FEC_CIERRE como fecha+hora completa en una
+// sola celda ("Date(Y,M,D,H,Mi,S)"), a diferencia de Pregeófono que las
+// trae separadas en dos columnas. Se parsea todo de una vez.
+function parseFechaHoraCompleta(raw) {
+  if (raw === null || raw === undefined || raw === "") return null;
+  const s = String(raw).trim();
+  const m = /Date\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d+),\s*(\d+),\s*(\d+))?\)?/.exec(s);
+  if (m) {
+    const y = Number(m[1]), mo = Number(m[2]), d = Number(m[3]);
+    const h = m[4] !== undefined ? Number(m[4]) : 0, mi = m[5] !== undefined ? Number(m[5]) : 0, se = m[6] !== undefined ? Number(m[6]) : 0;
+    return new Date(y, mo, d, h, mi, se);
+  }
+  const mTxt = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})/.exec(s);
+  if (mTxt) return new Date(Number(mTxt[3]), Number(mTxt[2]) - 1, Number(mTxt[1]));
+  const mIso = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (mIso) return new Date(Number(mIso[1]), Number(mIso[2]) - 1, Number(mIso[3]));
+  return null;
+}
+
+function formatHora(d) {
+  if (!d) return "—";
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+
+// El "Unidad de trabajo" del reporte trae el nombre seguido de la empresa
+// contratista (ej. "NOMBRE - LECTA"). Solo nos interesa el personal de
+// LECTA, y una vez filtrado no hace falta seguir mostrando esa etiqueta.
+function cleanInspectorName(name) {
+  return String(name || "").replace(/\s*-\s*LECTA.*$/i, "").trim();
+}
+
+function getField(row, name) {
+  if (Object.prototype.hasOwnProperty.call(row, name)) return row[name];
+  const target = name.trim().toUpperCase();
+  for (const k in row) {
+    if (k.trim().toUpperCase() === target) return row[k];
+  }
+  return "";
+}
+
+function setStatus(state, text) {
+  const dot = document.getElementById("status-dot");
+  dot.className = "status-dot " + state;
+  document.getElementById("status-text").textContent = text;
+}
+
+function showSetupBanner() {
+  const b = document.getElementById("setup-banner");
+  b.classList.remove("hidden");
+  b.innerHTML = "Este panel aún no está conectado a una hoja de datos. Reemplaza <code>SHEET_ID</code> en el código " + '(cerca de la línea "CONFIGURACIÓN" al inicio del script) por el ID de tu Google Sheet, y asegúrate de compartirla como ' + '<b>"Cualquier persona con el enlace: Lector"</b>.';
+  setStatus("error", "Falta configurar la hoja de datos");
+}
+
+function showErrorBanner(msg) {
+  const b = document.getElementById("error-banner");
+  b.classList.remove("hidden");
+  b.textContent = msg;
+  setStatus("error", "Error al cargar los datos");
+}
+
+function hideErrorBanner() {
+  document.getElementById("error-banner").classList.add("hidden");
+}
+
+function loadData(isManualRefresh) {
+  if (!SHEET_ID || SHEET_ID.indexOf("PEGA_AQUI") === 0) {
+    showSetupBanner();
+    return;
+  }
+  hideErrorBanner();
+  setStatus("loading", isManualRefresh ? "Actualizando…" : "Conectando con Google Sheets…");
+  document.getElementById("refresh-btn").disabled = true;
+  window.google = window.google || {};
+  window.google.visualization = window.google.visualization || {};
+  window.google.visualization.Query = window.google.visualization.Query || {};
+  window.google.visualization.Query.setResponse = function(resp) {
+    document.getElementById("refresh-btn").disabled = false;
+    if (!resp || resp.status === "error") {
+      const msg = resp && resp.errors && resp.errors[0] && resp.errors[0].message || "Respuesta inválida";
+      showErrorBanner("No se pudo leer la hoja (" + msg + '). Verifica que esté compartida como "Cualquier persona con el enlace: Lector" y que el SHEET_ID sea correcto.');
+      return;
+    }
+    try {
+      const rows = gvizToObjects(resp);
+      processRawRows(rows);
+      lastLoadedAt = new Date;
+      const fechaDatos = DATA && DATA.meta.fecha_max ? formatDateLong(DATA.meta.fecha_max) : "—";
+      setStatus("ok", "Conectado · última actualización: " + lastLoadedAt.toLocaleTimeString("es-CO") + " · Datos hasta: " + fechaDatos);
+      document.getElementById("sheet-link").href = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/edit#gid=" + SHEET_GID;
+    } catch (e) {
+      showErrorBanner("Los datos se recibieron pero no se pudieron procesar: " + e.message);
+    }
+  };
+  const script = document.createElement("script");
+  script.src = "https://docs.google.com/spreadsheets/d/" + SHEET_ID + "/gviz/tq?tqx=out:json&gid=" + SHEET_GID + (SHEET_COLUMNS_TQ ? "&tq=" + encodeURIComponent(SHEET_COLUMNS_TQ) : "") + "&_=" + Date.now();
+  script.onerror = function() {
+    document.getElementById("refresh-btn").disabled = false;
+    showErrorBanner("No se pudo contactar la hoja de Google Sheets. Revisa tu conexión y que el enlace de la hoja sea público.");
+  };
+  document.head.appendChild(script);
+}
+
+function gvizDateToISO(raw) {
+  if (raw === null || raw === undefined) return "";
+  const s = String(raw);
+  const m = /Date\((\d+),\s*(\d+),\s*(\d+)/.exec(s);
+  if (m) {
+    const y = m[1], mo = String(Number(m[2]) + 1).padStart(2, "0"), d = String(Number(m[3])).padStart(2, "0");
+    return y + "-" + mo + "-" + d;
+  }
+  return s.slice(0, 10);
+}
+
+function gvizToObjects(resp) {
+  const cols = resp.table.cols.map(function(c) {
+    return String(c.label || c.id || "").trim();
+  });
+  return (resp.table.rows || []).map(function(row) {
+    const obj = {};
+    cols.forEach(function(label, i) {
+      const cell = row.c[i];
+      if (!cell) {
+        obj[label] = "";
+        return;
+      }
+      const rawVal = cell.v;
+      const isTimeOnlyEpoch = typeof rawVal === "string" && /^Date\(1899,\s*11,\s*30,/.test(rawVal);
+      if (typeof rawVal === "string" && !isTimeOnlyEpoch && /^Date\(\d+,\s*\d+,\s*\d+/.test(rawVal) && !/^Date\(\d+,\s*\d+,\s*\d+,/.test(rawVal)) {
+        obj[label] = gvizDateToISO(rawVal);
+      } else if (typeof rawVal === "number" && typeof cell.f === "string" && /e\+?\d/i.test(cell.f)) {
+        obj[label] = String(rawVal);
+      } else {
+        obj[label] = cell.f !== undefined && cell.f !== null ? cell.f : rawVal === null || rawVal === undefined ? "" : rawVal;
+      }
+    });
+    return obj;
+  });
+}
+
+function processRawRows(rawRows) {
+  const clean = rawRows.map(function(r) {
+    const creadaDate = parseFechaHoraCompleta(getField(r, "FEC_CREACION"));
+    const cierreDate = parseFechaHoraCompleta(getField(r, "FEC_CIERRE"));
+    const causa = getField(r, "CAUSA_CIERRE");
+    const calif = calificarCausa(causa);
+    const inspectorRaw = getField(r, "UNIDAD_OPERATIVA") || "(Sin asignar)";
+    return {
+      orden: getField(r, "ORDEN"),
+      cuenta: getField(r, "CUENTA"),
+      fecha: cierreDate ? isoFromDate(cierreDate) : "",
+      horaTexto: formatHora(cierreDate),
+      fechaHoraTS: cierreDate ? cierreDate.getTime() : null,
+      creadaFecha: creadaDate ? isoFromDate(creadaDate) : "",
+      inspectorRaw: inspectorRaw,
+      inspector: cleanInspectorName(inspectorRaw),
+      causa: causa,
+      calificacion: calif,
+      efectividad: calif === "EFECTIVO" ? "Efectiva" : calif === "NO_EFECTIVO" ? "No Efectivo" : "Excluido",
+      comentario_cierre: getField(r, "COMENTARIO_CIERRE"),
+      municipio: getField(r, "MUNICIPIO"),
+      barrio: getField(r, "BARRIO"),
+      ciclo: getField(r, "CICLO")
+    };
+  }).filter(function(r) {
+    return r.orden !== "" && r.orden !== undefined && r.orden !== null && r.fecha && /lecta/i.test(r.inspectorRaw);
+  });
+  ALL_CLEAN_ROWS = clean;
+  rebuildData();
+}
+
+function groupBy(arr, key) {
+  const m = new Map;
+  arr.forEach(function(x) {
+    const k = x[key];
+    if (!m.has(k)) m.set(k, []);
+    m.get(k).push(x);
+  });
+  return m;
+}
+
+function dailyBlock(sub) {
+  const byDate = groupBy(sub, "fecha");
+  const dates = Array.from(byDate.keys()).filter(Boolean).sort();
+  return dates.map(function(fecha) {
+    const rows = byDate.get(fecha);
+    const efectiva = rows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+    const no_efectiva = rows.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+    const base = efectiva + no_efectiva;
+    return { fecha: fecha, total: rows.length, efectiva: efectiva, no_efectiva: no_efectiva, base_calificada: base };
+  });
+}
+
+function inspectoresBlock(sub) {
+  const by = groupBy(sub, "inspector");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1], total = rows.length;
+    const efectiva = rows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+    const no_efectiva = rows.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+    const base = efectiva + no_efectiva;
+    return {
+      inspector: e[0],
+      total: total,
+      efectiva: efectiva,
+      no_efectiva: no_efectiva,
+      pct_efectividad: base ? round1(efectiva / base * 100) : 0
+    };
+  });
+  out.sort(function(a, b) { return b.total - a.total; });
+  return out;
+}
+
+function causasBlock(sub) {
+  const by = groupBy(sub, "causa");
+  let out = Array.from(by.entries()).map(function(e) {
+    return { causa: e[0] || "(sin causa)", count: e[1].length };
+  });
+  out.sort(function(a, b) { return b.count - a.count; });
+  return out;
+}
+
+function rebuildData() {
+  const clean = ALL_CLEAN_ROWS;
+  const fechas = clean.map(function(r) { return r.fecha; }).filter(Boolean).sort();
+  const kpiEfectiva = clean.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+  const kpiNoEfectiva = clean.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+  const kpiBase = kpiEfectiva + kpiNoEfectiva;
+  DATA = {
+    meta: {
+      total_registros: clean.length,
+      fecha_min: fechas[0] || "",
+      fecha_max: fechas[fechas.length - 1] || "",
+      total_inspectores: new Set(clean.map(function(r) { return r.inspector; })).size
+    },
+    kpis: {
+      total: clean.length,
+      efectiva: kpiEfectiva,
+      no_efectiva: kpiNoEfectiva,
+      pct_efectividad: kpiBase ? round1(kpiEfectiva / kpiBase * 100) : 0
+    },
+    daily: dailyBlock(clean),
+    inspectores: inspectoresBlock(clean),
+    causas: causasBlock(clean)
+  };
+  populateDetailFiltered();
+  renderAll();
+}
+
+function renderAll() {
+  document.getElementById("header-meta").innerHTML = "Periodo <b>" + formatDateLong(DATA.meta.fecha_min) + "</b> – <b>" + formatDateLong(DATA.meta.fecha_max) + "</b> · " + "<b>" + fmtInt(DATA.meta.total_registros) + "</b> órdenes cerradas · " + "<b>" + DATA.meta.total_inspectores + "</b> inspectores";
+  renderKPIs();
+  renderDailyChart();
+  renderCausasChart();
+  renderEfectividadDoughnut();
+  renderInspectorTable();
+  renderDetailTable();
+}
+
+function renderKPIs() {
+  const k = DATA.kpis;
+  document.getElementById("kpi-total").textContent = fmtInt(k.total);
+  document.getElementById("kpi-total-sub").textContent = DATA.meta.fecha_min ? formatDateShort(DATA.meta.fecha_min) + " – " + formatDateShort(DATA.meta.fecha_max) : " ";
+  const efEl = document.getElementById("kpi-efectividad");
+  efEl.textContent = fmtPct(k.pct_efectividad);
+  efEl.className = "kpi-value " + semClass(k.pct_efectividad);
+  document.getElementById("kpi-efectividad-sub").textContent = k.efectiva + " de " + (k.efectiva + k.no_efectiva) + " calificadas";
+  document.getElementById("kpi-no-efectivas").textContent = fmtInt(k.no_efectiva);
+  document.getElementById("kpi-no-efectivas-sub").textContent = (k.total ? round1(k.no_efectiva / k.total * 100) : 0) + "% del total";
+  document.getElementById("kpi-inspectores").textContent = fmtInt(DATA.meta.total_inspectores);
+}
+
+function renderDailyChart() {
+  const labels = DATA.daily.map(function(d) { return formatDateShort(d.fecha); });
+  const efectivas = DATA.daily.map(function(d) { return d.efectiva; });
+  const noEfectivas = DATA.daily.map(function(d) { return d.no_efectiva; });
+  const efect = DATA.daily.map(function(d) { return d.base_calificada ? round1(d.efectiva / d.base_calificada * 100) : 0; });
+  const meta = DATA.daily.map(function() { return EFECTIVIDAD_META; });
+  if (charts.daily) charts.daily.destroy();
+  charts.daily = new Chart(document.getElementById("daily-chart"), {
+    data: {
+      labels: labels,
+      datasets: [ {
+        type: "bar", label: "Efectivas", data: efectivas, backgroundColor: COLORS.success, stack: "s", borderRadius: 3, maxBarThickness: 34
+      }, {
+        type: "bar", label: "No efectivas", data: noEfectivas, backgroundColor: COLORS.danger, stack: "s", borderRadius: 3, maxBarThickness: 34
+      }, {
+        type: "line", label: "% Efectividad", data: efect, borderColor: COLORS.teal, backgroundColor: COLORS.teal, tension: .3, yAxisID: "y1", pointRadius: 3
+      }, {
+        type: "line", label: "Meta " + EFECTIVIDAD_META + "%", data: meta, borderColor: COLORS.primaryDark, borderDash: [ 6, 4 ], borderWidth: 1.4, pointRadius: 0, yAxisID: "y1", fill: false
+      } ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+      scales: {
+        x: { stacked: true, grid: { display: false } },
+        y: { stacked: true, beginAtZero: true, grid: { color: "#EEF2F5" }, ticks: { precision: 0 } },
+        y1: { position: "right", min: 0, max: 100, grid: { display: false }, ticks: { callback: function(v) { return v + "%"; } } }
+      }
+    }
+  });
+}
+
+function renderCausasChart() {
+  const items = DATA.causas;
+  if (charts.causas) charts.causas.destroy();
+  charts.causas = new Chart(document.getElementById("causas-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) { return i.causa; }),
+      datasets: [ { label: "Órdenes", data: items.map(function(i) { return i.count; }), backgroundColor: COLORS.primaryDark, borderRadius: 4, maxBarThickness: 18 } ]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, grid: { color: "#EEF2F5" } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+function renderEfectividadDoughnut() {
+  const k = DATA.kpis;
+  if (charts.efectividad) charts.efectividad.destroy();
+  charts.efectividad = new Chart(document.getElementById("efectividad-chart"), {
+    type: "doughnut",
+    data: {
+      labels: [ "Efectiva", "No efectiva" ],
+      datasets: [ { data: [ k.efectiva, k.no_efectiva ], backgroundColor: [ COLORS.success, COLORS.danger ], borderWidth: 0 } ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: "68%",
+      plugins: { legend: { position: "bottom" } }
+    }
+  });
+}
+
+function attachTableSort(tableId, sortState, onChange) {
+  document.querySelectorAll("#" + tableId + " thead th").forEach(function(th) {
+    th.addEventListener("click", function() {
+      const key = th.dataset.key;
+      if (sortState.key === key) sortState.dir = sortState.dir === "asc" ? "desc" : "asc"; else { sortState.key = key; sortState.dir = "desc"; }
+      document.querySelectorAll("#" + tableId + " thead th").forEach(function(h) { h.classList.remove("sorted", "asc"); });
+      th.classList.add("sorted");
+      if (sortState.dir === "asc") th.classList.add("asc");
+      onChange();
+    });
+  });
+}
+let inspectorSortAttached = false;
+let detailSortAttached = false;
+
+function sortRows(rows, state) {
+  const out = rows.slice();
+  out.sort(function(a, b) {
+    let av = a[state.key], bv = b[state.key];
+    if (typeof av === "string") av = av.toLowerCase();
+    if (typeof bv === "string") bv = bv.toLowerCase();
+    if (av < bv) return state.dir === "asc" ? -1 : 1;
+    if (av > bv) return state.dir === "asc" ? 1 : -1;
+    return 0;
+  });
+  return out;
+}
+
+function renderInspectorTable() {
+  if (!inspectorSortAttached) {
+    attachTableSort("inspector-table", inspectorSort, renderInspectorTable);
+    inspectorSortAttached = true;
+  }
+  const rows = sortRows(DATA.inspectores, inspectorSort);
+  const tbody = document.getElementById("inspector-tbody");
+  tbody.innerHTML = rows.map(function(r) {
+    return "<tr><td>" + r.inspector + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + fmtInt(r.no_efectiva) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td></tr>";
+  }).join("") || '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin datos.</td></tr>';
+}
+
+function populateDetailFiltered() {
+  const q = searchTerm.trim().toLowerCase();
+  detailFiltered = ALL_CLEAN_ROWS.filter(function(r) {
+    if (!q) return true;
+    return String(r.orden).toLowerCase().indexOf(q) !== -1 || String(r.cuenta).toLowerCase().indexOf(q) !== -1 || String(r.inspector).toLowerCase().indexOf(q) !== -1 || String(r.causa).toLowerCase().indexOf(q) !== -1;
+  });
+  detailPage = 0;
+}
+
+function renderDetailTable() {
+  if (!detailSortAttached) {
+    attachTableSort("detail-table", detailSort, function() { renderDetailTable(); });
+    detailSortAttached = true;
+  }
+  const sorted = sortRows(detailFiltered, detailSort);
+  document.getElementById("detail-count").textContent = fmtInt(sorted.length);
+  const start = detailPage * PAGE_SIZE;
+  const pageRows = sorted.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById("detail-tbody");
+  tbody.innerHTML = pageRows.map(function(r) {
+    const badgeClass = r.efectividad === "Efectiva" ? "sem-verde" : r.efectividad === "No Efectivo" ? "sem-rojo" : "sem-naranja";
+    return "<tr><td>" + formatDateShort(r.fecha) + " " + r.horaTexto + "</td><td>" + r.orden + "</td><td>" + r.cuenta + "</td><td>" + r.inspector + "</td><td>" + (r.causa || "—") + "</td><td>" + (r.comentario_cierre || "—") + "</td><td>" + (r.ciclo || "—") + "</td>" + '<td><span class="sem-badge ' + badgeClass + '">' + r.efectividad + "</span></td></tr>";
+  }).join("") || '<tr><td colspan="8" style="text-align:center; color:var(--text-2);">Sin resultados.</td></tr>';
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  document.getElementById("page-info").textContent = "Página " + (detailPage + 1) + " de " + totalPages;
+  document.getElementById("prev-page").disabled = detailPage === 0;
+  document.getElementById("next-page").disabled = detailPage >= totalPages - 1;
+}
+
+function csvEscape(v) {
+  const s = v === null || v === undefined ? "" : String(v);
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+function downloadCSV(filename, rows, headers) {
+  const lines = [ headers.map(function(h) { return csvEscape(h.label); }).join(",") ];
+  rows.forEach(function(r) {
+    lines.push(headers.map(function(h) { return csvEscape(r[h.key]); }).join(","));
+  });
+  const csv = "﻿" + lines.join("\r\n");
+  const blob = new Blob([ csv ], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportInspectorCSV() {
+  downloadCSV("resumen_por_inspector_consumo_cero.csv", DATA.inspectores, [
+    { key: "inspector", label: "Inspector" }, { key: "total", label: "Cerradas" },
+    { key: "efectiva", label: "Efectivas" }, { key: "no_efectiva", label: "No efectivas" },
+    { key: "pct_efectividad", label: "% Efectividad" }
+  ]);
+}
+
+function exportDetailCSV() {
+  const rows = sortRows(detailFiltered, detailSort);
+  downloadCSV("detalle_consumo_cero.csv", rows, [
+    { key: "fecha", label: "Fecha" }, { key: "horaTexto", label: "Hora" }, { key: "orden", label: "Orden" },
+    { key: "cuenta", label: "Cuenta" }, { key: "inspector", label: "Inspector" }, { key: "causa", label: "Causa de cierre" },
+    { key: "comentario_cierre", label: "Comentario" }, { key: "ciclo", label: "Ciclo" }, { key: "municipio", label: "Municipio" },
+    { key: "barrio", label: "Barrio" }, { key: "efectividad", label: "Calificación" }
+  ]);
+}
+
+function unlockDashboard(role) {
+  try { localStorage.setItem(ROLE_STORAGE_KEY, role); } catch (e) {}
+  document.getElementById("access-gate").classList.add("hidden");
+  applyRoleDisplay(role);
+}
+
+function applyRoleDisplay(role) {
+  currentRole = role;
+  const isAdmin = role === "admin";
+  const badge = document.getElementById("role-badge");
+  const pill = document.getElementById("role-pill");
+  badge.classList.toggle("admin-pill", isAdmin);
+  pill.textContent = isAdmin ? "Administrador" : "Supervisor";
+}
+
+let currentRole = "supervisor";
+
+function initAccessGate() {
+  let storedRole = null;
+  try { storedRole = localStorage.getItem(ROLE_STORAGE_KEY); } catch (e) {}
+  if (storedRole === "admin" || storedRole === "supervisor") unlockDashboard(storedRole);
+  document.getElementById("role-btn-supervisor").addEventListener("click", function() { unlockDashboard("supervisor"); });
+  document.getElementById("role-btn-admin").addEventListener("click", function() {
+    document.getElementById("role-choices").classList.add("hidden");
+    document.getElementById("access-password-row").classList.remove("hidden");
+    document.getElementById("access-password-input").focus();
+  });
+  document.getElementById("access-back-btn").addEventListener("click", function() {
+    document.getElementById("access-password-row").classList.add("hidden");
+    document.getElementById("role-choices").classList.remove("hidden");
+    document.getElementById("access-error").textContent = " ";
+    document.getElementById("access-password-input").value = "";
+  });
+  function trySubmitPassword() {
+    const val = document.getElementById("access-password-input").value;
+    if (val === ADMIN_PASSWORD) {
+      unlockDashboard("admin");
+    } else {
+      document.getElementById("access-error").textContent = "Contraseña incorrecta.";
+      document.getElementById("access-password-input").value = "";
+      document.getElementById("access-password-input").focus();
+    }
+  }
+  document.getElementById("access-password-submit").addEventListener("click", trySubmitPassword);
+  document.getElementById("access-password-input").addEventListener("keydown", function(e) {
+    if (e.key === "Enter") trySubmitPassword();
+  });
+  document.getElementById("role-switch-btn").addEventListener("click", function() {
+    try { localStorage.removeItem(ROLE_STORAGE_KEY); } catch (e) {}
+    document.getElementById("access-gate").classList.remove("hidden");
+    document.getElementById("role-choices").classList.remove("hidden");
+    document.getElementById("access-password-row").classList.add("hidden");
+    document.getElementById("access-error").textContent = " ";
+  });
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  initAccessGate();
+  document.getElementById("refresh-btn").addEventListener("click", function() { loadData(true); });
+  document.getElementById("export-inspector-btn").addEventListener("click", exportInspectorCSV);
+  document.getElementById("export-detail-btn").addEventListener("click", exportDetailCSV);
+  document.getElementById("table-search").addEventListener("input", function(e) {
+    searchTerm = e.target.value;
+    populateDetailFiltered();
+    renderDetailTable();
+  });
+  document.getElementById("prev-page").addEventListener("click", function() {
+    if (detailPage > 0) { detailPage--; renderDetailTable(); }
+  });
+  document.getElementById("next-page").addEventListener("click", function() {
+    detailPage++; renderDetailTable();
+  });
+  const backToTop = document.getElementById("back-to-top");
+  window.addEventListener("scroll", function() {
+    backToTop.classList.toggle("hidden", window.scrollY < 400);
+  });
+  backToTop.addEventListener("click", function() { window.scrollTo({ top: 0, behavior: "smooth" }); });
+  loadData(false);
+  setInterval(function() { loadData(false); }, REFRESH_INTERVAL_MS);
+});
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function() {
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(function(reg) { reg.update(); }).catch(function() {});
+  });
+}
+</script>
+</body>
+</html>
