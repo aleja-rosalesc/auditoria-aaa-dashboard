@@ -863,7 +863,7 @@
         <table class="data-table" id="pend-table">
           <thead>
             <tr>
-              <th data-key="creadaFecha" class="sorted">Fecha asignada</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
+              <th data-key="asignadaFecha" class="sorted">Fecha asignada</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
               <th data-key="inspector">Inspector</th><th data-key="procesoLabel">Categoría</th><th data-key="diasAtraso" class="num">Días de atraso</th>
             </tr>
           </thead>
@@ -918,11 +918,14 @@ const REFRESH_INTERVAL_MS = 5 * 60 * 1e3;
 // según la posición real del export (a diferencia de Crítica/Pregeófono,
 // este reporte trae encabezados únicos y limpios, así que no hace falta
 // "label" para desambiguar nada).
-// A=CUENTA, E=ORDEN, I=FEC_CREACION, K=FEC_CIERRE, O=COMENTARIO_CIERRE,
-// T=CAUSA_CIERRE, V=COMENTARIO (categoría del proceso: Consumo Cero vs.
-// Eficiencia Hidráulica), X=UNIDAD_OPERATIVA, AA=MUNICIPIO, AB=BARRIO,
-// AC=CICLO. FEC_CIERRE vacío = orden aún asignada, pendiente por cerrar.
-const SHEET_COLUMNS_TQ = "select A,E,I,K,O,T,V,X,AA,AB,AC";
+// A=CUENTA, E=ORDEN, I=FEC_CREACION, J=FEC_ASIGNACION, K=FEC_CIERRE,
+// O=COMENTARIO_CIERRE, T=CAUSA_CIERRE, V=COMENTARIO (categoría del proceso:
+// Consumo Cero vs. Eficiencia Hidráulica), X=UNIDAD_OPERATIVA, AA=MUNICIPIO,
+// AB=BARRIO, AC=CICLO. FEC_CIERRE vacío = orden aún en estado "Asignada",
+// pendiente por cerrar — el control de pendientes usa FEC_ASIGNACION (no
+// FEC_CREACION) porque es la fecha real de cuándo quedó a cargo del
+// inspector; una orden puede crearse un día y asignarse días después.
+const SHEET_COLUMNS_TQ = "select A,E,I,J,K,O,T,V,X,AA,AB,AC";
 
 const ADMIN_PASSWORD = "AAA2026admin";
 
@@ -1042,7 +1045,7 @@ let ccPendInspSortAttached = false;
 
 let efPendInspSortAttached = false;
 
-let pendSort = { key: "creadaFecha", dir: "asc" };
+let pendSort = { key: "asignadaFecha", dir: "asc" };
 
 let pendSortAttached = false;
 
@@ -1268,6 +1271,7 @@ function gvizToObjects(resp) {
 function processRawRows(rawRows) {
   const all = rawRows.map(function(r) {
     const creadaDate = parseFechaHoraCompleta(getField(r, "FEC_CREACION"));
+    const asignadaDate = parseFechaHoraCompleta(getField(r, "FEC_ASIGNACION"));
     const cierreDate = parseFechaHoraCompleta(getField(r, "FEC_CIERRE"));
     const causa = getField(r, "CAUSA_CIERRE");
     const calif = calificarCausa(causa);
@@ -1281,6 +1285,7 @@ function processRawRows(rawRows) {
       horaTexto: formatHora(cierreDate),
       fechaHoraTS: cierreDate ? cierreDate.getTime() : null,
       creadaFecha: creadaDate ? isoFromDate(creadaDate) : "",
+      asignadaFecha: asignadaDate ? isoFromDate(asignadaDate) : "",
       inspectorRaw: inspectorRaw,
       inspector: cleanInspectorName(inspectorRaw),
       causa: causa,
@@ -1300,9 +1305,9 @@ function processRawRows(rawRows) {
   const cc = all.filter(function(r) { return !r.esEficiencia; });
   const ef = all.filter(function(r) { return r.esEficiencia; });
   ALL_CLEAN_ROWS = cc.filter(function(r) { return !!r.fecha; });
-  ALL_PENDING_ROWS = cc.filter(function(r) { return !r.fecha && !!r.creadaFecha; });
+  ALL_PENDING_ROWS = cc.filter(function(r) { return !r.fecha && !!r.asignadaFecha; });
   ALL_EF_CLEAN_ROWS = ef.filter(function(r) { return !!r.fecha; });
-  ALL_EF_PENDING_ROWS = ef.filter(function(r) { return !r.fecha && !!r.creadaFecha; });
+  ALL_EF_PENDING_ROWS = ef.filter(function(r) { return !r.fecha && !!r.asignadaFecha; });
   rebuildData();
 }
 
@@ -1374,8 +1379,8 @@ function pendientesPorInspectorBlock(pendingRows) {
   const by = groupBy(pendingRows, "inspector");
   let out = Array.from(by.entries()).map(function(e) {
     const rows = e[1];
-    const atrasadas = rows.filter(function(r) { return r.creadaFecha && r.creadaFecha < hoy; }).length;
-    const fechas = rows.map(function(r) { return r.creadaFecha; }).filter(Boolean).sort();
+    const atrasadas = rows.filter(function(r) { return r.asignadaFecha && r.asignadaFecha < hoy; }).length;
+    const fechas = rows.map(function(r) { return r.asignadaFecha; }).filter(Boolean).sort();
     return {
       inspector: e[0],
       atrasadas: atrasadas,
@@ -1525,7 +1530,7 @@ function renderHoyBlock() {
 // "ef" = Eficiencia). El detalle orden por orden vive en la pestaña Pendientes.
 function renderPendingSummary(prefix, dotId, sortState, pendingRows) {
   const hoy = todayISO();
-  const atrasadasTotal = pendingRows.filter(function(r) { return r.creadaFecha && r.creadaFecha < hoy; }).length;
+  const atrasadasTotal = pendingRows.filter(function(r) { return r.asignadaFecha && r.asignadaFecha < hoy; }).length;
   const hoyTotal = pendingRows.length - atrasadasTotal;
 
   const kpiAtrasadasEl = document.getElementById(prefix + "-pend-atrasadas");
@@ -1733,7 +1738,7 @@ function populatePendFilterOptions() {
   const inspSel = document.getElementById("pend-inspector-select");
   const monthSel = document.getElementById("pend-month-select");
   const inspectores = Array.from(new Set(ALL_PENDING_ALL.map(function(r) { return r.inspector; }))).sort();
-  const months = Array.from(new Set(ALL_PENDING_ALL.map(function(r) { return r.creadaFecha ? r.creadaFecha.slice(0, 7) : ""; }).filter(Boolean))).sort().reverse();
+  const months = Array.from(new Set(ALL_PENDING_ALL.map(function(r) { return r.asignadaFecha ? r.asignadaFecha.slice(0, 7) : ""; }).filter(Boolean))).sort().reverse();
   const prevInsp = inspSel.value, prevMonth = monthSel.value;
   inspSel.innerHTML = '<option value="">Todos</option>' + inspectores.map(function(i) { return '<option value="' + i.replace(/"/g, "&quot;") + '">' + i + "</option>"; }).join("");
   monthSel.innerHTML = '<option value="">Todos</option>' + months.map(function(m) { return '<option value="' + m + '">' + monthLabel(m) + "</option>"; }).join("");
@@ -1747,9 +1752,9 @@ function computePendFiltered() {
     if (pendFilterCategoria === "cc" && r.esEficiencia) return false;
     if (pendFilterCategoria === "ef" && !r.esEficiencia) return false;
     if (pendFilterInspector && r.inspector !== pendFilterInspector) return false;
-    if (pendFilterMonth && r.creadaFecha.slice(0, 7) !== pendFilterMonth) return false;
-    if (pendFilterDateFrom && (!r.creadaFecha || r.creadaFecha < pendFilterDateFrom)) return false;
-    if (pendFilterDateTo && (!r.creadaFecha || r.creadaFecha > pendFilterDateTo)) return false;
+    if (pendFilterMonth && r.asignadaFecha.slice(0, 7) !== pendFilterMonth) return false;
+    if (pendFilterDateFrom && (!r.asignadaFecha || r.asignadaFecha < pendFilterDateFrom)) return false;
+    if (pendFilterDateTo && (!r.asignadaFecha || r.asignadaFecha > pendFilterDateTo)) return false;
     if (!q) return true;
     return String(r.orden).toLowerCase().indexOf(q) !== -1 || String(r.cuenta).toLowerCase().indexOf(q) !== -1 || String(r.inspector).toLowerCase().indexOf(q) !== -1;
   });
@@ -1758,7 +1763,7 @@ function computePendFiltered() {
 
 function pendRowsWithDias() {
   return pendFiltered.map(function(r) {
-    return Object.assign({}, r, { diasAtraso: r.creadaFecha ? diasAtraso(r.creadaFecha) : 0 });
+    return Object.assign({}, r, { diasAtraso: r.asignadaFecha ? diasAtraso(r.asignadaFecha) : 0 });
   });
 }
 
@@ -1773,7 +1778,7 @@ function renderPendTable() {
   const pageRows = sorted.slice(start, start + PAGE_SIZE);
   const tbody = document.getElementById("pend-tbody");
   tbody.innerHTML = pageRows.map(function(r) {
-    return "<tr><td>" + formatDateShort(r.creadaFecha) + "</td><td>" + r.orden + "</td><td>" + r.cuenta + "</td><td>" + r.inspector + "</td><td>" + r.procesoLabel + "</td>" + '<td class="num">' + r.diasAtraso + "</td></tr>";
+    return "<tr><td>" + formatDateShort(r.asignadaFecha) + "</td><td>" + r.orden + "</td><td>" + r.cuenta + "</td><td>" + r.inspector + "</td><td>" + r.procesoLabel + "</td>" + '<td class="num">' + r.diasAtraso + "</td></tr>";
   }).join("") || '<tr><td colspan="6" style="text-align:center; color:var(--text-2);">Sin pendientes.</td></tr>';
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   document.getElementById("pend-page-info").textContent = "Página " + (pendPage + 1) + " de " + totalPages;
@@ -1784,7 +1789,7 @@ function renderPendTable() {
 function exportPendCSV() {
   const rows = sortRows(pendRowsWithDias(), pendSort);
   downloadCSV("pendientes_consumo_cero.csv", rows, [
-    { key: "creadaFecha", label: "Fecha asignada" }, { key: "orden", label: "Orden" }, { key: "cuenta", label: "Cuenta" },
+    { key: "asignadaFecha", label: "Fecha asignada" }, { key: "orden", label: "Orden" }, { key: "cuenta", label: "Cuenta" },
     { key: "inspector", label: "Inspector" }, { key: "procesoLabel", label: "Categoría" }, { key: "diasAtraso", label: "Días de atraso" }
   ]);
 }
