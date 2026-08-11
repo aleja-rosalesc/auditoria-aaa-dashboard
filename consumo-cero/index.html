@@ -30,6 +30,8 @@
     --danger-bg: #FCEAE3;
     --warning: #F0A93A;
     --warning-bg: #FDF1DD;
+    --violet: #7C3AED;
+    --violet-bg: #F1E9FE;
     --gray: #A9B7C2;
     --bg: #EFF4F7;
     --card: #FFFFFF;
@@ -52,7 +54,8 @@
   .dashboard-container{
     max-width: 1360px;
     margin: 0 auto;
-    padding: 20px 22px 50px;
+    padding: 20px 22px 40px;
+    padding-bottom: 82px;
   }
 
   .dashboard-header{
@@ -128,6 +131,7 @@
   }
   .btn:hover{ background: var(--navy); }
   .btn.ghost{ background:#fff; color:var(--teal-dark); }
+  .btn.small{ padding:8px 14px; font-size:12.5px; }
   .btn:disabled{ opacity:0.5; cursor:not-allowed; }
   .setup-banner{
     background: var(--warning-bg); border: 1px solid #F0D9A8; color:#7A5714;
@@ -140,6 +144,7 @@
   }
 
   .kpi-row{ display:grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 18px; }
+  .kpi-row.five{ grid-template-columns: repeat(5, 1fr); }
   .kpi-card{
     background: var(--card); border-radius: var(--radius); padding: 18px 20px;
     box-shadow: var(--shadow); border: 1px solid var(--border); display:flex; align-items:flex-start; gap:14px;
@@ -150,9 +155,12 @@
   .kpi-icon.green{ background:var(--success-bg); color:var(--success); }
   .kpi-icon.red{ background:var(--danger-bg); color:var(--danger); }
   .kpi-icon.amber{ background:var(--warning-bg); color:#FF7A00; }
+  .kpi-icon.violet{ background:var(--violet-bg); color:var(--violet); }
   .kpi-label{ font-size: 12px; color: var(--text-2); font-weight:600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom:4px; }
   .kpi-value{ font-family: var(--font-display); font-size: 26px; font-weight:700; color: var(--text); line-height:1.1; }
   .kpi-sub{ font-size:12px; color:var(--text-2); margin-top:3px; }
+  .kpi-sub.delta-up{ color: var(--success); font-weight:600; }
+  .kpi-sub.delta-down{ color: var(--danger); font-weight:600; }
 
   .sem-badge{
     display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px;
@@ -206,11 +214,103 @@
   }
   .table-pagination button:disabled{ opacity:0.4; cursor:not-allowed; }
 
+  .filter-bar{
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 12px 18px; margin-bottom: 16px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .filter-bar label{ font-size:12px; color: var(--text-2); font-weight:600; display:flex; align-items:center; gap:6px; }
+  .filter-bar select{
+    padding:7px 12px; border-radius:8px; border:1px solid var(--border);
+    font-size:12.8px; font-family: var(--font-body); background:#F7FAFB; color:var(--navy); min-width:220px;
+  }
+
   .dashboard-footer{ text-align:center; font-size:12px; color: var(--text-2); padding: 14px 0 4px; }
   .dashboard-footer a{ color: var(--teal-dark); }
 
   .hidden{ display:none !important; }
   html{ scroll-behavior:smooth; }
+  .page-content{ display:none; }
+  .page-content.active{ display:block; animation: pageFadeIn 0.18s ease; }
+  @keyframes pageFadeIn{ from{ opacity:0; transform:translateY(4px);} to{ opacity:1; transform:translateY(0);} }
+
+  .tab-bar{
+    position: fixed; left:0; right:0; bottom:0; z-index: 50;
+    display:flex; justify-content:space-around; align-items:stretch;
+    background: rgba(255,255,255,0.94); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border); box-shadow: 0 -4px 18px rgba(11,61,92,0.10);
+    padding: 4px 4px calc(4px + env(safe-area-inset-bottom));
+  }
+  .tab-bar .tab-btn.role-hidden{ display:none; }
+  .tab-bar .tab-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:3px; padding:8px 2px 7px; background:none; border:none; cursor:pointer;
+    color: var(--text-2); font-family: var(--font-body); font-size:10.8px; font-weight:600;
+    border-radius:10px; transition: color 0.15s;
+  }
+  .tab-bar .tab-btn svg{ width:22px; height:22px; }
+  .tab-bar .tab-btn.active{ color: var(--teal-dark); }
+  .tab-bar .tab-btn.active .tab-icon-wrap{ background: var(--success-bg); }
+  .tab-icon-wrap{ width:35px; height:35px; border-radius:11px; display:flex; align-items:center; justify-content:center; transition: background 0.15s; }
+
+  .hoy-section{
+    background: linear-gradient(135deg, #E4F1FB 0%, #E9F8F2 100%);
+    border: 1px solid var(--teal);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    margin-bottom: 18px;
+  }
+  .hoy-header{ display:flex; align-items:center; gap:10px; margin-bottom:12px; flex-wrap:wrap; }
+  .hoy-badge{ background: var(--teal-dark); color:#fff; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; letter-spacing:0.5px; }
+  .hoy-fecha{ font-size:13px; color: var(--text-2); font-weight:600; }
+  .hoy-empty{ font-size:13px; color: var(--text-2); padding: 4px 0 2px; }
+  .hoy-kpis{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+  .hoy-card{ background: rgba(255,255,255,0.75); border-radius:10px; padding:12px 14px; }
+  .hoy-label{ font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-2); font-weight:700; margin-bottom:4px; }
+  .hoy-value{ font-family: var(--font-display); font-size:22px; font-weight:700; color:var(--text); line-height:1.1; }
+  .hoy-delta{ font-size:11.5px; margin-top:3px; font-weight:600; }
+  .hoy-delta.up{ color: var(--success); }
+  .hoy-delta.down{ color: var(--danger); }
+  .hoy-delta.neutral{ color: var(--text-2); }
+
+  .matriz-hero{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--teal-dark) 100%);
+    color:#fff; border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px;
+    position:relative; overflow:hidden;
+  }
+  .matriz-hero::after{
+    content:""; position:absolute; right:-40px; bottom:-50px; width:170px; height:170px; border-radius:50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 70%);
+  }
+  .matriz-hero h2{ font-family: var(--font-display); font-size:19px; font-weight:700; margin:0 0 5px; display:flex; align-items:center; gap:9px; }
+  .matriz-hero p{ margin:0; font-size:12.8px; color:rgba(255,255,255,0.85); }
+  .matriz-legend{ display:flex; gap:10px; margin: 14px 0 0; flex-wrap:wrap; }
+  .matriz-legend span{ font-size:11.5px; font-weight:700; padding:5px 12px; border-radius:20px; display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.18); color:#fff; }
+  .matriz-search-row{ margin-bottom:14px; }
+  #matriz-search{
+    width:100%; padding: 10px 14px; border-radius:10px; border:1px solid var(--border);
+    font-size:13.5px; font-family: var(--font-body); background:#fff; box-shadow: var(--shadow);
+  }
+  .matriz-table-wrap{
+    background: var(--card); border:1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow:hidden; margin-bottom:16px;
+  }
+  .matriz-table{ width:100%; border-collapse:collapse; font-size:12.8px; }
+  .matriz-table thead th{
+    background: linear-gradient(120deg, var(--navy) 0%, var(--navy-2) 100%); color:#fff;
+    text-align:left; padding:11px 14px; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+    position:sticky; top:0;
+  }
+  .matriz-table tbody td{ padding:10px 14px; border-top:1px solid #F0F3F5; vertical-align:top; }
+  .matriz-table tbody tr:nth-child(even){ background:#F8FBFC; }
+  .matriz-table tbody tr:hover{ background:#EDF6F9; }
+  .matriz-table td.num{ text-align:center; font-variant-numeric: tabular-nums; color:var(--text-2); font-weight:700; }
+  .clasif-badge{ display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; letter-spacing:0.3px; }
+  .clasif-badge.efectivo{ background: var(--success-bg); color: var(--success); }
+  .clasif-badge.no-efectivo{ background: var(--danger-bg); color: var(--danger); }
+  .notif-badge{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+  .notif-badge.si{ background: var(--warning-bg); color:#FF7A00; }
+  .notif-badge.no{ background:#EEF2F5; color:var(--text-2); }
 
   .access-gate{
     position: fixed; inset:0; z-index: 200;
@@ -263,20 +363,21 @@
   .chart-container:hover, .table-section:hover{ transform: translateY(-2px); box-shadow: 0 6px 22px rgba(11,61,92,0.13); }
 
   .back-to-top{
-    position: fixed; bottom: 24px; right: 22px; width:46px; height:46px; border-radius:50%;
+    position: fixed; bottom: 88px; right: 22px; width:46px; height:46px; border-radius:50%;
     background: var(--teal-dark); color:#fff; border:none; font-size:20px; cursor:pointer;
     box-shadow: 0 4px 16px rgba(11,61,92,0.28); z-index: 40;
   }
   .back-to-top:hover{ background: var(--navy); }
 
   @media (max-width: 1080px){
-    .kpi-row{ grid-template-columns: repeat(2, 1fr); }
+    .kpi-row, .kpi-row.five{ grid-template-columns: repeat(2, 1fr); }
     .chart-row.two-col{ grid-template-columns: 1fr; }
+    .hoy-kpis{ grid-template-columns: repeat(2, 1fr); }
   }
   @media (max-width: 640px){
     .dashboard-container{ padding-left: 10px; padding-right: 10px; }
-    .chart-container, .table-section{ padding-left: 12px; padding-right: 12px; }
-    .kpi-row{ grid-template-columns: 1fr 1fr; gap:10px; }
+    .chart-container, .table-section, .hoy-section{ padding-left: 12px; padding-right: 12px; }
+    .kpi-row, .kpi-row.five{ grid-template-columns: 1fr 1fr; gap:10px; }
     .dashboard-header{ flex-direction:column; align-items:stretch; padding: 16px 16px 26px; gap:12px; }
     .dashboard-header h1{ font-size: 19px; margin-bottom: 5px; }
     .header-eyebrow{ font-size: 10.5px; letter-spacing: 1px; }
@@ -289,7 +390,11 @@
     .status-actions .btn{ flex:1; min-width: 130px; padding: 9px 10px; font-size:12.3px; }
     .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin: 0 -12px; padding: 0 12px; }
     .data-table{ min-width: 640px; }
-    .back-to-top{ width:42px; height:42px; bottom:16px; right:16px; }
+    .matriz-table{ min-width: 560px; }
+    .matriz-table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .back-to-top{ width:42px; height:42px; bottom:80px; right:16px; }
+    .tab-bar .tab-btn{ font-size:9.5px; }
+    .filter-bar select{ min-width: 100%; width:100%; }
   }
 </style>
 </head>
@@ -354,117 +459,257 @@
   <div class="setup-banner hidden" id="setup-banner"></div>
   <div class="error-banner hidden" id="error-banner"></div>
 
-  <section class="kpi-row">
-    <div class="kpi-card">
-      <div class="kpi-icon blue">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      </div>
-      <div>
-        <div class="kpi-label">Órdenes cerradas</div>
-        <div class="kpi-value" id="kpi-total">—</div>
-        <div class="kpi-sub" id="kpi-total-sub">&nbsp;</div>
-      </div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon amber">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      </div>
-      <div>
-        <div class="kpi-label">% Efectividad</div>
-        <div class="kpi-value" id="kpi-efectividad">—</div>
-        <div class="kpi-sub" id="kpi-efectividad-sub">&nbsp;</div>
-      </div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon red">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-      </div>
-      <div>
-        <div class="kpi-label">No efectivas</div>
-        <div class="kpi-value" id="kpi-no-efectivas">—</div>
-        <div class="kpi-sub" id="kpi-no-efectivas-sub">&nbsp;</div>
-      </div>
-    </div>
-    <div class="kpi-card">
-      <div class="kpi-icon green">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
-      </div>
-      <div>
-        <div class="kpi-label">Inspectores activos</div>
-        <div class="kpi-value" id="kpi-inspectores">—</div>
-        <div class="kpi-sub">&nbsp;</div>
-      </div>
-    </div>
-  </section>
+  <nav class="tab-bar" id="tab-bar">
+    <button class="tab-btn active" data-page="hoy">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+      Hoy
+    </button>
+    <button class="tab-btn" data-page="resumen">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg></span>
+      Resumen
+    </button>
+    <button class="tab-btn" data-page="inspectores">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10" cy="8" r="3.2"/><path d="M4 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="18" cy="7" r="2"/><path d="M21 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg></span>
+      Inspectores
+    </button>
+    <button class="tab-btn" data-page="detalle">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6M9 8h3"/></svg></span>
+      Detalle
+    </button>
+    <button class="tab-btn" data-page="matriz">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg></span>
+      Matriz
+    </button>
+  </nav>
 
-  <section class="chart-row one-col">
-    <div class="chart-container">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> Cierres por día</h3>
-      <p class="chart-sub">Órdenes efectivas vs. no efectivas (barras) y % de efectividad (línea)</p>
-      <canvas id="daily-chart" height="90"></canvas>
-    </div>
-  </section>
+  <div class="page-content active" data-page="hoy">
+    <section class="hoy-section">
+      <div class="hoy-header">
+        <span class="hoy-badge">● HOY</span>
+        <span class="hoy-fecha" id="hoy-fecha">—</span>
+      </div>
+      <p class="hoy-empty hidden" id="hoy-empty">Aún no hay órdenes cerradas registradas para hoy.</p>
+      <div id="hoy-content" class="hidden">
+        <div class="hoy-kpis">
+          <div class="hoy-card">
+            <div class="hoy-label">Cerradas hoy</div>
+            <div class="hoy-value" id="hoy-total">—</div>
+            <div class="hoy-delta neutral" id="hoy-total-delta">&nbsp;</div>
+          </div>
+          <div class="hoy-card">
+            <div class="hoy-label">% Efectividad hoy</div>
+            <div class="hoy-value" id="hoy-efectividad">—</div>
+            <div class="hoy-delta neutral" id="hoy-efectividad-delta">&nbsp;</div>
+          </div>
+          <div class="hoy-card">
+            <div class="hoy-label">No efectivas hoy</div>
+            <div class="hoy-value" id="hoy-no-efectivas">—</div>
+            <div class="hoy-delta neutral" id="hoy-no-efectivas-delta">&nbsp;</div>
+          </div>
+          <div class="hoy-card">
+            <div class="hoy-label">Irregularidades hoy</div>
+            <div class="hoy-value" id="hoy-irregularidades">—</div>
+            <div class="hoy-delta neutral" id="hoy-irregularidades-delta">&nbsp;</div>
+          </div>
+        </div>
+      </div>
+    </section>
 
-  <section class="chart-row two-col">
-    <div class="chart-container tall">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Causas de cierre</h3>
-      <p class="chart-sub">Todas las causas registradas, de mayor a menor</p>
-      <canvas id="causas-chart"></canvas>
-    </div>
-    <div class="chart-container tall">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg> Efectiva vs. No efectiva</h3>
-      <p class="chart-sub">Distribución general</p>
-      <canvas id="efectividad-chart"></canvas>
-    </div>
-  </section>
+    <section class="table-section">
+      <div class="table-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg> Cierres de hoy por inspector</h3></div>
+      <div class="table-scroll">
+        <table class="data-table" id="hoy-inspector-table">
+          <thead><tr><th>Inspector</th><th class="num">Cerradas</th><th class="num">Efectivas</th><th class="num">No efectivas</th><th class="num">% Efectividad</th></tr></thead>
+          <tbody id="hoy-inspector-tbody"></tbody>
+        </table>
+      </div>
+    </section>
 
-  <section class="table-section">
-    <div class="table-header">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2"/><path d="M20 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg> Resumen por inspector</h3>
-      <div class="table-actions">
-        <button class="btn ghost" id="export-inspector-btn">Exportar CSV</button>
+    <section class="table-section">
+      <div class="table-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Causas de hoy</h3></div>
+      <div class="table-scroll">
+        <table class="data-table" id="hoy-causas-table">
+          <thead><tr><th>Causa</th><th class="num">Cantidad</th></tr></thead>
+          <tbody id="hoy-causas-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="page-content" data-page="resumen">
+    <section class="kpi-row five">
+      <div class="kpi-card">
+        <div class="kpi-icon blue">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        <div>
+          <div class="kpi-label">Órdenes cerradas</div>
+          <div class="kpi-value" id="kpi-total">—</div>
+          <div class="kpi-sub" id="kpi-total-sub">&nbsp;</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon amber">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        </div>
+        <div>
+          <div class="kpi-label">% Efectividad</div>
+          <div class="kpi-value" id="kpi-efectividad">—</div>
+          <div class="kpi-sub" id="kpi-efectividad-sub">&nbsp;</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon red">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        </div>
+        <div>
+          <div class="kpi-label">No efectivas</div>
+          <div class="kpi-value" id="kpi-no-efectivas">—</div>
+          <div class="kpi-sub" id="kpi-no-efectivas-sub">&nbsp;</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon violet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4"/><path d="M4 5c2-2 4 2 8 0s6 2 8 0v9c-2 2-4-2-8 0s-6-2-8 0z"/></svg>
+        </div>
+        <div>
+          <div class="kpi-label">Irregularidades detectadas</div>
+          <div class="kpi-value" id="kpi-irregularidades">—</div>
+          <div class="kpi-sub" id="kpi-irregularidades-sub">Posible Irregularidad + Reconexión Ilegal</div>
+        </div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg>
+        </div>
+        <div>
+          <div class="kpi-label">Inspectores activos</div>
+          <div class="kpi-value" id="kpi-inspectores">—</div>
+          <div class="kpi-sub">&nbsp;</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="chart-row one-col">
+      <div class="chart-container">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg> Cierres por día</h3>
+        <p class="chart-sub">Órdenes efectivas vs. no efectivas (barras) y % de efectividad (línea)</p>
+        <canvas id="daily-chart" height="90"></canvas>
+      </div>
+    </section>
+
+    <section class="chart-row two-col">
+      <div class="chart-container tall">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Causas de cierre</h3>
+        <p class="chart-sub">Todas las causas registradas, de mayor a menor</p>
+        <canvas id="causas-chart"></canvas>
+      </div>
+      <div class="chart-container tall">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></svg> Efectiva vs. No efectiva</h3>
+        <p class="chart-sub">Distribución general</p>
+        <canvas id="efectividad-chart"></canvas>
+      </div>
+    </section>
+
+    <section class="chart-row one-col">
+      <div class="chart-container tall">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4"/><path d="M4 5c2-2 4 2 8 0s6 2 8 0v9c-2 2-4-2-8 0s-6-2-8 0z"/></svg> Ciclos con más irregularidades</h3>
+        <p class="chart-sub">Posible Irregularidad + Reconexión Ilegal, por ciclo de facturación — para priorizar dónde reinspeccionar</p>
+        <canvas id="ciclos-chart"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <div class="page-content" data-page="inspectores">
+    <section class="chart-row two-col">
+      <div class="chart-container tall">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="5"/><path d="M9 13.5L7.5 21l4.5-2.5L16.5 21 15 13.5"/></svg> Inspectores más efectivos</h3>
+        <p class="chart-sub">% de efectividad sobre el total gestionado (mínimo 5 órdenes)</p>
+        <canvas id="inspectores-efectivos-chart"></canvas>
+      </div>
+      <div class="chart-container tall">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4"/><path d="M4 5c2-2 4 2 8 0s6 2 8 0v9c-2 2-4-2-8 0s-6-2-8 0z"/></svg> Más irregularidades detectadas</h3>
+        <p class="chart-sub">Posible Irregularidad + Reconexión Ilegal, por inspector</p>
+        <canvas id="inspectores-irregularidades-chart"></canvas>
+      </div>
+    </section>
+
+    <section class="table-section">
+      <div class="table-header">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="7" r="2"/><path d="M20 13.2c-.3-1.6-1.6-2.8-3-3.1"/></svg> Resumen por inspector</h3>
+        <div class="table-actions">
+          <button class="btn ghost" id="export-inspector-btn">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table" id="inspector-table">
+          <thead>
+            <tr>
+              <th data-key="inspector">Inspector</th><th data-key="total" class="num sorted">Cerradas</th>
+              <th data-key="efectiva" class="num">Efectivas</th><th data-key="no_efectiva" class="num">No efectivas</th>
+              <th data-key="irregularidades" class="num">Irregularidades</th><th data-key="pct_efectividad" class="num">% Efectividad</th>
+            </tr>
+          </thead>
+          <tbody id="inspector-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div class="page-content" data-page="detalle">
+    <div class="filter-bar">
+      <label>Inspector <select id="detail-inspector-select"><option value="">Todos</option></select></label>
+      <label>Causa <select id="detail-causa-select"><option value="">Todas</option></select></label>
+    </div>
+    <section class="table-section">
+      <div class="table-header">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Detalle de órdenes (<span id="detail-count">0</span>)</h3>
+        <div class="table-actions">
+          <input type="text" id="table-search" placeholder="Buscar por orden, cuenta, inspector o causa…">
+          <button class="btn" id="export-detail-btn">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table class="data-table" id="detail-table">
+          <thead>
+            <tr>
+              <th data-key="fecha" class="sorted">Fecha</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
+              <th data-key="inspector">Inspector</th><th data-key="causa">Causa de cierre</th><th data-key="comentario_cierre">Comentario</th>
+              <th data-key="ciclo">Ciclo</th><th data-key="efectividad">Calificación</th>
+            </tr>
+          </thead>
+          <tbody id="detail-tbody"></tbody>
+        </table>
+      </div>
+      <div class="table-pagination">
+        <button id="prev-page">‹ Anterior</button>
+        <span id="page-info">—</span>
+        <button id="next-page">Siguiente ›</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="page-content" data-page="matriz">
+    <div class="matriz-hero">
+      <h2><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg> Matriz de cierres — Consumo Cero</h2>
+      <p>Basada en el Manual de Cierres Operativos de Consumo Cero: definición de cada causa, clasificación de efectividad, si requiere notificación previa al supervisor, y el orden de prioridad cuando aplican varias causas a la vez.</p>
+      <div class="matriz-legend">
+        <span>✓ Efectivo = la visita concluyó algo concreto</span>
+        <span>✕ No efectivo = quedó bloqueada o sin resolver</span>
       </div>
     </div>
-    <div class="table-scroll">
-      <table class="data-table" id="inspector-table">
+    <div class="matriz-search-row">
+      <input type="text" id="matriz-search" placeholder="Buscar causa o definición… (ej: deshabitado, irregularidad, medidor)">
+    </div>
+    <div class="matriz-table-wrap">
+      <table class="matriz-table" id="matriz-table">
         <thead>
-          <tr>
-            <th data-key="inspector">Inspector</th><th data-key="total" class="num sorted">Cerradas</th>
-            <th data-key="efectiva" class="num">Efectivas</th><th data-key="no_efectiva" class="num">No efectivas</th>
-            <th data-key="pct_efectividad" class="num">% Efectividad</th>
-          </tr>
+          <tr><th class="num">Prioridad</th><th>Causa de cierre</th><th>Definición</th><th>Clasificación</th><th>Notificación previa</th></tr>
         </thead>
-        <tbody id="inspector-tbody"></tbody>
+        <tbody id="matriz-tbody"></tbody>
       </table>
     </div>
-  </section>
-
-  <section class="table-section">
-    <div class="table-header">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Detalle de órdenes (<span id="detail-count">0</span>)</h3>
-      <div class="table-actions">
-        <input type="text" id="table-search" placeholder="Buscar por orden, cuenta, inspector o causa…">
-        <button class="btn" id="export-detail-btn">Exportar CSV</button>
-      </div>
-    </div>
-    <div class="table-scroll">
-      <table class="data-table" id="detail-table">
-        <thead>
-          <tr>
-            <th data-key="fecha" class="sorted">Fecha</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
-            <th data-key="inspector">Inspector</th><th data-key="causa">Causa de cierre</th><th data-key="comentario">Comentario</th>
-            <th data-key="ciclo">Ciclo</th><th data-key="efectividad">Calificación</th>
-          </tr>
-        </thead>
-        <tbody id="detail-tbody"></tbody>
-      </table>
-    </div>
-    <div class="table-pagination">
-      <button id="prev-page">‹ Anterior</button>
-      <span id="page-info">—</span>
-      <button id="next-page">Siguiente ›</button>
-    </div>
-  </section>
+  </div>
 
   <footer class="dashboard-footer">
     Fuente: hoja de Google Sheets conectada en vivo · <a id="sheet-link" href="#" target="_blank" rel="noopener">Abrir hoja de datos</a> · Uso interno de control de calidad
@@ -492,10 +737,13 @@ const ADMIN_PASSWORD = "AAA2026admin";
 
 const ROLE_STORAGE_KEY = "aaa_consumocero_role";
 
+const SUPERVISOR_HIDDEN_PAGES = [];
+
 const COLORS = {
   success: "#1F9D66",
   danger: "#E4572E",
   warning: "#F0A93A",
+  violet: "#7C3AED",
   teal: "#17A2B8",
   primary: "#0E6E8C",
   primaryDark: "#0B3D5C",
@@ -531,11 +779,44 @@ function calificarCausa(causa) {
   return CAUSA_CALIFICACION[key] || "EXCLUIDO";
 }
 
+// Las únicas dos causas que representan un hallazgo real de pérdidas/fraude
+// (el objetivo del programa de Consumo Cero) — se destacan aparte del resto
+// de causas "Efectivo" porque su valor analítico es distinto: no solo se
+// concluyó algo, se encontró una irregularidad accionable.
+function esIrregularidad(causa) {
+  const key = String(causa || "").trim().toUpperCase();
+  return key === "POSIBLE IRREGULARIDAD" || key === "RI-PREDIO CON RECONEXION ILEGAL";
+}
+
+// Contenido del Manual de Cierres Operativos - Consumo Cero, para la
+// pestaña Matriz. La prioridad y la necesidad de notificación previa vienen
+// literales del manual; la clasificación es la misma de CAUSA_CALIFICACION.
+const MATRIZ_CAUSAS = [
+  { prioridad: 1, causa: "DH-Deshabitado", definicion: "Predio deshabitado. Tiene prioridad sobre cualquier otro cierre que pueda identificarse durante la inspección.", notifica: false },
+  { prioridad: 2, causa: "SP-Sector Peligroso", definicion: "Las condiciones de seguridad del sector representan un riesgo para el inspector.", notifica: true },
+  { prioridad: 3, causa: "NP-No Permiten Ingreso Al Predio", definicion: "El usuario impide la ejecución de la inspección.", notifica: true },
+  { prioridad: 4, causa: "RI-Predio Con Reconexión Ilegal", definicion: "Un predio con servicio suspendido continúa recibiendo agua.", notifica: false },
+  { prioridad: 5, causa: "SS-Servicio Suspendido", definicion: "Se comprueba que el predio no cuenta con servicio debido a una suspensión efectiva.", notifica: true },
+  { prioridad: 6, causa: "RO-Roto", definicion: "El medidor presenta daños físicos que impiden su funcionamiento normal.", notifica: false },
+  { prioridad: 7, causa: "PA-Parado", definicion: "El medidor no registra consumo aun teniendo grifos abiertos.", notifica: false },
+  { prioridad: 8, causa: "Posible Irregularidad", definicion: "Se identifican condiciones que pueden indicar una irregularidad en el servicio o en el comportamiento del consumo.", notifica: true },
+  { prioridad: 9, causa: "AR-Amerita Revisión De Laboratorio", definicion: "El medidor presenta anomalías que impiden su correcto funcionamiento o dificultan una lectura confiable.", notifica: false },
+  { prioridad: 10, causa: "Normal", definicion: "Servicio de agua funcionando normalmente y sin novedades evidentes. Si no se justifica el bajo consumo, debe cerrarse como Posible Irregularidad.", notifica: true },
+  { prioridad: 11, causa: "Ausente", definicion: "Predio habitado donde no haya usuarios presentes al momento de la visita.", notifica: false },
+  { prioridad: 12, causa: "CO-Construcción", definicion: "El predio se encuentra en proceso de construcción.", notifica: false },
+  { prioridad: 13, causa: "No Se Puede Revisar", definicion: "No es posible realizar la inspección o verificar las condiciones del predio.", notifica: false },
+  { prioridad: 14, causa: "SSA-Sector Sin Agua", definicion: "El predio no cuenta con servicio debido a mantenimientos programados o daños en la red.", notifica: true },
+  { prioridad: 15, causa: "SD-Servicio Directo", definicion: "El predio se abastece directamente de la red matriz o tubo madre sin contar con equipo de medición instalado.", notifica: false },
+  { prioridad: 16, causa: "Sin Medidor En Terreno", definicion: "El predio no cuenta con medidor instalado.", notifica: false }
+];
+
 let ALL_CLEAN_ROWS = [];
 
 let DATA = null;
 
 let charts = {};
+
+let currentRole = "supervisor";
 
 let detailSort = { key: "fecha", dir: "desc" };
 
@@ -548,6 +829,10 @@ let detailFiltered = [];
 let inspectorSort = { key: "total", dir: "desc" };
 
 let searchTerm = "";
+
+let filterInspectorSel = "";
+
+let filterCausaSel = "";
 
 let lastLoadedAt = null;
 
@@ -580,6 +865,18 @@ function semBadge(pct) {
 function isoFromDate(d) {
   const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, "0"), day = String(d.getDate()).padStart(2, "0");
   return y + "-" + m + "-" + day;
+}
+
+function todayISO() {
+  return isoFromDate(new Date);
+}
+
+function lastWorkedDayBefore(beforeISO) {
+  let best = "";
+  ALL_CLEAN_ROWS.forEach(function(r) {
+    if (r.fecha && r.fecha < beforeISO && r.fecha > best) best = r.fecha;
+  });
+  return best;
 }
 
 function formatDateShort(iso) {
@@ -752,6 +1049,7 @@ function processRawRows(rawRows) {
       causa: causa,
       calificacion: calif,
       efectividad: calif === "EFECTIVO" ? "Efectiva" : calif === "NO_EFECTIVO" ? "No Efectivo" : "Excluido",
+      irregularidad: esIrregularidad(causa),
       comentario_cierre: getField(r, "COMENTARIO_CIERRE"),
       municipio: getField(r, "MUNICIPIO"),
       barrio: getField(r, "BARRIO"),
@@ -792,17 +1090,30 @@ function inspectoresBlock(sub) {
     const rows = e[1], total = rows.length;
     const efectiva = rows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
     const no_efectiva = rows.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+    const irregularidades = rows.filter(function(r) { return r.irregularidad; }).length;
     const base = efectiva + no_efectiva;
     return {
       inspector: e[0],
       total: total,
       efectiva: efectiva,
       no_efectiva: no_efectiva,
+      irregularidades: irregularidades,
       pct_efectividad: base ? round1(efectiva / base * 100) : 0
     };
   });
   out.sort(function(a, b) { return b.total - a.total; });
   return out;
+}
+
+function topInspectoresEfectivosBlock(sub, n, minTotal) {
+  n = n || 10;
+  minTotal = minTotal || 5;
+  return inspectoresBlock(sub).filter(function(x) { return x.total >= minTotal; }).sort(function(a, b) { return b.pct_efectividad - a.pct_efectividad; }).slice(0, n);
+}
+
+function topInspectoresIrregularidadesBlock(sub, n) {
+  n = n || 10;
+  return inspectoresBlock(sub).filter(function(x) { return x.irregularidades > 0; }).sort(function(a, b) { return b.irregularidades - a.irregularidades; }).slice(0, n);
 }
 
 function causasBlock(sub) {
@@ -814,11 +1125,24 @@ function causasBlock(sub) {
   return out;
 }
 
+function ciclosIrregularidadesBlock(sub, n) {
+  n = n || 15;
+  const by = groupBy(sub, "ciclo");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1];
+    const irregularidades = rows.filter(function(r) { return r.irregularidad; }).length;
+    return { ciclo: e[0] || "(sin ciclo)", total: rows.length, irregularidades: irregularidades };
+  }).filter(function(x) { return x.irregularidades > 0; });
+  out.sort(function(a, b) { return b.irregularidades - a.irregularidades; });
+  return out.slice(0, n);
+}
+
 function rebuildData() {
   const clean = ALL_CLEAN_ROWS;
   const fechas = clean.map(function(r) { return r.fecha; }).filter(Boolean).sort();
   const kpiEfectiva = clean.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
   const kpiNoEfectiva = clean.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+  const kpiIrregularidades = clean.filter(function(r) { return r.irregularidad; }).length;
   const kpiBase = kpiEfectiva + kpiNoEfectiva;
   DATA = {
     meta: {
@@ -831,22 +1155,31 @@ function rebuildData() {
       total: clean.length,
       efectiva: kpiEfectiva,
       no_efectiva: kpiNoEfectiva,
+      irregularidades: kpiIrregularidades,
       pct_efectividad: kpiBase ? round1(kpiEfectiva / kpiBase * 100) : 0
     },
     daily: dailyBlock(clean),
     inspectores: inspectoresBlock(clean),
-    causas: causasBlock(clean)
+    causas: causasBlock(clean),
+    ciclosIrregularidades: ciclosIrregularidadesBlock(clean),
+    topEfectivos: topInspectoresEfectivosBlock(clean),
+    topIrregularidades: topInspectoresIrregularidadesBlock(clean)
   };
+  populateDetailFilterOptions();
   populateDetailFiltered();
   renderAll();
 }
 
 function renderAll() {
-  document.getElementById("header-meta").innerHTML = "Periodo <b>" + formatDateLong(DATA.meta.fecha_min) + "</b> – <b>" + formatDateLong(DATA.meta.fecha_max) + "</b> · " + "<b>" + fmtInt(DATA.meta.total_registros) + "</b> órdenes cerradas · " + "<b>" + DATA.meta.total_inspectores + "</b> inspectores";
+  document.getElementById("header-meta").innerHTML = "Periodo <b>" + formatDateLong(DATA.meta.fecha_min) + "</b> – <b>" + formatDateLong(DATA.meta.fecha_max) + "</b> · " + "<b>" + fmtInt(DATA.meta.total_registros) + "</b> órdenes cerradas · " + "<b>" + DATA.meta.total_inspectores + "</b> inspectores · " + "<b>" + fmtInt(DATA.kpis.irregularidades) + "</b> irregularidades detectadas";
+  renderHoyBlock();
   renderKPIs();
   renderDailyChart();
   renderCausasChart();
   renderEfectividadDoughnut();
+  renderCiclosChart();
+  renderInspectoresEfectivosChart();
+  renderInspectoresIrregularidadesChart();
   renderInspectorTable();
   renderDetailTable();
 }
@@ -854,14 +1187,81 @@ function renderAll() {
 function renderKPIs() {
   const k = DATA.kpis;
   document.getElementById("kpi-total").textContent = fmtInt(k.total);
-  document.getElementById("kpi-total-sub").textContent = DATA.meta.fecha_min ? formatDateShort(DATA.meta.fecha_min) + " – " + formatDateShort(DATA.meta.fecha_max) : " ";
+  document.getElementById("kpi-total-sub").textContent = DATA.meta.fecha_min ? formatDateShort(DATA.meta.fecha_min) + " – " + formatDateShort(DATA.meta.fecha_max) : " ";
   const efEl = document.getElementById("kpi-efectividad");
   efEl.textContent = fmtPct(k.pct_efectividad);
   efEl.className = "kpi-value " + semClass(k.pct_efectividad);
   document.getElementById("kpi-efectividad-sub").textContent = k.efectiva + " de " + (k.efectiva + k.no_efectiva) + " calificadas";
   document.getElementById("kpi-no-efectivas").textContent = fmtInt(k.no_efectiva);
   document.getElementById("kpi-no-efectivas-sub").textContent = (k.total ? round1(k.no_efectiva / k.total * 100) : 0) + "% del total";
+  document.getElementById("kpi-irregularidades").textContent = fmtInt(k.irregularidades);
   document.getElementById("kpi-inspectores").textContent = fmtInt(DATA.meta.total_inspectores);
+}
+
+function calcResumen(rows) {
+  const efectiva = rows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
+  const no_efectiva = rows.filter(function(r) { return r.efectividad === "No Efectivo"; }).length;
+  const irregularidades = rows.filter(function(r) { return r.irregularidad; }).length;
+  const base = efectiva + no_efectiva;
+  return { total: rows.length, efectiva: efectiva, no_efectiva: no_efectiva, irregularidades: irregularidades, pct: base ? round1(efectiva / base * 100) : 0 };
+}
+
+function setHoyDelta(elId, todayVal, yestVal, goodDirection) {
+  const el = document.getElementById(elId);
+  if (yestVal === null) {
+    el.textContent = "Sin dato de ayer";
+    el.className = "hoy-delta neutral";
+    return;
+  }
+  const diff = round1(todayVal - yestVal);
+  if (diff === 0) {
+    el.textContent = "= vs. ayer";
+    el.className = "hoy-delta neutral";
+    return;
+  }
+  const sign = diff > 0 ? "+" : "";
+  el.textContent = sign + diff + " vs. ayer";
+  el.className = "hoy-delta " + (goodDirection === "neutral" ? "neutral" : diff > 0 === (goodDirection === "up") ? "up" : "down");
+}
+
+function renderHoyBlock() {
+  const hoy = todayISO();
+  const ayer = lastWorkedDayBefore(hoy);
+  document.getElementById("hoy-fecha").textContent = formatDateLong(hoy);
+  const todayRows = ALL_CLEAN_ROWS.filter(function(r) { return r.fecha === hoy; });
+  const yestRows = ayer ? ALL_CLEAN_ROWS.filter(function(r) { return r.fecha === ayer; }) : [];
+  const empty = document.getElementById("hoy-empty");
+  const content = document.getElementById("hoy-content");
+  if (todayRows.length === 0) {
+    empty.classList.remove("hidden");
+    content.classList.add("hidden");
+    document.getElementById("hoy-inspector-tbody").innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
+    document.getElementById("hoy-causas-tbody").innerHTML = '<tr><td colspan="2" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
+    return;
+  }
+  empty.classList.add("hidden");
+  content.classList.remove("hidden");
+  const t = calcResumen(todayRows);
+  const y = ayer ? calcResumen(yestRows) : null;
+  document.getElementById("hoy-total").textContent = fmtInt(t.total);
+  const efEl = document.getElementById("hoy-efectividad");
+  efEl.textContent = fmtPct(t.pct);
+  document.getElementById("hoy-no-efectivas").textContent = fmtInt(t.no_efectiva);
+  document.getElementById("hoy-irregularidades").textContent = fmtInt(t.irregularidades);
+  setHoyDelta("hoy-total-delta", t.total, y ? y.total : null, "neutral");
+  setHoyDelta("hoy-efectividad-delta", t.pct, y ? y.pct : null, "up");
+  setHoyDelta("hoy-no-efectivas-delta", t.no_efectiva, y ? y.no_efectiva : null, "down");
+  setHoyDelta("hoy-irregularidades-delta", t.irregularidades, y ? y.irregularidades : null, "up");
+
+  const inspRows = inspectoresBlock(todayRows);
+  document.getElementById("hoy-inspector-tbody").innerHTML = inspRows.map(function(r) {
+    return "<tr><td>" + r.inspector + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + fmtInt(r.no_efectiva) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td></tr>";
+  }).join("") || '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
+
+  const causaRows = causasBlock(todayRows);
+  document.getElementById("hoy-causas-tbody").innerHTML = causaRows.map(function(r) {
+    return "<tr><td>" + r.causa + "</td>" + '<td class="num">' + fmtInt(r.count) + "</td></tr>";
+  }).join("") || '<tr><td colspan="2" style="text-align:center; color:var(--text-2);">Sin cierres hoy.</td></tr>';
 }
 
 function renderDailyChart() {
@@ -929,6 +1329,63 @@ function renderEfectividadDoughnut() {
   });
 }
 
+function renderCiclosChart() {
+  const items = DATA.ciclosIrregularidades;
+  if (charts.ciclos) charts.ciclos.destroy();
+  charts.ciclos = new Chart(document.getElementById("ciclos-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) { return i.ciclo; }),
+      datasets: [ { label: "Irregularidades", data: items.map(function(i) { return i.irregularidades; }), backgroundColor: COLORS.violet, borderRadius: 4, maxBarThickness: 20 } ]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { afterLabel: function(ctx) {
+          const it = items[ctx.dataIndex];
+          return fmtInt(it.irregularidades) + " de " + fmtInt(it.total) + " órdenes del ciclo";
+        } } }
+      },
+      scales: { x: { beginAtZero: true, grid: { color: "#EEF2F5" }, ticks: { precision: 0 } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+function renderInspectoresEfectivosChart() {
+  const items = DATA.topEfectivos;
+  if (charts.inspEfectivos) charts.inspEfectivos.destroy();
+  charts.inspEfectivos = new Chart(document.getElementById("inspectores-efectivos-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) { return i.inspector; }),
+      datasets: [ { label: "% Efectividad", data: items.map(function(i) { return i.pct_efectividad; }), backgroundColor: items.map(function(i) { return semColor(i.pct_efectividad); }), borderRadius: 4, maxBarThickness: 18 } ]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, max: 100, grid: { color: "#EEF2F5" }, ticks: { callback: function(v) { return v + "%"; } } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
+function renderInspectoresIrregularidadesChart() {
+  const items = DATA.topIrregularidades;
+  if (charts.inspIrregularidades) charts.inspIrregularidades.destroy();
+  charts.inspIrregularidades = new Chart(document.getElementById("inspectores-irregularidades-chart"), {
+    type: "bar",
+    data: {
+      labels: items.map(function(i) { return i.inspector; }),
+      datasets: [ { label: "Irregularidades", data: items.map(function(i) { return i.irregularidades; }), backgroundColor: COLORS.violet, borderRadius: 4, maxBarThickness: 18 } ]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, grid: { color: "#EEF2F5" }, ticks: { precision: 0 } }, y: { grid: { display: false } } }
+    }
+  });
+}
+
 function attachTableSort(tableId, sortState, onChange) {
   document.querySelectorAll("#" + tableId + " thead th").forEach(function(th) {
     th.addEventListener("click", function() {
@@ -965,13 +1422,27 @@ function renderInspectorTable() {
   const rows = sortRows(DATA.inspectores, inspectorSort);
   const tbody = document.getElementById("inspector-tbody");
   tbody.innerHTML = rows.map(function(r) {
-    return "<tr><td>" + r.inspector + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + fmtInt(r.no_efectiva) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td></tr>";
-  }).join("") || '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin datos.</td></tr>';
+    return "<tr><td>" + r.inspector + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + fmtInt(r.no_efectiva) + "</td>" + '<td class="num">' + fmtInt(r.irregularidades) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td></tr>";
+  }).join("") || '<tr><td colspan="6" style="text-align:center; color:var(--text-2);">Sin datos.</td></tr>';
+}
+
+function populateDetailFilterOptions() {
+  const inspSel = document.getElementById("detail-inspector-select");
+  const causaSel = document.getElementById("detail-causa-select");
+  const inspectores = Array.from(new Set(ALL_CLEAN_ROWS.map(function(r) { return r.inspector; }))).sort();
+  const causas = Array.from(new Set(ALL_CLEAN_ROWS.map(function(r) { return r.causa; }))).sort();
+  const prevInsp = inspSel.value, prevCausa = causaSel.value;
+  inspSel.innerHTML = '<option value="">Todos</option>' + inspectores.map(function(i) { return '<option value="' + i.replace(/"/g, "&quot;") + '">' + i + "</option>"; }).join("");
+  causaSel.innerHTML = '<option value="">Todas</option>' + causas.map(function(c) { return '<option value="' + c.replace(/"/g, "&quot;") + '">' + c + "</option>"; }).join("");
+  inspSel.value = inspectores.indexOf(prevInsp) !== -1 ? prevInsp : "";
+  causaSel.value = causas.indexOf(prevCausa) !== -1 ? prevCausa : "";
 }
 
 function populateDetailFiltered() {
   const q = searchTerm.trim().toLowerCase();
   detailFiltered = ALL_CLEAN_ROWS.filter(function(r) {
+    if (filterInspectorSel && r.inspector !== filterInspectorSel) return false;
+    if (filterCausaSel && r.causa !== filterCausaSel) return false;
     if (!q) return true;
     return String(r.orden).toLowerCase().indexOf(q) !== -1 || String(r.cuenta).toLowerCase().indexOf(q) !== -1 || String(r.inspector).toLowerCase().indexOf(q) !== -1 || String(r.causa).toLowerCase().indexOf(q) !== -1;
   });
@@ -996,6 +1467,17 @@ function renderDetailTable() {
   document.getElementById("page-info").textContent = "Página " + (detailPage + 1) + " de " + totalPages;
   document.getElementById("prev-page").disabled = detailPage === 0;
   document.getElementById("next-page").disabled = detailPage >= totalPages - 1;
+}
+
+function renderMatrizTable() {
+  const items = MATRIZ_CAUSAS.slice().sort(function(a, b) { return a.prioridad - b.prioridad; });
+  const tbody = document.getElementById("matriz-tbody");
+  tbody.innerHTML = items.map(function(m) {
+    const clasif = calificarCausa(m.causa);
+    const clasifBadge = clasif === "EFECTIVO" ? '<span class="clasif-badge efectivo">✓ Efectivo</span>' : '<span class="clasif-badge no-efectivo">✕ No efectivo</span>';
+    const notifBadge = m.notifica ? '<span class="notif-badge si">Sí</span>' : '<span class="notif-badge no">No</span>';
+    return '<tr data-search="' + (m.causa + " " + m.definicion).toLowerCase() + '">' + '<td class="num">' + m.prioridad + "</td><td><b>" + m.causa + "</b></td><td>" + m.definicion + "</td><td>" + clasifBadge + "</td><td>" + notifBadge + "</td></tr>";
+  }).join("");
 }
 
 function csvEscape(v) {
@@ -1024,7 +1506,7 @@ function exportInspectorCSV() {
   downloadCSV("resumen_por_inspector_consumo_cero.csv", DATA.inspectores, [
     { key: "inspector", label: "Inspector" }, { key: "total", label: "Cerradas" },
     { key: "efectiva", label: "Efectivas" }, { key: "no_efectiva", label: "No efectivas" },
-    { key: "pct_efectividad", label: "% Efectividad" }
+    { key: "irregularidades", label: "Irregularidades" }, { key: "pct_efectividad", label: "% Efectividad" }
   ]);
 }
 
@@ -1051,9 +1533,11 @@ function applyRoleDisplay(role) {
   const pill = document.getElementById("role-pill");
   badge.classList.toggle("admin-pill", isAdmin);
   pill.textContent = isAdmin ? "Administrador" : "Supervisor";
+  document.querySelectorAll(".tab-bar .tab-btn").forEach(function(btn) {
+    const hidden = !isAdmin && SUPERVISOR_HIDDEN_PAGES.indexOf(btn.dataset.page) !== -1;
+    btn.classList.toggle("role-hidden", hidden);
+  });
 }
-
-let currentRole = "supervisor";
 
 function initAccessGate() {
   let storedRole = null;
@@ -1096,6 +1580,7 @@ function initAccessGate() {
 
 document.addEventListener("DOMContentLoaded", function() {
   initAccessGate();
+  renderMatrizTable();
   document.getElementById("refresh-btn").addEventListener("click", function() { loadData(true); });
   document.getElementById("export-inspector-btn").addEventListener("click", exportInspectorCSV);
   document.getElementById("export-detail-btn").addEventListener("click", exportDetailCSV);
@@ -1104,11 +1589,35 @@ document.addEventListener("DOMContentLoaded", function() {
     populateDetailFiltered();
     renderDetailTable();
   });
+  document.getElementById("detail-inspector-select").addEventListener("change", function(e) {
+    filterInspectorSel = e.target.value;
+    populateDetailFiltered();
+    renderDetailTable();
+  });
+  document.getElementById("detail-causa-select").addEventListener("change", function(e) {
+    filterCausaSel = e.target.value;
+    populateDetailFiltered();
+    renderDetailTable();
+  });
+  document.getElementById("matriz-search").addEventListener("input", function(e) {
+    const q = e.target.value.trim().toLowerCase();
+    document.querySelectorAll("#matriz-tbody tr").forEach(function(tr) {
+      tr.style.display = !q || (tr.dataset.search || "").indexOf(q) !== -1 ? "" : "none";
+    });
+  });
   document.getElementById("prev-page").addEventListener("click", function() {
     if (detailPage > 0) { detailPage--; renderDetailTable(); }
   });
   document.getElementById("next-page").addEventListener("click", function() {
     detailPage++; renderDetailTable();
+  });
+  document.querySelectorAll(".tab-bar .tab-btn").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      const page = btn.dataset.page;
+      document.querySelectorAll(".tab-bar .tab-btn").forEach(function(b) { b.classList.toggle("active", b === btn); });
+      document.querySelectorAll(".page-content").forEach(function(p) { p.classList.toggle("active", p.dataset.page === page); });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
   });
   const backToTop = document.getElementById("back-to-top");
   window.addEventListener("scroll", function() {
