@@ -109,6 +109,36 @@
   .header-meta{ font-size: 13px; color: rgba(255,255,255,0.82); }
   .header-meta b{ color:#fff; font-weight:600; }
 
+  .header-filter{ display:flex; flex-direction:column; gap:6px; position: relative; z-index:1; }
+  .header-filter > label{
+    font-size: 11px; text-transform:uppercase; letter-spacing:1px;
+    color: rgba(255,255,255,0.7); font-weight:600;
+  }
+  .msel{ position:relative; }
+  .msel-toggle{
+    padding: 10px 14px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.12); color: #fff; font-size: 13.5px; font-weight: 500;
+    font-family: var(--font-body); min-width: 220px; cursor:pointer; text-align:left;
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+  }
+  .msel-toggle:disabled{ opacity:0.55; cursor:not-allowed; }
+  .msel-toggle::after{ content:'▾'; font-size:10px; opacity:0.85; flex-shrink:0; }
+  .msel-panel{
+    position:fixed; top:0; left:0; z-index:150; min-width:250px; max-width:320px;
+    max-height:60vh; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    background:#fff; border-radius:10px; border:1px solid var(--border);
+    box-shadow:0 12px 32px rgba(0,0,0,0.25); padding:6px;
+    overscroll-behavior: contain;
+  }
+  .msel-panel.hidden{ display:none; }
+  .msel-option{
+    display:flex; align-items:center; gap:9px; padding:8px 10px; border-radius:7px; cursor:pointer;
+    font-size:13px; color:var(--text); font-weight:500;
+  }
+  .msel-option:hover{ background:#F1F6F8; }
+  .msel-option input{ accent-color: var(--teal-dark); width:15px; height:15px; cursor:pointer; flex-shrink:0; }
+  .msel-option.msel-all{ border-bottom:1px solid var(--border); margin-bottom:4px; padding-bottom:9px; font-weight:700; }
+
   .status-bar{
     background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
     border: 1px solid var(--border); padding: 12px 20px; margin-bottom: 18px;
@@ -407,6 +437,8 @@
     .back-to-top{ width:42px; height:42px; bottom:80px; right:16px; }
     .tab-bar .tab-btn{ font-size:9px; }
     .filter-bar select{ min-width: 100%; width:100%; }
+    .header-filter select, .msel-toggle{ min-width: 100%; width:100%; }
+    .msel-panel{ max-width: calc(100vw - 20px); }
   }
 </style>
 </head>
@@ -450,6 +482,13 @@
         </div>
         <h1>Dashboard de Cierres — Consumo Cero</h1>
         <div class="header-meta" id="header-meta">Cargando datos en vivo…</div>
+      </div>
+    </div>
+    <div class="header-filter">
+      <label>Mes</label>
+      <div class="msel" id="month-msel">
+        <button type="button" class="msel-toggle" id="month-msel-toggle" disabled>Todos los meses</button>
+        <div class="msel-panel hidden" id="month-msel-panel"></div>
       </div>
     </div>
     <img src="logo.png" alt="" class="header-logo-watermark" aria-hidden="true">
@@ -1013,6 +1052,10 @@ let ALL_EF_PENDING_ROWS = [];
 
 let ALL_PENDING_ALL = [];
 
+let CLEAN_CC_SCOPED = [];
+
+let CLEAN_EF_SCOPED = [];
+
 let DATA = null;
 
 let DATA_EF = null;
@@ -1036,6 +1079,8 @@ let searchTerm = "";
 let filterInspectorSel = "";
 
 let filterCausaSel = "";
+
+let filterMonths = [];
 
 let ccPendInspSort = { key: "atrasadas", dir: "desc" };
 
@@ -1413,6 +1458,110 @@ function monthLabel(ym) {
   return (MESES_ES[Number(p[1]) - 1] || p[1]) + " " + p[0];
 }
 
+// Filtro global de Mes (encabezado): reordena Resumen/Inspectores/Detalle/
+// Eficiencia al mes seleccionado, igual que en Crítica. Hoy y Pendientes
+// quedan fuera a propósito — "Hoy" siempre es hoy, y "Pendientes" se mide
+// por fecha de asignación, no por mes de cierre.
+function positionMselPanel(toggle, panel) {
+  const r = toggle.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  panel.style.minWidth = Math.max(r.width, 240) + "px";
+  const spaceBelow = vh - r.bottom - 12;
+  const spaceAbove = r.top - 12;
+  const openUp = spaceBelow < 200 && spaceAbove > spaceBelow;
+  const maxH = Math.max(160, Math.min(Math.round(vh * .6), openUp ? spaceAbove : spaceBelow));
+  panel.style.maxHeight = maxH + "px";
+  panel.style.top = (openUp ? Math.max(8, r.top - 6 - maxH) : r.bottom + 6) + "px";
+  const pw = panel.offsetWidth || r.width;
+  let left = r.left;
+  if (left + pw > vw - 10) left = Math.max(10, vw - 10 - pw);
+  panel.style.left = left + "px";
+}
+
+function closeAllMselPanels() {
+  document.querySelectorAll(".msel-panel").forEach(function(p) { p.classList.add("hidden"); });
+}
+
+function setupMultiSelectToggle(containerId) {
+  const toggle = document.getElementById(containerId + "-toggle");
+  const panel = document.getElementById(containerId + "-panel");
+  if (!toggle || !panel) return;
+  toggle.addEventListener("click", function(e) {
+    e.stopPropagation();
+    const willOpen = panel.classList.contains("hidden");
+    closeAllMselPanels();
+    if (willOpen) {
+      panel.classList.remove("hidden");
+      positionMselPanel(toggle, panel);
+    }
+  });
+  panel.addEventListener("click", function(e) { e.stopPropagation(); });
+  window.addEventListener("resize", function() {
+    if (!panel.classList.contains("hidden")) positionMselPanel(toggle, panel);
+  });
+  window.addEventListener("scroll", function() {
+    if (!panel.classList.contains("hidden")) positionMselPanel(toggle, panel);
+  }, true);
+}
+
+function renderMultiSelect(containerId, options, selected, allLabel, onChange) {
+  const toggle = document.getElementById(containerId + "-toggle");
+  const panel = document.getElementById(containerId + "-panel");
+  if (!toggle || !panel) return;
+  toggle.disabled = options.length === 0;
+  const prevScroll = panel.scrollTop;
+  panel.innerHTML = "";
+  const allRow = document.createElement("label");
+  allRow.className = "msel-option msel-all";
+  const allCb = document.createElement("input");
+  allCb.type = "checkbox";
+  allCb.checked = selected.length === 0;
+  allCb.addEventListener("change", function() { onChange([]); });
+  allRow.appendChild(allCb);
+  allRow.appendChild(document.createTextNode(" " + allLabel));
+  panel.appendChild(allRow);
+  options.forEach(function(opt) {
+    const row = document.createElement("label");
+    row.className = "msel-option";
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.value = opt.value;
+    cb.checked = selected.indexOf(opt.value) !== -1;
+    cb.addEventListener("change", function() {
+      let next = selected.slice();
+      if (cb.checked) {
+        if (next.indexOf(opt.value) === -1) next.push(opt.value);
+      } else {
+        next = next.filter(function(v) { return v !== opt.value; });
+      }
+      onChange(next);
+    });
+    row.appendChild(cb);
+    row.appendChild(document.createTextNode(" " + opt.label));
+    panel.appendChild(row);
+  });
+  let label;
+  if (selected.length === 0) label = allLabel; else if (selected.length === 1) {
+    const found = options.filter(function(o) { return o.value === selected[0]; })[0];
+    label = found ? found.label : selected[0];
+  } else label = selected.length + " seleccionados";
+  toggle.textContent = label;
+  if (!panel.classList.contains("hidden")) {
+    positionMselPanel(toggle, panel);
+    panel.scrollTop = prevScroll;
+  }
+}
+
+function populateMonthOptions() {
+  const months = Array.from(new Set(ALL_CLEAN_ROWS.concat(ALL_EF_CLEAN_ROWS).map(function(r) { return r.fecha.slice(0, 7); }).filter(Boolean))).sort().reverse();
+  filterMonths = filterMonths.filter(function(m) { return months.indexOf(m) !== -1; });
+  const options = months.map(function(m) { return { value: m, label: monthLabel(m) }; });
+  renderMultiSelect("month-msel", options, filterMonths, "Todos los meses", function(next) {
+    filterMonths = next;
+    rebuildData();
+  });
+}
+
 function buildScopeData(cleanRows) {
   const fechas = cleanRows.map(function(r) { return r.fecha; }).filter(Boolean).sort();
   const efectiva = cleanRows.filter(function(r) { return r.efectividad === "Efectiva"; }).length;
@@ -1434,8 +1583,11 @@ function buildScopeData(cleanRows) {
 }
 
 function rebuildData() {
-  DATA = buildScopeData(ALL_CLEAN_ROWS);
-  DATA_EF = buildScopeData(ALL_EF_CLEAN_ROWS);
+  populateMonthOptions();
+  CLEAN_CC_SCOPED = filterMonths.length ? ALL_CLEAN_ROWS.filter(function(r) { return filterMonths.indexOf(r.fecha.slice(0, 7)) !== -1; }) : ALL_CLEAN_ROWS;
+  CLEAN_EF_SCOPED = filterMonths.length ? ALL_EF_CLEAN_ROWS.filter(function(r) { return filterMonths.indexOf(r.fecha.slice(0, 7)) !== -1; }) : ALL_EF_CLEAN_ROWS;
+  DATA = buildScopeData(CLEAN_CC_SCOPED);
+  DATA_EF = buildScopeData(CLEAN_EF_SCOPED);
   ALL_PENDING_ALL = ALL_PENDING_ROWS.concat(ALL_EF_PENDING_ROWS);
   populateDetailFilterOptions();
   populateDetailFiltered();
@@ -1708,8 +1860,8 @@ function renderInspectorTable() {
 function populateDetailFilterOptions() {
   const inspSel = document.getElementById("detail-inspector-select");
   const causaSel = document.getElementById("detail-causa-select");
-  const inspectores = Array.from(new Set(ALL_CLEAN_ROWS.map(function(r) { return r.inspector; }))).sort();
-  const causas = Array.from(new Set(ALL_CLEAN_ROWS.map(function(r) { return r.causa; }))).sort();
+  const inspectores = Array.from(new Set(CLEAN_CC_SCOPED.map(function(r) { return r.inspector; }))).sort();
+  const causas = Array.from(new Set(CLEAN_CC_SCOPED.map(function(r) { return r.causa; }))).sort();
   const prevInsp = inspSel.value, prevCausa = causaSel.value;
   inspSel.innerHTML = '<option value="">Todos</option>' + inspectores.map(function(i) { return '<option value="' + i.replace(/"/g, "&quot;") + '">' + i + "</option>"; }).join("");
   causaSel.innerHTML = '<option value="">Todas</option>' + causas.map(function(c) { return '<option value="' + c.replace(/"/g, "&quot;") + '">' + c + "</option>"; }).join("");
@@ -1719,7 +1871,7 @@ function populateDetailFilterOptions() {
 
 function populateDetailFiltered() {
   const q = searchTerm.trim().toLowerCase();
-  detailFiltered = ALL_CLEAN_ROWS.filter(function(r) {
+  detailFiltered = CLEAN_CC_SCOPED.filter(function(r) {
     if (filterInspectorSel && r.inspector !== filterInspectorSel) return false;
     if (filterCausaSel && r.causa !== filterCausaSel) return false;
     if (!q) return true;
@@ -1943,6 +2095,8 @@ function initAccessGate() {
 document.addEventListener("DOMContentLoaded", function() {
   initAccessGate();
   renderMatrizTable();
+  setupMultiSelectToggle("month-msel");
+  document.addEventListener("click", closeAllMselPanels);
   document.getElementById("refresh-btn").addEventListener("click", function() { loadData(true); });
   document.getElementById("export-inspector-btn").addEventListener("click", exportInspectorCSV);
   document.getElementById("export-detail-btn").addEventListener("click", exportDetailCSV);
