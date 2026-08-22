@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.aleja_rosalesc.twa",
+        "sha256_cert_fingerprints": ["6E:03:50:B8:99:70:B6:78:B6:17:BA:A2:F8:3E:7A:7F:AA:2E:29:42:DE:69:7B:4A:C8:A3:9C:24:E7:F0:93:ED"]
+      }
+    }]
