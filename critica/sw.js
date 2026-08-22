@@ -1,3 +1,21 @@
+importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js");
+
+firebase.initializeApp({
+  apiKey: "AIzaSyALAAWgglH-BPJpNOwTEaLz1N3EgTRV4UU",
+  authDomain: "inspecciones-aaa.firebaseapp.com",
+  projectId: "inspecciones-aaa",
+  storageBucket: "inspecciones-aaa.firebasestorage.app",
+  messagingSenderId: "417714382892",
+  appId: "1:417714382892:web:7d8eac84e582823b06c989"
+});
+const messaging = firebase.messaging();
+messaging.onBackgroundMessage(function(payload) {
+  const title = payload.notification && payload.notification.title || "Crítica";
+  const body = payload.notification && payload.notification.body || "";
+  self.registration.showNotification(title, { body: body, icon: "./icon-192.png", badge: "./icon-192.png" });
+});
+
 const CACHE_NAME = "aaa-auditoria-v5";
 
 const APP_SHELL = [ "./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./logo.png" ];
