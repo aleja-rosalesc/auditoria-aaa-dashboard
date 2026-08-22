@@ -1,8 +1,0 @@
-[{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.aleja_rosalesc.tablerosaaa2",
-        "sha256_cert_fingerprints": ["9C:D7:EE:09:4E:DE:3B:EE:71:1C:23:3F:85:40:B1:2C:0E:BE:1C:31:68:9B:AD:12:E4:F4:7D:F1:80:74:BF:DF"]
-      }
-    }]
