@@ -51,6 +51,10 @@
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;
     touch-action: pan-x pan-y;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  }
+  input, textarea, select, [contenteditable]{
+    -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
   }
   .dashboard-container{
     max-width: 1360px;
