@@ -690,6 +690,10 @@
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/></svg></span>
       Supervisores
     </button>
+    <button class="tab-btn" data-page="ranking">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 3H7v6a5 5 0 0 0 10 0V3z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg></span>
+      Ranking
+    </button>
     <button class="tab-btn" data-page="detalle">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6M9 8h3"/></svg></span>
       Detalle
@@ -772,7 +776,7 @@
       <div class="table-scroll">
         <table class="hoy-track-table" id="ayer-table">
           <thead>
-            <tr><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num sorted">Auditadas</th><th data-key="correcto" class="num">Correctas</th><th data-key="con_errores" class="num">Con error</th><th data-key="pct_error" class="num">% Error</th><th data-key="pct_efectividad" class="num">% Efectividad</th></tr>
+            <tr><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num sorted">Auditadas</th><th data-key="correcto" class="num">Correctas</th><th data-key="con_errores" class="num">Con error</th><th data-key="pct_error" class="num">% Error</th><th data-key="efectiva" class="num">Efectivas</th><th data-key="pct_efectividad" class="num">% Efectividad</th></tr>
           </thead>
           <tbody id="ayer-tbody"></tbody>
         </table>
@@ -839,6 +843,16 @@
         <div class="kpi-label">Efectividad</div>
         <div class="kpi-value" id="kpi-efectividad">—</div>
         <div class="kpi-sub" id="kpi-efectividad-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C12 2 5 10.5 5 15.5C5 19.6 8.1 22 12 22C15.9 22 19 19.6 19 15.5C19 10.5 12 2 12 2Z"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Efectivas</div>
+        <div class="kpi-value" id="kpi-efectiva">—</div>
+        <div class="kpi-sub" id="kpi-efectiva-sub">&nbsp;</div>
       </div>
     </div>
   </section>
@@ -937,7 +951,7 @@
           <tr>
             <th data-key="inspector" data-col="inspector">Inspector2</th><th data-key="supervisor" data-col="supervisor">Supervisor</th><th data-key="total" class="num" data-col="total">Total</th>
             <th data-key="correcto" class="num" data-col="correcto">Correctas</th><th data-key="con_errores" class="num" data-col="con_errores">Con error</th>
-            <th data-key="pct_error" class="num sorted" data-col="pct_error">% Error</th><th data-key="pct_efectividad" class="num" data-col="pct_efectividad">% Efectividad</th><th data-key="tipos_error" data-col="tipos_error">Errores</th>
+            <th data-key="pct_error" class="num sorted" data-col="pct_error">% Error</th><th data-key="efectiva" class="num" data-col="efectiva">Efectivas</th><th data-key="pct_efectividad" class="num" data-col="pct_efectividad">% Efectividad</th><th data-key="tipos_error" data-col="tipos_error">Errores</th>
           </tr>
         </thead>
         <tbody id="inspector-tbody"></tbody>
@@ -976,6 +990,50 @@
           </tr>
         </thead>
         <tbody id="summary-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+  </div>
+
+  <div class="page-content" data-page="ranking">
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 3H7v6a5 5 0 0 0 10 0V3z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg> Ranking NC — No se puede Comprobar</h3>
+      <div class="table-actions">
+        <button class="btn ghost" id="export-ranking-nc-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 12px;">Suma de cierres con causa LT-Lote, SSA-Sector Sin Agua, PNF-Persona No Facultada, VI-Verificación Incompleta o SP-Sector Peligroso — todas clasificadas como NC.</p>
+    <div class="table-scroll">
+      <table class="data-table" id="ranking-nc-table">
+        <thead>
+          <tr>
+            <th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Auditadas</th>
+            <th data-key="nc" class="num sorted">Cierres NC</th><th data-key="pct_nc" class="num">% del total</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-nc-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Ranking SP — Sector Peligroso</h3>
+      <div class="table-actions">
+        <button class="btn ghost" id="export-ranking-sp-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 12px;">Visible para supervisores — quiénes están cerrando más órdenes con causa SP-Sector Peligroso, para seguimiento de seguridad del equipo.</p>
+    <div class="table-scroll">
+      <table class="data-table" id="ranking-sp-table">
+        <thead>
+          <tr>
+            <th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Auditadas</th>
+            <th data-key="sp" class="num sorted">Cierres SP</th><th data-key="pct_sp" class="num">% del total</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-sp-tbody"></tbody>
       </table>
     </div>
   </section>
@@ -1557,6 +1615,33 @@ function topInspectoresEfectivosBlock(sub, n, minTotal) {
   return out.slice(0, n);
 }
 
+// Causas clasificadas como "NC - No se puede Comprobar" segun la matriz del
+// manual de Critica. Confirmado con el usuario: exactamente estas 5.
+const NC_CAUSAS = [ "LT-Lote", "SSA-Sector Sin Agua", "PNF-Persona No Facultada", "VI-Verificación Incompleta", "SP-Sector Peligroso" ];
+
+function rankingCausaGroupBlock(sub) {
+  const by = groupBy(sub, "inspector");
+  let out = Array.from(by.entries()).map(function(e) {
+    const rows = e[1], total = rows.length;
+    const nc = rows.filter(function(r) {
+      return NC_CAUSAS.indexOf(r.causa_cierre) !== -1;
+    }).length;
+    const sp = rows.filter(function(r) {
+      return r.causa_cierre === "SP-Sector Peligroso";
+    }).length;
+    return {
+      inspector: e[0],
+      supervisor: rows[0].supervisor,
+      total: total,
+      nc: nc,
+      pct_nc: total ? round1(nc / total * 100) : 0,
+      sp: sp,
+      pct_sp: total ? round1(sp / total * 100) : 0
+    };
+  });
+  return out;
+}
+
 function inspectoresFullBlock(sub, minTotal) {
   minTotal = minTotal || 1;
   const by = groupBy(sub, "inspector");
@@ -1705,7 +1790,8 @@ function buildScope(sub) {
     top_inspectores_efectivos: topInspectoresEfectivosBlock(sub),
     top_ciclos_inefectivos: topCiclosInefectivosBlock(sub),
     inspector_comparativa: topInspectoresEfectivosBlock(sub, 15, 10),
-    inspectores_full: inspectoresFullBlock(sub, 1)
+    inspectores_full: inspectoresFullBlock(sub, 1),
+    ranking: rankingCausaGroupBlock(sub)
   };
 }
 
@@ -2245,6 +2331,7 @@ function renderAll() {
   renderSupervisoresChart();
   renderCausasChart(scope);
   renderSummaryTable();
+  renderRankingTables();
   computeInspectorFiltered();
   renderInspectorTable();
   populateDetailFilterOptions();
@@ -2535,6 +2622,7 @@ function renderAyerTable(rows, fechaISO) {
     return {
       inspector: e[0], supervisor: rws[0].supervisor, total: total, correcto: correcto, con_errores: con_errores,
       pct_error: total ? round1(con_errores / total * 100) : 0,
+      efectiva: efectiva,
       pct_efectividad: total ? round1(efectiva / total * 100) : 0
     };
   });
@@ -2544,7 +2632,7 @@ function renderAyerTable(rows, fechaISO) {
   list = sortByState(list, getTableSort("ayer-table", "total", "desc"));
   list.forEach(function(r) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>";
     tbody.appendChild(tr);
   });
   const tot = rows.length;
@@ -2554,7 +2642,7 @@ function renderAyerTable(rows, fechaISO) {
   const trTot = document.createElement("tr");
   trTot.style.fontWeight = "700";
   trTot.style.borderTop = "2px solid #C9D6DD";
-  trTot.innerHTML = "<td>Total</td><td>—</td>" + '<td class="num">' + fmtInt(tot) + "</td>" + '<td class="num">' + fmtInt(totCorrecto) + "</td>" + '<td class="num">' + fmtInt(totErr) + "</td>" + '<td class="num">' + fmtPct(tot ? round1(totErr / tot * 100) : 0) + "</td>" + '<td class="num">' + semBadge(tot ? round1(totEf / tot * 100) : 0) + "</td>";
+  trTot.innerHTML = "<td>Total</td><td>—</td>" + '<td class="num">' + fmtInt(tot) + "</td>" + '<td class="num">' + fmtInt(totCorrecto) + "</td>" + '<td class="num">' + fmtInt(totErr) + "</td>" + '<td class="num">' + fmtPct(tot ? round1(totErr / tot * 100) : 0) + "</td>" + '<td class="num">' + fmtInt(totEf) + "</td>" + '<td class="num">' + semBadge(tot ? round1(totEf / tot * 100) : 0) + "</td>";
   tbody.appendChild(trTot);
 }
 
@@ -2569,6 +2657,8 @@ function renderKPIs(scope) {
   kpiEfEl.textContent = fmtPct(scope.kpis.pct_efectividad);
   kpiEfEl.className = "kpi-value " + semClass(scope.kpis.pct_efectividad);
   document.getElementById("kpi-efectividad-sub").textContent = fmtInt(scope.kpis.efectiva) + " órdenes efectivas";
+  document.getElementById("kpi-efectiva").textContent = fmtInt(scope.kpis.efectiva);
+  document.getElementById("kpi-efectiva-sub").textContent = fmtInt(scope.kpis.no_efectiva) + " no efectivas";
 }
 
 const metaLinePlugin = {
@@ -3553,6 +3643,51 @@ function renderSummaryTable() {
   });
 }
 
+function renderRankingTables() {
+  let list = DATA.overall.ranking;
+  if (currentScopes.length) {
+    list = list.filter(function(r) { return currentScopes.indexOf(r.supervisor) !== -1; });
+  }
+
+  const ncTbody = document.getElementById("ranking-nc-tbody");
+  attachTableSort("ranking-nc-table", "nc", "desc", renderRankingTables);
+  const ncList = sortByState(list, getTableSort("ranking-nc-table", "nc", "desc"));
+  ncTbody.innerHTML = "";
+  ncList.forEach(function(r) {
+    if (!r.nc) return;
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.nc) + "</td>" + '<td class="num">' + fmtPct(r.pct_nc) + "</td>";
+    ncTbody.appendChild(tr);
+  });
+  if (!ncTbody.children.length) ncTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin cierres NC en este periodo/filtro.</td></tr>';
+
+  const spTbody = document.getElementById("ranking-sp-tbody");
+  attachTableSort("ranking-sp-table", "sp", "desc", renderRankingTables);
+  const spList = sortByState(list, getTableSort("ranking-sp-table", "sp", "desc"));
+  spTbody.innerHTML = "";
+  spList.forEach(function(r) {
+    if (!r.sp) return;
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.sp) + "</td>" + '<td class="num">' + fmtPct(r.pct_sp) + "</td>";
+    spTbody.appendChild(tr);
+  });
+  if (!spTbody.children.length) spTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin cierres SP en este periodo/filtro.</td></tr>';
+}
+
+function exportRankingCSV(which) {
+  const key = which === "nc" ? "nc" : "sp";
+  const pctKey = which === "nc" ? "pct_nc" : "pct_sp";
+  const label = which === "nc" ? "Cierres NC" : "Cierres SP";
+  let list = DATA.overall.ranking.filter(function(r) { return r[key] > 0; });
+  if (currentScopes.length) list = list.filter(function(r) { return currentScopes.indexOf(r.supervisor) !== -1; });
+  list = list.slice().sort(function(a, b) { return b[key] - a[key]; });
+  const headers = [
+    { key: "inspector", label: "Inspector" }, { key: "supervisor", label: "Supervisor" },
+    { key: "total", label: "Auditadas" }, { key: key, label: label }, { key: pctKey, label: "% del total" }
+  ];
+  downloadCSV("ranking_" + which + ".csv", list, headers);
+}
+
 function computeInspectorFiltered() {
   const q = document.getElementById("inspector-search").value.trim().toLowerCase();
   let rows = DATA.overall.inspectores_full.filter(function(r) {
@@ -3591,7 +3726,7 @@ function renderInspectorTable() {
   tbody.innerHTML = "";
   inspectorFiltered.forEach(function(r) {
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>" + "<td>" + (r.tipos_error || "—") + "</td>";
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.correcto) + "</td>" + '<td class="num">' + fmtInt(r.con_errores) + "</td>" + '<td class="num">' + fmtPct(r.pct_error) + "</td>" + '<td class="num">' + fmtInt(r.efectiva) + "</td>" + '<td class="num">' + semBadge(r.pct_efectividad) + "</td>" + "<td>" + (r.tipos_error || "—") + "</td>";
     tbody.appendChild(tr);
   });
 }
@@ -3615,6 +3750,9 @@ function exportInspectorCSV() {
   }, {
     key: "pct_error",
     label: "% Error"
+  }, {
+    key: "efectiva",
+    label: "Efectivas"
   }, {
     key: "pct_efectividad",
     label: "% Efectividad"
@@ -3925,6 +4063,8 @@ function init() {
   });
   document.getElementById("export-detail-btn").addEventListener("click", exportDetailCSV);
   document.getElementById("export-summary-btn").addEventListener("click", exportSummaryCSV);
+  document.getElementById("export-ranking-nc-btn").addEventListener("click", function() { exportRankingCSV("nc"); });
+  document.getElementById("export-ranking-sp-btn").addEventListener("click", function() { exportRankingCSV("sp"); });
   document.getElementById("export-inspector-btn").addEventListener("click", exportInspectorCSV);
   document.getElementById("refresh-btn").addEventListener("click", function() {
     loadData(true);
