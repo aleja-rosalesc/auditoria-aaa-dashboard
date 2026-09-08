@@ -18,8 +18,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
 <style>
   :root{
     --navy: #0B3D5C;
@@ -667,7 +665,6 @@
       <a class="btn ghost" href="../index.html">🏠 Cambiar de área</a>
       <button class="btn ghost" id="clear-all-filters-btn">✕ Limpiar todo</button>
       <button class="btn ghost" id="refresh-btn">↻ Actualizar ahora</button>
-      <button class="btn ghost hidden" id="notif-btn">🔔 Activar notificaciones</button>
       <button class="btn hidden" id="install-btn">＋ Instalar app</button>
     </div>
   </div>
@@ -1162,20 +1159,6 @@
 const SHEET_ID = "1_NTcyMn3xX0MYqP40qdFc9hiAVpgOXdkfwJEEhRwL3o";
 
 const SHEET_GID = "205567382";
-
-// Notificaciones push (Firebase Cloud Messaging). El valor público de Firebase
-// config no es secreto — la clave privada de la cuenta de servicio vive
-// únicamente en Apps Script, nunca aquí.
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyALAAWgglH-BPJpNOwTEaLz1N3EgTRV4UU",
-  authDomain: "inspecciones-aaa.firebaseapp.com",
-  projectId: "inspecciones-aaa",
-  storageBucket: "inspecciones-aaa.firebasestorage.app",
-  messagingSenderId: "417714382892",
-  appId: "1:417714382892:web:7d8eac84e582823b06c989"
-};
-const FIREBASE_VAPID_KEY = "BEaDPzpBQTnzwaTz7HM5E1RtfBR8DvOdFajPMbdgK6J6gK83lLMfdY_zRw4JZMx2uMTf3eNXIdaUaqxx74-ZV3U";
-const APPS_SCRIPT_NOTIFY_URL = "https://script.google.com/macros/s/AKfycbzzvOBfbfpC6QixgC46yn5O-ZjAyQRAtR-KtzplBSCMo1ozDltJLJg3LlALLPXdrPS-/exec";
 
 const REFRESH_INTERVAL_MS = 5 * 60 * 1e3;
 
@@ -4230,51 +4213,6 @@ function init() {
     await deferredPrompt.userChoice;
     deferredPrompt = null;
     document.getElementById("install-btn").classList.add("hidden");
-  });
-  setupNotifications();
-}
-
-// Notificaciones push: pide permiso, obtiene el token de FCM y lo registra
-// en el Apps Script de la hoja (que manda el push cada vez que alguien edita
-// la hoja Crítica). No requiere backend propio, solo Apps Script + Firebase.
-function setupNotifications() {
-  const btn = document.getElementById("notif-btn");
-  if (!("Notification" in window) || !("serviceWorker" in navigator) || !APPS_SCRIPT_NOTIFY_URL) {
-    return;
-  }
-  btn.classList.remove("hidden");
-  if (Notification.permission === "granted" && localStorage.getItem("aaa_notif_subscribed") === "1") {
-    btn.textContent = "🔔 Notificaciones activas";
-    btn.disabled = true;
-  }
-  btn.addEventListener("click", async function() {
-    btn.disabled = true;
-    btn.textContent = "Activando…";
-    try {
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        btn.textContent = "🔔 Activar notificaciones";
-        btn.disabled = false;
-        alert("No se concedió el permiso de notificaciones.");
-        return;
-      }
-      if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-      const registration = await navigator.serviceWorker.ready;
-      const messaging = firebase.messaging();
-      const token = await messaging.getToken({ vapidKey: FIREBASE_VAPID_KEY, serviceWorkerRegistration: registration });
-      const res = await fetch(APPS_SCRIPT_NOTIFY_URL, {
-        method: "POST",
-        body: JSON.stringify({ token: token })
-      });
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error || "Error desconocido");
-      localStorage.setItem("aaa_notif_subscribed", "1");
-      btn.textContent = "🔔 Notificaciones activas";
-    } catch (err) {
-      btn.textContent = "🔔 Activar notificaciones";
-      btn.disabled = false;
-      alert("No se pudo activar las notificaciones: " + err.message);
-    }
   });
 }
 
