@@ -219,7 +219,7 @@
 
   .sem-badge{
     display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px;
-    font-weight:700; font-size:0.92em; line-height:1.5;
+    font-weight:700; font-size:0.92em; line-height:1.5; white-space:nowrap; flex-shrink:0;
   }
   .sem-badge::before{ content:''; width:7px; height:7px; border-radius:50%; background:currentColor; flex-shrink:0; }
   .sem-badge.sem-rojo{ background:var(--danger-bg); color:var(--danger); }
@@ -570,7 +570,7 @@
     .hoy-filter-row select, .hoy-filter-row input[type="text"]{ min-width: 100%; }
 
     .table-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; margin: 0 -12px; padding: 0 12px; }
-    .data-table, .hoy-track-table{ min-width: 640px; }
+    .data-table, .hoy-track-table{ min-width: 780px; }
     .data-table th, .data-table td, .hoy-track-table th, .hoy-track-table td{ white-space: nowrap; }
     .matriz-table{ min-width: 520px; }
     .matriz-table td, .matriz-table th{ white-space: nowrap; }
