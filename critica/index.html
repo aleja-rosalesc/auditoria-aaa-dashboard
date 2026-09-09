@@ -994,6 +994,55 @@
   </div>
 
   <div class="page-content" data-page="ranking">
+  <div class="date-filter-bar">
+    <span class="df-label"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg> Periodo:</span>
+    <label>Desde <input type="date" id="ranking-date-from"></label>
+    <label>Hasta <input type="date" id="ranking-date-to"></label>
+    <button class="btn ghost small" id="ranking-date-today-btn">Solo hoy</button>
+    <button class="btn ghost small" id="ranking-date-clear-btn">Ver todo</button>
+  </div>
+
+  <section class="kpi-row" id="sec-ranking-kpis" style="grid-template-columns: repeat(2, 1fr);">
+    <div class="kpi-card">
+      <div class="kpi-icon amber">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 3H7v6a5 5 0 0 0 10 0V3z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Total cierres NC</div>
+        <div class="kpi-value" id="kpi-ranking-nc">—</div>
+        <div class="kpi-sub" id="kpi-ranking-nc-sub">&nbsp;</div>
+      </div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-icon red">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Total cierres SP</div>
+        <div class="kpi-value" id="kpi-ranking-sp">—</div>
+        <div class="kpi-sub" id="kpi-ranking-sp-sub">&nbsp;</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chart-row three-col">
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 3H7v6a5 5 0 0 0 10 0V3z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg> Top 10 — más cierres NC</h3>
+      <p class="chart-sub">Inspectores con más cierres clasificados NC</p>
+      <div style="height:320px; position:relative;"><canvas id="ranking-nc-chart"></canvas></div>
+    </div>
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Top 10 — más cierres SP</h3>
+      <p class="chart-sub">Inspectores con más cierres en Sector Peligroso</p>
+      <div style="height:320px; position:relative;"><canvas id="ranking-sp-chart"></canvas></div>
+    </div>
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Composición de NC</h3>
+      <p class="chart-sub">Qué causas están pesando más dentro de NC</p>
+      <div style="height:320px; position:relative;"><canvas id="ranking-causa-chart"></canvas></div>
+    </div>
+  </section>
+
   <section class="table-section">
     <div class="table-header">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 3H7v6a5 5 0 0 0 10 0V3z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg> Ranking NC — No se puede Comprobar</h3>
@@ -1008,6 +1057,7 @@
           <tr>
             <th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Auditadas</th>
             <th data-key="nc" class="num sorted">Cierres NC</th><th data-key="pct_nc" class="num">% del total</th>
+            <th data-key="nc_correcto" class="num">Correctas</th><th data-key="nc_con_errores" class="num">Con error</th>
           </tr>
         </thead>
         <tbody id="ranking-nc-tbody"></tbody>
@@ -1029,6 +1079,7 @@
           <tr>
             <th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Auditadas</th>
             <th data-key="sp" class="num sorted">Cierres SP</th><th data-key="pct_sp" class="num">% del total</th>
+            <th data-key="sp_correcto" class="num">Correctas</th><th data-key="sp_con_errores" class="num">Con error</th>
           </tr>
         </thead>
         <tbody id="ranking-sp-tbody"></tbody>
@@ -1261,6 +1312,20 @@ function yesterdayISO() {
   const d = new Date;
   d.setDate(d.getDate() - 1);
   return isoFromDate(d);
+}
+
+// El filtro de fecha vive en dos pestañas (Resumen y Ranking) apuntando a
+// las mismas variables globales dateFrom/dateTo -- esto mantiene ambos
+// juegos de inputs sincronizados sin importar cuál se haya usado.
+function syncDateFilterInputs() {
+  [ "date-from", "ranking-date-from" ].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = dateFrom;
+  });
+  [ "date-to", "ranking-date-to" ].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.value = dateTo;
+  });
 }
 
 function lastWorkedDayBefore(beforeISO) {
@@ -1607,23 +1672,46 @@ function rankingCausaGroupBlock(sub) {
   const by = groupBy(sub, "inspector");
   let out = Array.from(by.entries()).map(function(e) {
     const rows = e[1], total = rows.length;
-    const nc = rows.filter(function(r) {
+    const ncRows = rows.filter(function(r) {
       return NC_CAUSAS.indexOf(r.causa_cierre) !== -1;
-    }).length;
-    const sp = rows.filter(function(r) {
+    });
+    const spRows = rows.filter(function(r) {
       return r.causa_cierre === "SP-Sector Peligroso";
-    }).length;
+    });
+    const nc = ncRows.length, sp = spRows.length;
+    const nc_correcto = ncRows.filter(function(r) { return r.estado === "Correcto"; }).length;
+    const sp_correcto = spRows.filter(function(r) { return r.estado === "Correcto"; }).length;
     return {
       inspector: e[0],
       supervisor: rows[0].supervisor,
       total: total,
       nc: nc,
       pct_nc: total ? round1(nc / total * 100) : 0,
+      nc_correcto: nc_correcto,
+      nc_con_errores: nc - nc_correcto,
       sp: sp,
-      pct_sp: total ? round1(sp / total * 100) : 0
+      pct_sp: total ? round1(sp / total * 100) : 0,
+      sp_correcto: sp_correcto,
+      sp_con_errores: sp - sp_correcto
     };
   });
   return out;
+}
+
+function rankingBreakdownBlock(sub) {
+  const ncRows = sub.filter(function(r) { return NC_CAUSAS.indexOf(r.causa_cierre) !== -1; });
+  const spRows = sub.filter(function(r) { return r.causa_cierre === "SP-Sector Peligroso"; });
+  const totalNC = ncRows.length, totalSP = spRows.length;
+  const ncCorrecto = ncRows.filter(function(r) { return r.estado === "Correcto"; }).length;
+  const spCorrecto = spRows.filter(function(r) { return r.estado === "Correcto"; }).length;
+  const porCausa = NC_CAUSAS.map(function(c) {
+    return { causa: c, count: sub.filter(function(r) { return r.causa_cierre === c; }).length };
+  }).sort(function(a, b) { return b.count - a.count; });
+  return {
+    totalNC: totalNC, totalSP: totalSP, porCausa: porCausa,
+    ncCorrecto: ncCorrecto, ncConErrores: totalNC - ncCorrecto, pctNcCorrecto: totalNC ? round1(ncCorrecto / totalNC * 100) : 0,
+    spCorrecto: spCorrecto, spConErrores: totalSP - spCorrecto, pctSpCorrecto: totalSP ? round1(spCorrecto / totalSP * 100) : 0
+  };
 }
 
 function inspectoresFullBlock(sub, minTotal) {
@@ -1775,7 +1863,8 @@ function buildScope(sub) {
     top_ciclos_inefectivos: topCiclosInefectivosBlock(sub),
     inspector_comparativa: topInspectoresEfectivosBlock(sub, 15, 10),
     inspectores_full: inspectoresFullBlock(sub, 1),
-    ranking: rankingCausaGroupBlock(sub)
+    ranking: rankingCausaGroupBlock(sub),
+    ranking_breakdown: rankingBreakdownBlock(sub)
   };
 }
 
@@ -2315,6 +2404,8 @@ function renderAll() {
   renderSupervisoresChart();
   renderCausasChart(scope);
   renderSummaryTable();
+  renderRankingKPIs();
+  renderRankingCharts();
   renderRankingTables();
   computeInspectorFiltered();
   renderInspectorTable();
@@ -3640,10 +3731,10 @@ function renderRankingTables() {
   ncList.forEach(function(r) {
     if (!r.nc) return;
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.nc) + "</td>" + '<td class="num">' + fmtPct(r.pct_nc) + "</td>";
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.nc) + "</td>" + '<td class="num">' + fmtPct(r.pct_nc) + "</td>" + '<td class="num">' + fmtInt(r.nc_correcto) + "</td>" + '<td class="num">' + fmtInt(r.nc_con_errores) + "</td>";
     ncTbody.appendChild(tr);
   });
-  if (!ncTbody.children.length) ncTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin cierres NC en este periodo/filtro.</td></tr>';
+  if (!ncTbody.children.length) ncTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Sin cierres NC en este periodo/filtro.</td></tr>';
 
   const spTbody = document.getElementById("ranking-sp-tbody");
   attachTableSort("ranking-sp-table", "sp", "desc", renderRankingTables);
@@ -3652,22 +3743,84 @@ function renderRankingTables() {
   spList.forEach(function(r) {
     if (!r.sp) return;
     const tr = document.createElement("tr");
-    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.sp) + "</td>" + '<td class="num">' + fmtPct(r.pct_sp) + "</td>";
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.sp) + "</td>" + '<td class="num">' + fmtPct(r.pct_sp) + "</td>" + '<td class="num">' + fmtInt(r.sp_correcto) + "</td>" + '<td class="num">' + fmtInt(r.sp_con_errores) + "</td>";
     spTbody.appendChild(tr);
   });
-  if (!spTbody.children.length) spTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-2);">Sin cierres SP en este periodo/filtro.</td></tr>';
+  if (!spTbody.children.length) spTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Sin cierres SP en este periodo/filtro.</td></tr>';
+}
+
+function renderRankingKPIs() {
+  const b = DATA.overall.ranking_breakdown;
+  const total = DATA.overall.kpis.total;
+  document.getElementById("kpi-ranking-nc").textContent = fmtInt(b.totalNC);
+  document.getElementById("kpi-ranking-nc-sub").textContent = fmtPct(total ? round1(b.totalNC / total * 100) : 0) + " del total · " + fmtPct(b.pctNcCorrecto) + " cerradas correctamente";
+  document.getElementById("kpi-ranking-sp").textContent = fmtInt(b.totalSP);
+  document.getElementById("kpi-ranking-sp-sub").textContent = fmtPct(total ? round1(b.totalSP / total * 100) : 0) + " del total · " + fmtPct(b.pctSpCorrecto) + " cerradas correctamente";
+}
+
+function renderRankingCharts() {
+  let list = DATA.overall.ranking;
+  if (currentScopes.length) list = list.filter(function(r) { return currentScopes.indexOf(r.supervisor) !== -1; });
+
+  const topNc = list.slice().filter(function(r) { return r.nc > 0; }).sort(function(a, b) { return b.nc - a.nc; }).slice(0, 10);
+  if (charts.rankingNc) charts.rankingNc.destroy();
+  charts.rankingNc = new Chart(document.getElementById("ranking-nc-chart"), {
+    type: "bar",
+    data: {
+      labels: topNc.map(function(r) { return r.inspector; }),
+      datasets: [ { label: "Cierres NC", data: topNc.map(function(r) { return r.nc; }), backgroundColor: "#FF7A00", borderRadius: 4, maxBarThickness: 18 } ]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "#EEF2F5" } }, y: { grid: { display: false } } }
+    }
+  });
+
+  const topSp = list.slice().filter(function(r) { return r.sp > 0; }).sort(function(a, b) { return b.sp - a.sp; }).slice(0, 10);
+  if (charts.rankingSp) charts.rankingSp.destroy();
+  charts.rankingSp = new Chart(document.getElementById("ranking-sp-chart"), {
+    type: "bar",
+    data: {
+      labels: topSp.map(function(r) { return r.inspector; }),
+      datasets: [ { label: "Cierres SP", data: topSp.map(function(r) { return r.sp; }), backgroundColor: COLORS.danger, borderRadius: 4, maxBarThickness: 18 } ]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "#EEF2F5" } }, y: { grid: { display: false } } }
+    }
+  });
+
+  const porCausa = DATA.overall.ranking_breakdown.porCausa;
+  const causaColors = [ COLORS.danger, "#FF7A00", COLORS.warning, COLORS.teal, COLORS.gray ];
+  if (charts.rankingCausa) charts.rankingCausa.destroy();
+  charts.rankingCausa = new Chart(document.getElementById("ranking-causa-chart"), {
+    type: "doughnut",
+    data: {
+      labels: porCausa.map(function(c) { return c.causa; }),
+      datasets: [ { data: porCausa.map(function(c) { return c.count; }), backgroundColor: causaColors, borderWidth: 0 } ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: "60%",
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 10 } } } }
+    }
+  });
 }
 
 function exportRankingCSV(which) {
   const key = which === "nc" ? "nc" : "sp";
   const pctKey = which === "nc" ? "pct_nc" : "pct_sp";
   const label = which === "nc" ? "Cierres NC" : "Cierres SP";
+  const correctoKey = which === "nc" ? "nc_correcto" : "sp_correcto";
+  const conErroresKey = which === "nc" ? "nc_con_errores" : "sp_con_errores";
   let list = DATA.overall.ranking.filter(function(r) { return r[key] > 0; });
   if (currentScopes.length) list = list.filter(function(r) { return currentScopes.indexOf(r.supervisor) !== -1; });
   list = list.slice().sort(function(a, b) { return b[key] - a[key]; });
   const headers = [
     { key: "inspector", label: "Inspector" }, { key: "supervisor", label: "Supervisor" },
-    { key: "total", label: "Auditadas" }, { key: key, label: label }, { key: pctKey, label: "% del total" }
+    { key: "total", label: "Auditadas" }, { key: key, label: label }, { key: pctKey, label: "% del total" },
+    { key: correctoKey, label: "Correctas" }, { key: conErroresKey, label: "Con error" }
   ];
   downloadCSV("ranking_" + which + ".csv", list, headers);
 }
@@ -4086,17 +4239,41 @@ function init() {
   initAccessGate();
   document.getElementById("date-from").addEventListener("change", function(e) {
     dateFrom = e.target.value || "";
+    syncDateFilterInputs();
     if (ALL_CLEAN_ROWS.length) rebuildData();
   });
   document.getElementById("date-to").addEventListener("change", function(e) {
     dateTo = e.target.value || "";
+    syncDateFilterInputs();
     if (ALL_CLEAN_ROWS.length) rebuildData();
   });
   document.getElementById("date-clear-btn").addEventListener("click", function() {
     dateFrom = "";
     dateTo = "";
-    document.getElementById("date-from").value = "";
-    document.getElementById("date-to").value = "";
+    syncDateFilterInputs();
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById("ranking-date-from").addEventListener("change", function(e) {
+    dateFrom = e.target.value || "";
+    syncDateFilterInputs();
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById("ranking-date-to").addEventListener("change", function(e) {
+    dateTo = e.target.value || "";
+    syncDateFilterInputs();
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById("ranking-date-today-btn").addEventListener("click", function() {
+    const hoy = todayISO();
+    dateFrom = hoy;
+    dateTo = hoy;
+    syncDateFilterInputs();
+    if (ALL_CLEAN_ROWS.length) rebuildData();
+  });
+  document.getElementById("ranking-date-clear-btn").addEventListener("click", function() {
+    dateFrom = "";
+    dateTo = "";
+    syncDateFilterInputs();
     if (ALL_CLEAN_ROWS.length) rebuildData();
   });
   document.getElementById("hoy-inspector-select").addEventListener("change", function(e) {
