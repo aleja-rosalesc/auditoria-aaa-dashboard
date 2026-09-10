@@ -1002,7 +1002,7 @@
     <button class="btn ghost small" id="ranking-date-clear-btn">Ver todo</button>
   </div>
 
-  <section class="kpi-row" id="sec-ranking-kpis" style="grid-template-columns: repeat(2, 1fr);">
+  <section class="kpi-row" id="sec-ranking-kpis" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
     <div class="kpi-card">
       <div class="kpi-icon amber">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 3H7v6a5 5 0 0 0 10 0V3z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg>
@@ -1023,9 +1023,19 @@
         <div class="kpi-sub" id="kpi-ranking-sp-sub">&nbsp;</div>
       </div>
     </div>
+    <div class="kpi-card">
+      <div class="kpi-icon purple">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Total cierres VI</div>
+        <div class="kpi-value" id="kpi-ranking-vi">—</div>
+        <div class="kpi-sub" id="kpi-ranking-vi-sub">&nbsp;</div>
+      </div>
+    </div>
   </section>
 
-  <section class="chart-row three-col">
+  <section class="chart-row two-col">
     <div class="chart-container tall">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 3H7v6a5 5 0 0 0 10 0V3z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg> Top 10 — más cierres NC</h3>
       <p class="chart-sub">Inspectores con más cierres clasificados NC</p>
@@ -1035,6 +1045,11 @@
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> Top 10 — más cierres SP</h3>
       <p class="chart-sub">Inspectores con más cierres en Sector Peligroso</p>
       <div style="height:320px; position:relative;"><canvas id="ranking-sp-chart"></canvas></div>
+    </div>
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Top 10 — más cierres VI</h3>
+      <p class="chart-sub">Inspectores con más cierres en Verificación Incompleta</p>
+      <div style="height:320px; position:relative;"><canvas id="ranking-vi-chart"></canvas></div>
     </div>
     <div class="chart-container tall">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Composición de NC</h3>
@@ -1083,6 +1098,28 @@
           </tr>
         </thead>
         <tbody id="ranking-sp-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Ranking VI — Verificación Incompleta</h3>
+      <div class="table-actions">
+        <button class="btn ghost" id="export-ranking-vi-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 12px;">Quiénes están cerrando más órdenes con causa VI-Verificación Incompleta — subconjunto de NC. Correctas / Con error según la auditoría (ESTADO_AUDITORIA).</p>
+    <div class="table-scroll">
+      <table class="data-table" id="ranking-vi-table">
+        <thead>
+          <tr>
+            <th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Auditadas</th>
+            <th data-key="vi" class="num sorted">Cierres VI</th><th data-key="pct_vi" class="num">% del total</th>
+            <th data-key="vi_correcto" class="num">Correctas</th><th data-key="vi_con_errores" class="num">Con error</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-vi-tbody"></tbody>
       </table>
     </div>
   </section>
@@ -1678,9 +1715,13 @@ function rankingCausaGroupBlock(sub) {
     const spRows = rows.filter(function(r) {
       return r.causa_cierre === "SP-Sector Peligroso";
     });
-    const nc = ncRows.length, sp = spRows.length;
+    const viRows = rows.filter(function(r) {
+      return r.causa_cierre === "VI-Verificación Incompleta";
+    });
+    const nc = ncRows.length, sp = spRows.length, vi = viRows.length;
     const nc_correcto = ncRows.filter(function(r) { return r.estado === "Correcto"; }).length;
     const sp_correcto = spRows.filter(function(r) { return r.estado === "Correcto"; }).length;
+    const vi_correcto = viRows.filter(function(r) { return r.estado === "Correcto"; }).length;
     return {
       inspector: e[0],
       supervisor: rows[0].supervisor,
@@ -1692,7 +1733,11 @@ function rankingCausaGroupBlock(sub) {
       sp: sp,
       pct_sp: total ? round1(sp / total * 100) : 0,
       sp_correcto: sp_correcto,
-      sp_con_errores: sp - sp_correcto
+      sp_con_errores: sp - sp_correcto,
+      vi: vi,
+      pct_vi: total ? round1(vi / total * 100) : 0,
+      vi_correcto: vi_correcto,
+      vi_con_errores: vi - vi_correcto
     };
   });
   return out;
@@ -1701,16 +1746,19 @@ function rankingCausaGroupBlock(sub) {
 function rankingBreakdownBlock(sub) {
   const ncRows = sub.filter(function(r) { return NC_CAUSAS.indexOf(r.causa_cierre) !== -1; });
   const spRows = sub.filter(function(r) { return r.causa_cierre === "SP-Sector Peligroso"; });
-  const totalNC = ncRows.length, totalSP = spRows.length;
+  const viRows = sub.filter(function(r) { return r.causa_cierre === "VI-Verificación Incompleta"; });
+  const totalNC = ncRows.length, totalSP = spRows.length, totalVI = viRows.length;
   const ncCorrecto = ncRows.filter(function(r) { return r.estado === "Correcto"; }).length;
   const spCorrecto = spRows.filter(function(r) { return r.estado === "Correcto"; }).length;
+  const viCorrecto = viRows.filter(function(r) { return r.estado === "Correcto"; }).length;
   const porCausa = NC_CAUSAS.map(function(c) {
     return { causa: c, count: sub.filter(function(r) { return r.causa_cierre === c; }).length };
   }).sort(function(a, b) { return b.count - a.count; });
   return {
-    totalNC: totalNC, totalSP: totalSP, porCausa: porCausa,
+    totalNC: totalNC, totalSP: totalSP, totalVI: totalVI, porCausa: porCausa,
     ncCorrecto: ncCorrecto, ncConErrores: totalNC - ncCorrecto, pctNcCorrecto: totalNC ? round1(ncCorrecto / totalNC * 100) : 0,
-    spCorrecto: spCorrecto, spConErrores: totalSP - spCorrecto, pctSpCorrecto: totalSP ? round1(spCorrecto / totalSP * 100) : 0
+    spCorrecto: spCorrecto, spConErrores: totalSP - spCorrecto, pctSpCorrecto: totalSP ? round1(spCorrecto / totalSP * 100) : 0,
+    viCorrecto: viCorrecto, viConErrores: totalVI - viCorrecto, pctViCorrecto: totalVI ? round1(viCorrecto / totalVI * 100) : 0
   };
 }
 
@@ -3747,6 +3795,18 @@ function renderRankingTables() {
     spTbody.appendChild(tr);
   });
   if (!spTbody.children.length) spTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Sin cierres SP en este periodo/filtro.</td></tr>';
+
+  const viTbody = document.getElementById("ranking-vi-tbody");
+  attachTableSort("ranking-vi-table", "vi", "desc", renderRankingTables);
+  const viList = sortByState(list, getTableSort("ranking-vi-table", "vi", "desc"));
+  viTbody.innerHTML = "";
+  viList.forEach(function(r) {
+    if (!r.vi) return;
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.vi) + "</td>" + '<td class="num">' + fmtPct(r.pct_vi) + "</td>" + '<td class="num">' + fmtInt(r.vi_correcto) + "</td>" + '<td class="num">' + fmtInt(r.vi_con_errores) + "</td>";
+    viTbody.appendChild(tr);
+  });
+  if (!viTbody.children.length) viTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Sin cierres VI en este periodo/filtro.</td></tr>';
 }
 
 function renderRankingKPIs() {
@@ -3756,6 +3816,8 @@ function renderRankingKPIs() {
   document.getElementById("kpi-ranking-nc-sub").textContent = fmtPct(total ? round1(b.totalNC / total * 100) : 0) + " del total · " + fmtPct(b.pctNcCorrecto) + " cerradas correctamente";
   document.getElementById("kpi-ranking-sp").textContent = fmtInt(b.totalSP);
   document.getElementById("kpi-ranking-sp-sub").textContent = fmtPct(total ? round1(b.totalSP / total * 100) : 0) + " del total · " + fmtPct(b.pctSpCorrecto) + " cerradas correctamente";
+  document.getElementById("kpi-ranking-vi").textContent = fmtInt(b.totalVI);
+  document.getElementById("kpi-ranking-vi-sub").textContent = fmtPct(total ? round1(b.totalVI / total * 100) : 0) + " del total · " + fmtPct(b.pctViCorrecto) + " cerradas correctamente";
 }
 
 function renderRankingCharts() {
@@ -3792,6 +3854,21 @@ function renderRankingCharts() {
     }
   });
 
+  const topVi = list.slice().filter(function(r) { return r.vi > 0; }).sort(function(a, b) { return b.vi - a.vi; }).slice(0, 10);
+  if (charts.rankingVi) charts.rankingVi.destroy();
+  charts.rankingVi = new Chart(document.getElementById("ranking-vi-chart"), {
+    type: "bar",
+    data: {
+      labels: topVi.map(function(r) { return r.inspector; }),
+      datasets: [ { label: "Cierres VI", data: topVi.map(function(r) { return r.vi; }), backgroundColor: "#7C4DFF", borderRadius: 4, maxBarThickness: 18 } ]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "#EEF2F5" } }, y: { grid: { display: false } } }
+    }
+  });
+
   const porCausa = DATA.overall.ranking_breakdown.porCausa;
   const causaColors = [ COLORS.danger, "#FF7A00", COLORS.warning, COLORS.teal, COLORS.gray ];
   if (charts.rankingCausa) charts.rankingCausa.destroy();
@@ -3809,11 +3886,12 @@ function renderRankingCharts() {
 }
 
 function exportRankingCSV(which) {
-  const key = which === "nc" ? "nc" : "sp";
-  const pctKey = which === "nc" ? "pct_nc" : "pct_sp";
-  const label = which === "nc" ? "Cierres NC" : "Cierres SP";
-  const correctoKey = which === "nc" ? "nc_correcto" : "sp_correcto";
-  const conErroresKey = which === "nc" ? "nc_con_errores" : "sp_con_errores";
+  const key = which;
+  const pctKey = "pct_" + which;
+  const labelMap = { nc: "Cierres NC", sp: "Cierres SP", vi: "Cierres VI" };
+  const label = labelMap[which] || ("Cierres " + which.toUpperCase());
+  const correctoKey = which + "_correcto";
+  const conErroresKey = which + "_con_errores";
   let list = DATA.overall.ranking.filter(function(r) { return r[key] > 0; });
   if (currentScopes.length) list = list.filter(function(r) { return currentScopes.indexOf(r.supervisor) !== -1; });
   list = list.slice().sort(function(a, b) { return b[key] - a[key]; });
@@ -4202,6 +4280,7 @@ function init() {
   document.getElementById("export-summary-btn").addEventListener("click", exportSummaryCSV);
   document.getElementById("export-ranking-nc-btn").addEventListener("click", function() { exportRankingCSV("nc"); });
   document.getElementById("export-ranking-sp-btn").addEventListener("click", function() { exportRankingCSV("sp"); });
+  document.getElementById("export-ranking-vi-btn").addEventListener("click", function() { exportRankingCSV("vi"); });
   document.getElementById("export-inspector-btn").addEventListener("click", exportInspectorCSV);
   document.getElementById("refresh-btn").addEventListener("click", function() {
     loadData(true);
