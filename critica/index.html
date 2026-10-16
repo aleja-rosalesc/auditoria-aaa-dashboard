@@ -315,6 +315,28 @@
   body.gx-no-time .needs-time{ display:none !important; }
   body.gx-no-time .gx-pair{ grid-template-columns:1fr; }
   body.gx-no-time .gx-trio{ grid-template-columns:1fr 1fr; }
+  .gx-insights{ list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+  .gx-insights li{ display:flex; gap:10px; align-items:flex-start; font-size:13.5px; line-height:1.55; color:var(--text); }
+  .gx-dot{ width:10px; height:10px; border-radius:50%; margin-top:6px; flex-shrink:0; background:var(--teal); }
+  .gx-dot.ok{ background:var(--success); }
+  .gx-dot.warn{ background:#FF7A00; }
+  .gx-dot.bad{ background:var(--danger); }
+  .gx-team-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:14px; margin-bottom:16px; }
+  .gx-team{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 16px; }
+  .gx-team-head{ display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; font-size:14px; }
+  .gx-team-stats{ display:grid; grid-template-columns:1fr 1fr; gap:8px 14px; }
+  .gx-team-stats span{ display:block; font-size:11px; color:var(--text-2); text-transform:uppercase; letter-spacing:.4px; }
+  .gx-team-stats b{ font-family:var(--font-display); font-size:17px; color:var(--text); }
+  .gx-select{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); font-size:13px; font-family:var(--font-body); background:#F7FAFB; max-width:100%; }
+  .gx-sim{ display:flex; flex-wrap:wrap; gap:14px 22px; align-items:flex-end; }
+  .gx-sim label{ display:flex; flex-direction:column; gap:6px; font-size:12px; font-weight:600; color:var(--text-2); }
+  .gx-sim input[type=range]{ width:200px; }
+  .gx-sim-out{ display:flex; flex-wrap:wrap; gap:12px; flex:1 1 100%; }
+  .gx-sim-out > div{ background:#F7FAFB; border:1px solid var(--border); border-radius:12px; padding:10px 14px; min-width:170px; }
+  .gx-sim-out span{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-2); }
+  .gx-sim-out b{ display:block; font-family:var(--font-display); font-size:22px; color:var(--text); }
+  .gx-sim-out small{ color:var(--text-2); font-size:11.5px; }
+  .gx-heat td{ min-width:72px; }
   .gx-search{ padding:8px 12px; border-radius:8px; border:1px solid var(--border); font-size:13px; font-family:var(--font-body); min-width:200px; background:#F7FAFB; }
   .gx-matrix th, .gx-matrix td{ white-space:nowrap; }
   .gx-matrix th:first-child, .gx-matrix td:first-child{ position:sticky; left:0; background:#fff; z-index:1; max-width:150px; overflow:hidden; text-overflow:ellipsis; box-shadow:1px 0 0 var(--border); }
@@ -732,6 +754,10 @@
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
       Panorama
     </button>
+    <button class="tab-btn" data-page="tendencias" data-section="gestion">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg></span>
+      Tendencias
+    </button>
     <button class="tab-btn" data-page="produccion" data-section="gestion">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></svg></span>
       Producción
@@ -740,17 +766,29 @@
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></span>
       Efectividad
     </button>
-    <button class="tab-btn needs-time" data-page="jornada" data-section="gestion">
-      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></span>
-      Jornada
+    <button class="tab-btn" data-page="auditoria" data-section="gestion">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></span>
+      Auditoría
     </button>
     <button class="tab-btn" data-page="medidores" data-section="gestion">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-5"/></svg></span>
       Medidores
     </button>
+    <button class="tab-btn" data-page="consumos" data-section="gestion">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3s6 6.2 6 10.5A6 6 0 0 1 6 13.5C6 9.2 12 3 12 3z"/></svg></span>
+      Consumos
+    </button>
+    <button class="tab-btn" data-page="predios" data-section="gestion">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span>
+      Predios
+    </button>
     <button class="tab-btn" data-page="usuarios" data-section="gestion">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3 2.7-5 6-5s6 2 6 5"/><path d="M16 5a3 3 0 0 1 0 6M18 15c2 .6 3 2.2 3 5"/></svg></span>
       Usuarios
+    </button>
+    <button class="tab-btn" data-page="equipos" data-section="gestion">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="8" r="2.5"/><circle cx="17" cy="8" r="2.5"/><circle cx="12" cy="14" r="2.5"/><path d="M2 20c0-2.5 2-4 5-4M22 20c0-2.5-2-4-5-4M8 21c0-2.5 1.8-4 4-4s4 1.5 4 4"/></svg></span>
+      Equipos
     </button>
     <button class="tab-btn" data-page="gx-inspectores" data-section="gestion">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg></span>
@@ -759,6 +797,10 @@
     <button class="tab-btn" data-page="ciclos" data-section="gestion">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6-7-11a7 7 0 0 1 14 0c0 5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
       Ciclos
+    </button>
+    <button class="tab-btn needs-time" data-page="jornada" data-section="gestion">
+      <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></span>
+      Jornada
     </button>
     <button class="tab-btn active" data-page="hoy" data-section="calidad">
       <span class="tab-icon-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
@@ -804,6 +846,11 @@
 
   <div class="page-content" data-page="panorama" id="page-panorama">
   <section class="gx-ind-row" id="gx-indicators"></section>
+
+  <section class="table-section" id="gx-insights-sec">
+    <div class="table-header"><h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg> Hallazgos clave del periodo</h3></div>
+    <ul class="gx-insights" id="gx-insights"></ul>
+  </section>
 
   <section class="kpi-row" id="gx-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>
 
@@ -1492,7 +1539,7 @@ const ADMIN_PASSWORD = "AAA2026admin";
 
 const ROLE_STORAGE_KEY = "aaa_dashboard_role";
 
-const SUPERVISOR_HIDDEN_PAGES = [ "resumen", "inspectores", "panorama", "produccion", "efectividad", "jornada", "medidores", "usuarios", "gx-inspectores", "ciclos" ];
+const SUPERVISOR_HIDDEN_PAGES = [ "resumen", "inspectores", "panorama", "tendencias", "produccion", "efectividad", "auditoria", "jornada", "medidores", "consumos", "predios", "usuarios", "equipos", "gx-inspectores", "ciclos" ];
 
 const COLORS = {
   success: "#1F9D66",
@@ -2713,13 +2760,16 @@ const BASE_SHEET_NAME = "BASE";
 // 13 AL RECIBIO_FACTURA, 14 AP VERIFICAR_IRREGULARIDAD, 15 AQ RESULTADO, 16 AR CAUSA_CIERRE,
 // 17 AT LECTURA1, 18 AU FECHA_INICIAL, 19 AV OBS_1, 20 AY FECHA_FINALIZACION (con hora),
 // 21 AZ LECTURA_ACTUAL, 22 BF LECTURA_ANTERIOR, 23 BH USUARIO_CIERRA, 24 BK CALIFICACION,
-// 25 BL JORNADA, 26 BQ SUPERVISOR.
-const BASE_COLUMNS_TQ = "select A,E,H,I,K,L,R,Z,AE,AF,AH,AI,AK,AL,AP,AQ,AR,AT,AU,AV,AY,AZ,BF,BH,BK,BL,BQ";
+// 25 BL JORNADA, 26 BQ SUPERVISOR, 27 M UNID_RESIDE_HABITADOS, 28 N UNID_RESIDE_DESOCUPADOS,
+// 29 O UNID_NO_RESIDE_HABITADOS, 30 P UNID_NO_RESIDE_DESOCUPADOS, 31 Q NO_PERSONAS, 32 U NO_PUNTOS_HIDRAULICOS,
+// 33 S VERIFICO_PUNTO_POTABLE, 34 T CERRO_PUNTOS_SENSOR, 35 AA NOMBRE_USUARIO, 36 AC NUMERO_DOCUMENTO,
+// 37 AD TELEFONO, 38 AG CORREO, 39 AM ACEPTA_FACTURA_CORREO.
+const BASE_COLUMNS_TQ = "select A,E,H,I,K,L,R,Z,AE,AF,AH,AI,AK,AL,AP,AQ,AR,AT,AU,AV,AY,AZ,BF,BH,BK,BL,BQ,M,N,O,P,Q,U,S,T,AA,AC,AD,AG,AM";
 
 // Meta de cumplimiento de jornada (el % de efectividad usa EFECTIVIDAD_META).
 const JORNADA_META = 85;
 
-const GX_PAGES = [ "panorama", "produccion", "efectividad", "jornada", "medidores", "usuarios", "gx-inspectores", "ciclos" ];
+const GX_PAGES = [ "panorama", "tendencias", "produccion", "efectividad", "auditoria", "medidores", "consumos", "predios", "usuarios", "equipos", "gx-inspectores", "ciclos", "jornada" ];
 const GX_PALETTE = [ "#0E6E8C", "#17A2B8", "#1F9D66", "#F0A93A", "#E4572E", "#7C4DFF", "#0B3D5C", "#FF7A00", "#8E9AAF", "#C4CFD6" ];
 const GX_ESTADO_SIN_NOVEDAD = [ "", "No Amerita Revisión en Laboratorio", "No se puede comprobar" ];
 
@@ -2784,14 +2834,26 @@ function gxBaseRowFromGviz(row) {
   }
   let servicio = str(6);
   if (servicio.toLowerCase() === "si") servicio = "SI"; else if (servicio.toLowerCase() === "no") servicio = "NO";
-  const lec1 = num(17), lecAct = num(21);
+  const lec1 = num(17), lecAct = num(21), lecAnt = num(22);
+  const cicloParts = str(1).split(" - ");
+  const q = num(31), u = num(32);
+  function raw(i) {
+    const v = val(i);
+    return typeof v === "number" ? String(v) : String(v).trim();
+  }
   return {
     orden: orden, ciclo: str(1), unidad: str(2), marca: str(3), estadoMedidor: str(4), tipoUso: str(5), servicio: servicio,
     facultada: str(7), relacion: str(8), recibirCorreo: str(9), firma: str(10), noFirma: str(11), explico: str(12), factura: str(13),
     irreg: str(14), resultado: str(15), causa: str(16), obs1: str(19),
     fecha: fin.y + "-" + gxPad(fin.mo) + "-" + gxPad(fin.d), hora: fin.h + fin.mi / 60 + fin.s / 3600, durMin: durMin,
     usuario: str(23), calificacion: str(24), jornada: str(25), supervisorOrm: str(26),
-    dif: lec1 !== null && lecAct !== null ? lec1 - lecAct : null
+    dif: lec1 !== null && lecAct !== null ? lec1 - lecAct : null,
+    cons: lecAct !== null && lecAnt !== null ? lecAct - lecAnt : null,
+    muni: cicloParts.length > 1 ? cicloParts[cicloParts.length - 1].trim() : "",
+    uHab: (num(27) || 0) + (num(29) || 0), uDes: (num(28) || 0) + (num(30) || 0),
+    personas: q !== null && q > 0 && q <= 30 ? q : null, puntos: u !== null && u >= 0 && u <= 100 ? u : null,
+    verifPunto: str(33), cerroPuntos: str(34), aceptaCorreo: str(39),
+    tel: gxContact(raw(37), "tel"), doc: gxContact(raw(36), "doc"), mail: gxContact(raw(38), "mail")
   };
 }
 
@@ -2867,6 +2929,10 @@ function gxJoinedRows() {
     b.supervisor = v ? v.supervisor : "";
     b.efectiva = v ? v.efectividad === "Efectiva" : false;
     b.estado = v ? v.estado : "";
+    b.errCampos = v ? !!v.err_campos : false;
+    b.errLectura = v ? !!v.err_lectura : false;
+    b.errMatriz = v ? !!v.err_matriz : false;
+    b.errOblig = v ? !!v.err_obligatoriedad : false;
     b.jst = baseHasTime ? jornadaStatus(b.jornada, b.hora) : "sin";
   });
   _gxJoinKey = { base: ALL_BASE_ROWS, val: ALL_CLEAN_ROWS };
@@ -3254,6 +3320,7 @@ function renderGxPanorama(c) {
     sub: fmtInt(g.n) + " de " + fmtInt(g.total) + " cierres · " + fmtInt(g.adminN) + " administrativos" + (g.pendN ? " · " + fmtInt(g.pendN) + " por validar" : "")
   });
   document.getElementById("gx-indicators").innerHTML = cards;
+  renderGxInsights(c);
 
   document.getElementById("gx-kpis").innerHTML =
     gxKpiCard("blue", GX_ICON.bars, "Cierres ORM", fmtInt(g.total), "Todos los usuarios del ORM") +
@@ -3493,51 +3560,6 @@ function bindGxProduccion() {
 }
 
 // ----- Efectividad -----
-function buildGxEfectividad() {
-  return '<section class="kpi-row" id="ef-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
-    gxRow("two-col", [
-      gxBox("ef-causa-chart", "Causas de cierre", "Órdenes por causa, separadas en efectivas y no efectivas.", 340, "tall"),
-      gxBox("ef-noef-chart", "Motivos de no efectividad", "Causas que más pesan entre las órdenes no efectivas.", 340, "tall")
-    ]) +
-    gxRow("one-col", [ gxBox("ef-insp-chart", "Efectividad neta por inspector", "Verde: meta individual (70%) o más · Naranja: entre 65% y 70% · Rojo: por debajo de 65%.", 900, "tall") ]) +
-    gxTableBox("ef-causas", "Detalle por causa de cierre", "Todas las causas con el resultado de la inspección.", [
-      { key: "key", label: "Causa de cierre" }, { key: "n", label: "Órdenes", num: true }, { key: "pctShare", label: "% del total", num: true, html: function(r) { return fmtPct(r.pctShare); } },
-      { key: "efect", label: "Efectivas", num: true }, { key: "noEfect", label: "No efectivas", num: true }, { key: "err", label: "Con error", num: true }
-    ], true);
-}
-
-function renderGxEfectividad(c) {
-  const g = c.g, insp = c.insp;
-  const causas = gxAggregate(insp, function(r) { return r.causa || "(Sin causa)"; });
-  causas.forEach(function(a) { a.pctShare = gxPct(a.n, g.n); });
-  causas.sort(function(a, b) { return b.n - a.n; });
-  const noef = causas.filter(function(a) { return a.noEfect > 0; }).sort(function(a, b) { return b.noEfect - a.noEfect; });
-  const top = noef[0];
-  document.getElementById("ef-kpis").innerHTML =
-    gxKpiCard("green", GX_ICON.target, "Efectividad neta", fmtPct(g.pctEfect), "Meta del contrato " + fmtPct(EFECTIVIDAD_META)) +
-    gxKpiCard("blue", GX_ICON.check, "Efectivas", fmtInt(g.efect), fmtPct(g.pctEfectBruta) + " de las auditadas") +
-    gxKpiCard("amber", GX_ICON.alert, "No efectivas", fmtInt(g.n - g.efect), fmtPct(gxPct(g.n - g.efect, g.n)) + " de las auditadas") +
-    gxKpiCard("red", GX_ICON.star, "Principal motivo", '<span style="font-size:17px; line-height:1.25; display:inline-block;">' + (top ? top.key : "—") + "</span>", top ? fmtPct(gxPct(top.noEfect, g.n - g.efect)) + " de las no efectivas" : "");
-
-  const t12 = causas.slice(0, 12);
-  gxStackedH("efCausa", "ef-causa-chart", t12.map(function(a) { return a.key; }), [
-    { label: "Efectivas", data: t12.map(function(a) { return a.efect; }), color: COLORS.success },
-    { label: "No efectivas", data: t12.map(function(a) { return a.noEfect; }), color: COLORS.warning }
-  ]);
-  const t8 = noef.slice(0, 8);
-  gxHBar("efNoef", "ef-noef-chart", t8.map(function(a) { return a.key; }), t8.map(function(a) { return a.noEfect; }), "#FF7A00", "No efectivas");
-  const inspAgg = gxAggregate(insp, function(r) { return r.inspector; }).sort(function(a, b) { return b.pctEfect - a.pctEfect; });
-  gxHBar("efInsp", "ef-insp-chart", inspAgg.map(function(a) { return a.key; }), inspAgg.map(function(a) { return a.pctEfect; }), inspAgg.map(function(a) {
-    return a.pctEfect >= EFECTIVIDAD_META_INDIVIDUAL ? COLORS.success : a.pctEfect >= EFECTIVIDAD_META ? "#FF7A00" : COLORS.danger;
-  }), "% efectividad neta");
-  if (charts.efInsp) {
-    charts.efInsp.options.scales.x.max = 100;
-    charts.efInsp.options.scales.x.ticks.callback = function(v) { return v + "%"; };
-    charts.efInsp.update();
-  }
-  gxTable("ef-causas", "efectividad", causas, _gxTables["ef-causas"].cols, "n", "desc", "key");
-}
-
 // ----- Jornada -----
 function buildGxJornada() {
   return '<section class="kpi-row" id="jo-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
@@ -3614,30 +3636,605 @@ function gxIrregLabel(s) {
   return m[1] + " · " + (d.length > 34 ? d.slice(0, 33) + "…" : d);
 }
 
+// ----- Usuarios (atención al cliente) -----
+// ----- Inspectores -----
+// ----- Ciclos -----
+
+// =====================================================================
+// Análisis gerencial ampliado (hojas de gestión adicionales)
+// =====================================================================
+const RODAMIENTO_BASE = 400000;
+
+function gxContact(s, kind) {
+  if (!s) return "";
+  if (kind === "mail") return s.indexOf("@") !== -1 ? "ok" : "neg";
+  return s.replace(/\D/g, "").length >= (kind === "tel" ? 7 : 5) ? "ok" : "neg";
+}
+
+function gxMedian(arr) {
+  if (!arr.length) return 0;
+  const a = arr.slice().sort(function(x, y) { return x - y; });
+  const m = Math.floor(a.length / 2);
+  return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
+}
+
+function gxMean(arr) {
+  return arr.length ? arr.reduce(function(s, v) { return s + v; }, 0) / arr.length : 0;
+}
+
+function gxMemo(c, key, fn) {
+  c.memo = c.memo || {};
+  if (!(key in c.memo)) c.memo[key] = fn();
+  return c.memo[key];
+}
+
+function gxInspAgg(c) {
+  return gxMemo(c, "insp", function() { return gxAggregate(c.insp, function(r) { return r.inspector; }); });
+}
+
+function gxSupAgg(c) {
+  return gxMemo(c, "sup", function() { return gxAggregate(c.insp, function(r) { return r.supervisor || "(Sin supervisor)"; }); });
+}
+
+function gxCicloAgg(c) {
+  return gxMemo(c, "ciclo", function() { return gxAggregate(c.insp, function(r) { return r.ciclo || "(Sin ciclo)"; }); });
+}
+
+function gxCausaAgg(c) {
+  return gxMemo(c, "causa", function() {
+    const a = gxAggregate(c.insp, function(r) { return r.causa || "(Sin causa)"; });
+    a.forEach(function(x) { x.pctShare = gxPct(x.n, c.g.n); });
+    return a.sort(function(p, q) { return q.n - p.n; });
+  });
+}
+
+function gxWeekStart(fecha) {
+  const d = new Date(fecha + "T12:00:00");
+  d.setDate(d.getDate() - (d.getDay() + 6) % 7);
+  return isoFromDate(d);
+}
+
+function gxMoney(n) {
+  return "$ " + Math.round(n).toLocaleString("es-CO");
+}
+
+// Rodamiento según el Consolidado del Excel: completo si la efectividad llega a la meta, proporcional si no.
+function gxRodamiento(pctEfect) {
+  return pctEfect < EFECTIVIDAD_META ? Math.round(pctEfect / EFECTIVIDAD_META * RODAMIENTO_BASE) : RODAMIENTO_BASE;
+}
+
+// Agrupa por clave y cuenta cuántas filas cumplen cada predicado (más su porcentaje p_<nombre>).
+function gxGroup(rows, keyFn, preds) {
+  const names = Object.keys(preds);
+  const m = new Map;
+  rows.forEach(function(r) {
+    const k = keyFn(r);
+    let a = m.get(k);
+    if (!a) {
+      a = { key: k, supervisor: r.supervisor, n: 0 };
+      names.forEach(function(nm) { a[nm] = 0; });
+      m.set(k, a);
+    }
+    a.n++;
+    names.forEach(function(nm) { if (preds[nm](r)) a[nm]++; });
+  });
+  return Array.from(m.values()).map(function(a) {
+    names.forEach(function(nm) { a["p_" + nm] = gxPct(a[nm], a.n); });
+    return a;
+  });
+}
+
+function gxDailyStats(insp) {
+  const dm = new Map;
+  insp.forEach(function(r) {
+    let d = dm.get(r.fecha);
+    if (!d) {
+      d = { fecha: r.fecha, n: 0, efect: 0, err: 0, corr: 0, irreg: 0, insps: new Set };
+      dm.set(r.fecha, d);
+    }
+    d.n++;
+    if (r.efectiva) d.efect++;
+    if (r.estado === "Con Errores") d.err++;
+    if (r.estado === "Correcto") d.corr++;
+    if (r.irreg) d.irreg++;
+    d.insps.add(r.inspector);
+  });
+  const days = Array.from(dm.values()).sort(function(a, b) { return a.fecha < b.fecha ? -1 : 1; });
+  days.forEach(function(d, i) {
+    d.insp = d.insps.size;
+    d.pctEfect = gxPct(d.efect - d.err, d.n);
+    d.pctNoEfect = gxPct(d.n - d.efect, d.n);
+    d.pctCorrecto = gxPct(d.corr, d.n);
+    const w = days.slice(Math.max(0, i - 2), i + 1);
+    d.ma3 = gxPct(w.reduce(function(s, x) { return s + x.efect - x.err; }, 0), w.reduce(function(s, x) { return s + x.n; }, 0));
+    d.delta = i ? round1(d.pctEfect - days[i - 1].pctEfect) : null;
+  });
+  return days;
+}
+
+// Proyección de órdenes al cierre del mes: ritmo por día trabajado x días hábiles (lunes a sábado) que faltan.
+function gxMonthProjection() {
+  const rows = gxJoinedRows().filter(function(r) {
+    return r.rol === "insp" && (!currentScopes.length || currentScopes.indexOf(r.supervisor) !== -1);
+  });
+  if (!rows.length) return null;
+  const last = rows.reduce(function(m, r) { return r.fecha > m ? r.fecha : m; }, rows[0].fecha);
+  const ym = last.slice(0, 7);
+  const mrows = rows.filter(function(r) { return r.fecha.slice(0, 7) === ym; });
+  const dayCount = {};
+  mrows.forEach(function(r) { dayCount[r.fecha] = (dayCount[r.fecha] || 0) + 1; });
+  const dates = Object.keys(dayCount);
+  const avg = mrows.length / dates.length;
+  const y = +ym.slice(0, 4), m = +ym.slice(5, 7);
+  const lastDay = new Date(y, m, 0).getDate();
+  const series = [];
+  let acc = 0, rem = 0;
+  for (let d = 1; d <= lastDay; d++) {
+    const iso = ym + "-" + gxPad(d);
+    const dow = new Date(y, m - 1, d).getDay();
+    if (iso <= last) {
+      if (dayCount[iso]) {
+        acc += dayCount[iso];
+        series.push({ iso: iso, real: acc, proy: null });
+      }
+    } else if (dow !== 0) {
+      acc += avg;
+      rem++;
+      series.push({ iso: iso, real: null, proy: Math.round(acc) });
+    }
+  }
+  // La proyección arranca desde el último dato real para que las líneas se unan.
+  const lastReal = series.filter(function(p) { return p.real !== null; }).pop();
+  const firstProy = series.filter(function(p) { return p.proy !== null; })[0];
+  if (lastReal && firstProy) lastReal.proy = lastReal.real;
+  return { ym: ym, total: mrows.length, avg: avg, rem: rem, projected: Math.round(mrows.length + avg * rem), last: last, series: series, dias: dates.length };
+}
+
+const GX_MESES = [ "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre" ];
+
+// Lectura automática de los datos: las frases que un gerente querría ver sin abrir cada hoja.
+function gxInsights(c) {
+  const g = c.g, out = [];
+  const sups = gxSupAgg(c).filter(function(s) { return s.n >= 300; });
+  const insps = gxInspAgg(c).filter(function(a) { return a.n >= 100; });
+  const causas = gxCausaAgg(c);
+  if (!g.n) return out;
+  const dEf = round1(g.pctEfect - EFECTIVIDAD_META);
+  out.push({ tone: dEf >= 0 ? "ok" : dEf >= -5 ? "warn" : "bad", text: "La efectividad neta del periodo es <b>" + fmtPct(g.pctEfect) + "</b>: " + gxNum1(Math.abs(dEf)) + " puntos " + (dEf >= 0 ? "por encima" : "por debajo") + " de la meta del contrato (" + fmtPct(EFECTIVIDAD_META) + ")." });
+  const last = g.daily[g.daily.length - 1];
+  if (g.daily.length >= 2 && last) {
+    out.push({ tone: last.pctEfect >= g.pctEfect ? "ok" : "warn", text: "Último día con datos (" + formatDateShort(last.fecha) + "): <b>" + fmtInt(last.n) + "</b> órdenes con efectividad neta de <b>" + fmtPct(last.pctEfect) + "</b>, " + (last.pctEfect >= g.pctEfect ? "por encima" : "por debajo") + " del promedio del periodo (" + fmtPct(g.pctEfect) + ")." });
+  }
+  if (sups.length >= 2) {
+    const sorted = sups.slice().sort(function(a, b) { return b.pctEfect - a.pctEfect; });
+    const best = sorted[0], worst = sorted[sorted.length - 1];
+    out.push({ tone: worst.pctEfect < EFECTIVIDAD_META ? "warn" : "info", text: "El equipo con mejor efectividad es <b>" + best.key + "</b> (" + fmtPct(best.pctEfect) + "); el de mayor oportunidad es <b>" + worst.key + "</b> (" + fmtPct(worst.pctEfect) + " en " + fmtInt(worst.n) + " órdenes)." });
+  }
+  if (insps.length) {
+    const below = insps.filter(function(a) { return a.pctEfect < EFECTIVIDAD_META; }).sort(function(a, b) { return a.pctEfect - b.pctEfect; });
+    const names = below.slice(0, 3).map(function(a) { return a.key + " (" + fmtPct(a.pctEfect) + ")"; }).join(", ");
+    out.push({ tone: !below.length ? "ok" : below.length > insps.length * 0.2 ? "bad" : "warn", text: below.length ? "<b>" + below.length + " de " + insps.length + "</b> inspectores están por debajo de la meta del contrato (" + fmtPct(EFECTIVIDAD_META) + "): " + names + (below.length > 3 ? " y " + (below.length - 3) + " más." : ".") : "Los <b>" + insps.length + "</b> inspectores con volumen suficiente alcanzan la meta del contrato (" + fmtPct(EFECTIVIDAD_META) + ")." });
+  }
+  const noef = causas.filter(function(a) { return a.noEfect > 0; }).sort(function(a, b) { return b.noEfect - a.noEfect; });
+  if (noef.length) {
+    const t = noef[0];
+    out.push({ tone: "info", text: "<b>" + t.key + "</b> concentra el " + fmtPct(gxPct(t.noEfect, g.n - g.efect)) + " de las órdenes no efectivas; recuperar el 20% de esas órdenes subiría la efectividad neta en " + gxNum1(round1(t.noEfect * 0.2 / g.n * 100)) + " puntos." });
+  }
+  const eq = sups.slice().sort(function(a, b) { return b.err - a.err; })[0];
+  out.push({ tone: g.pctCorrecto >= 97 ? "ok" : g.pctCorrecto >= 94 ? "warn" : "bad", text: "El <b>" + fmtPct(g.pctCorrecto) + "</b> de los cierres fue correcto en la auditoría" + (eq && eq.err ? "; " + eq.key + " concentra la mayor cantidad de errores (" + fmtInt(eq.err) + " de " + fmtInt(g.errores) + ")." : ".") });
+  const irr = c.insp.filter(function(r) { return r.irreg; });
+  if (irr.length) {
+    const topC = gxCountBy(irr, function(r) { return r.ciclo; })[0];
+    out.push({ tone: "info", text: "Se reportaron <b>" + fmtInt(irr.length) + "</b> irregularidades (" + fmtPct(gxPct(irr.length, g.n)) + " de las órdenes)" + (topC ? "; el ciclo con más reportes es " + topC.k + " (" + fmtInt(topC.n) + ")." : ".") });
+  }
+  if (g.adminN) out.push({ tone: "info", text: "Además de las " + fmtInt(g.n) + " órdenes de inspectores, el ORM registró <b>" + fmtInt(g.adminN) + "</b> cierres administrativos (" + fmtPct(gxPct(g.adminN, g.total)) + " del total)." });
+  const pr = gxMonthProjection();
+  if (pr && pr.rem > 0) out.push({ tone: "info", text: "Con el ritmo actual (" + fmtInt(Math.round(pr.avg)) + " órdenes por día trabajado) se proyectan <b>" + fmtInt(pr.projected) + "</b> órdenes al cierre de " + GX_MESES[+pr.ym.slice(5, 7) - 1] + "." });
+  return out;
+}
+
+function renderGxInsights(c) {
+  document.getElementById("gx-insights").innerHTML = gxInsights(c).map(function(i) {
+    return '<li><span class="gx-dot ' + i.tone + '"></span><span>' + i.text + "</span></li>";
+  }).join("");
+}
+
+// ----- Tendencias -----
+function buildGxTendencias() {
+  return '<section class="kpi-row" id="td-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
+    gxRow("two-col", [
+      gxBox("td-sem-chart", "Evolución semanal", "Órdenes por semana (barras) y efectividad neta (línea).", 320, "tall"),
+      gxBox("td-ef-chart", "Efectividad diaria", "Efectividad neta de cada día, promedio móvil de 3 días y meta del contrato.", 320, "tall")
+    ]) +
+    gxRow("two-col", [
+      gxBox("td-sup-chart", "Efectividad por equipo", "Promedio móvil de 3 días de cada supervisor.", 320, "tall"),
+      gxBox("td-cal-chart", "Calidad de los cierres por día", "% de órdenes correctas (línea) y órdenes con error (barras).", 320, "tall")
+    ]) +
+    gxRow("two-col", [
+      gxBox("td-acum-chart", "Avance acumulado del mes", "Órdenes acumuladas y proyección al cierre del mes (lunes a sábado).", 320, "tall"),
+      gxBox("td-irr-chart", "Irregularidades por día", "Irregularidades reportadas en campo cada día.", 320, "tall")
+    ]) +
+    gxTableBox("td-dia", "Detalle diario", "Comparativo día a día.", [
+      { key: "fecha", label: "Fecha", html: function(r) { return formatDateLong(r.fecha) + " · " + GX_DIAS[new Date(r.fecha + "T12:00:00").getDay()]; } },
+      { key: "n", label: "Órdenes", num: true }, { key: "insp", label: "Inspectores", num: true },
+      { key: "pctEfect", label: "% Efectividad neta", num: true, html: function(r) { return semBadge(r.pctEfect); } },
+      { key: "pctNoEfect", label: "% No efectivas", num: true, html: function(r) { return fmtPct(r.pctNoEfect); } },
+      { key: "pctCorrecto", label: "% Correctas", num: true, html: function(r) { return fmtPct(r.pctCorrecto); } },
+      { key: "irreg", label: "Irregularidades", num: true },
+      { key: "delta", label: "Cambio de efectividad vs día anterior", num: true, html: function(r) { return r.delta === null ? "—" : (r.delta >= 0 ? "▲ +" : "▼ −") + gxNum1(Math.abs(r.delta)) + " pts"; } }
+    ], false);
+}
+
+function renderGxTendencias(c) {
+  const days = gxDailyStats(c.insp);
+  const labels = days.map(function(d) { return formatDateShort(d.fecha); });
+  const k = Math.min(7, Math.floor(days.length / 2));
+  const agg = function(list) {
+    const n = list.reduce(function(s, d) { return s + d.n; }, 0);
+    return { n: n, pct: gxPct(list.reduce(function(s, d) { return s + d.efect - d.err; }, 0), n), corr: gxPct(list.reduce(function(s, d) { return s + d.corr; }, 0), n), perDay: list.length ? n / list.length : 0 };
+  };
+  const dl = function(v, suf) { return (v >= 0 ? "▲ +" : "▼ −") + gxNum1(Math.abs(round1(v))) + suf; };
+  let kpis = "";
+  if (k >= 2) {
+    const L = agg(days.slice(-k)), P = agg(days.slice(-2 * k, -k));
+    kpis += gxKpiCard("green", GX_ICON.target, "Efectividad últimos " + k + " días", fmtPct(L.pct), dl(L.pct - P.pct, " pts vs los " + k + " días previos"));
+    kpis += gxKpiCard("blue", GX_ICON.bars, "Producción diaria", fmtInt(Math.round(L.perDay)), P.perDay ? dl((L.perDay - P.perDay) / P.perDay * 100, "% vs los " + k + " días previos") : "");
+    kpis += gxKpiCard("purple", GX_ICON.check, "Calidad últimos " + k + " días", fmtPct(L.corr), dl(L.corr - P.corr, " pts vs los " + k + " días previos"));
+  }
+  const bestDay = days.slice().sort(function(a, b) { return b.pctEfect - a.pctEfect; })[0];
+  if (bestDay) kpis += gxKpiCard("amber", GX_ICON.star, "Mejor día de efectividad", fmtPct(bestDay.pctEfect), formatDateLong(bestDay.fecha) + " · " + fmtInt(bestDay.n) + " órdenes");
+  const pr = gxMonthProjection();
+  if (pr) kpis += gxKpiCard("red", GX_ICON.trend, "Proyección de " + GX_MESES[+pr.ym.slice(5, 7) - 1], fmtInt(pr.projected), fmtInt(pr.total) + " ya cerradas · " + pr.rem + " días hábiles por delante");
+  document.getElementById("td-kpis").innerHTML = kpis;
+
+  const wk = new Map;
+  days.forEach(function(d) {
+    const key = gxWeekStart(d.fecha);
+    let w = wk.get(key);
+    if (!w) {
+      w = { k: key, n: 0, efect: 0, err: 0, dias: 0 };
+      wk.set(key, w);
+    }
+    w.n += d.n;
+    w.efect += d.efect;
+    w.err += d.err;
+    w.dias++;
+  });
+  const weeks = Array.from(wk.values()).sort(function(a, b) { return a.k < b.k ? -1 : 1; });
+  gxChart("tdSem", "td-sem-chart", {
+    data: {
+      labels: weeks.map(function(w) { return "Sem " + formatDateShort(w.k) + " · " + w.dias + " d"; }),
+      datasets: [
+        { type: "bar", label: "Órdenes", data: weeks.map(function(w) { return w.n; }), backgroundColor: COLORS.primary, borderRadius: 4, maxBarThickness: 46, yAxisID: "y" },
+        { type: "line", label: "% efectividad neta", data: weeks.map(function(w) { return gxPct(w.efect - w.err, w.n); }), borderColor: COLORS.success, backgroundColor: COLORS.success, tension: 0.25, pointRadius: 4, yAxisID: "y2" },
+        { type: "line", label: "Meta " + EFECTIVIDAD_META + "%", data: weeks.map(function() { return EFECTIVIDAD_META; }), borderColor: COLORS.danger, borderDash: [6, 5], borderWidth: 1.5, pointRadius: 0, yAxisID: "y2" }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: GX_GRID } }, y2: { position: "right", min: 0, max: 100, grid: { display: false }, ticks: { callback: function(v) { return v + "%"; } } } }
+    }
+  });
+
+  gxChart("tdEf", "td-ef-chart", {
+    type: "line",
+    data: {
+      labels: labels,
+      datasets: [
+        { label: "Efectividad neta del día", data: days.map(function(d) { return d.pctEfect; }), borderColor: COLORS.teal, backgroundColor: COLORS.teal, tension: 0.2, pointRadius: 3 },
+        { label: "Promedio móvil 3 días", data: days.map(function(d) { return d.ma3; }), borderColor: COLORS.primaryDark, backgroundColor: COLORS.primaryDark, borderWidth: 2.5, tension: 0.35, pointRadius: 0 },
+        { label: "Meta " + EFECTIVIDAD_META + "%", data: days.map(function() { return EFECTIVIDAD_META; }), borderColor: COLORS.danger, borderDash: [6, 5], borderWidth: 1.5, pointRadius: 0 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { suggestedMin: 50, suggestedMax: 90, grid: { color: GX_GRID }, ticks: { callback: function(v) { return v + "%"; } } } }
+    }
+  });
+
+  // Efectividad por equipo: promedio móvil de 3 días (solo equipos con volumen)
+  const supTot = gxSupAgg(c).filter(function(s) { return s.n >= 300; }).sort(function(a, b) { return b.n - a.n; }).slice(0, 6);
+  const bySup = {};
+  supTot.forEach(function(s) { bySup[s.key] = {}; });
+  c.insp.forEach(function(r) {
+    const s = r.supervisor || "(Sin supervisor)";
+    if (!bySup[s]) return;
+    const d = bySup[s][r.fecha] || (bySup[s][r.fecha] = { n: 0, ef: 0 });
+    d.n++;
+    if (r.efectiva) d.ef++;
+    if (r.estado === "Con Errores") d.ef--;
+  });
+  const dates = days.map(function(d) { return d.fecha; });
+  gxChart("tdSup", "td-sup-chart", {
+    type: "line",
+    data: { labels: labels, datasets: supTot.map(function(s, i) {
+      return {
+        label: s.key, borderColor: GX_PALETTE[i % GX_PALETTE.length], backgroundColor: GX_PALETTE[i % GX_PALETTE.length], tension: 0.3, pointRadius: 0, borderWidth: 2, spanGaps: true,
+        data: dates.map(function(_, idx) {
+          const w = dates.slice(Math.max(0, idx - 2), idx + 1);
+          const sn = w.reduce(function(a, d) { return a + (bySup[s.key][d] ? bySup[s.key][d].n : 0); }, 0);
+          const se = w.reduce(function(a, d) { return a + (bySup[s.key][d] ? bySup[s.key][d].ef : 0); }, 0);
+          return sn >= 20 ? gxPct(se, sn) : null;
+        })
+      };
+    }) },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { suggestedMin: 30, suggestedMax: 90, grid: { color: GX_GRID }, ticks: { callback: function(v) { return v + "%"; } } } }
+    }
+  });
+
+  gxChart("tdCal", "td-cal-chart", {
+    data: {
+      labels: labels,
+      datasets: [
+        { type: "bar", label: "Órdenes con error", data: days.map(function(d) { return d.n - d.corr; }), backgroundColor: COLORS.danger, borderRadius: 3, maxBarThickness: 34, yAxisID: "y" },
+        { type: "line", label: "% correctas", data: days.map(function(d) { return d.pctCorrecto; }), borderColor: COLORS.success, backgroundColor: COLORS.success, tension: 0.25, pointRadius: 3, yAxisID: "y2" }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+      plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } },
+      scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: GX_GRID } }, y2: { position: "right", min: 80, max: 100, grid: { display: false }, ticks: { callback: function(v) { return v + "%"; } } } }
+    }
+  });
+
+  if (pr) {
+    gxChart("tdAcum", "td-acum-chart", {
+      type: "line",
+      data: {
+        labels: pr.series.map(function(p) { return formatDateShort(p.iso); }),
+        datasets: [
+          { label: "Acumulado real", data: pr.series.map(function(p) { return p.real; }), borderColor: COLORS.primary, backgroundColor: "rgba(14,110,140,0.12)", fill: true, tension: 0.2, pointRadius: 2, spanGaps: false },
+          { label: "Proyección", data: pr.series.map(function(p) { return p.proy; }), borderColor: COLORS.warning, borderDash: [6, 5], borderWidth: 2, pointRadius: 0, spanGaps: false }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+        plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: GX_GRID } } }
+      }
+    });
+  }
+  gxColumns("tdIrr", "td-irr-chart", labels, days.map(function(d) { return d.irreg; }), COLORS.danger, "Irregularidades");
+  gxTable("td-dia", "tendencias", days, _gxTables["td-dia"].cols, "fecha", "desc");
+}
+
+// ----- Efectividad -----
+function buildGxEfectividad() {
+  return '<section class="kpi-row" id="ef-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
+    gxRow("two-col", [
+      gxBox("ef-causa-chart", "Causas de cierre", "Órdenes por causa, separadas en efectivas y no efectivas.", 340, "tall"),
+      gxBox("ef-noef-chart", "Motivos de no efectividad", "Causas que más pesan entre las órdenes no efectivas.", 340, "tall")
+    ]) +
+    gxRow("two-col", [
+      gxBox("ef-dist-chart", "Inspectores por rango de efectividad", "Cantidad de inspectores en cada rango de efectividad neta (mínimo 30 órdenes).", 300, "tall"),
+      gxBox("ef-meta-chart", "Meta individual por equipo", "Inspectores que alcanzan o no la meta individual (" + EFECTIVIDAD_META_INDIVIDUAL + "%).", 300, "tall")
+    ]) +
+    '<section class="table-section"><div class="table-header"><h3>Dónde se concentra cada causa</h3></div>' +
+    '<p class="chart-sub" style="margin:-4px 0 12px;">Porcentaje de las órdenes de cada equipo que se cierra con cada una de las 8 causas más frecuentes. Más intenso = mayor peso dentro del equipo.</p>' +
+    '<div class="table-scroll"><table class="data-table gx-heat" id="ef-heat"></table></div></section>' +
+    '<section class="table-section"><div class="table-header"><h3>Simulador de efectividad</h3></div>' +
+    '<p class="chart-sub" style="margin:-4px 0 12px;">Estima cuánto subiría la efectividad neta si se recuperara una parte de las órdenes no efectivas de una causa.</p>' +
+    '<div class="gx-sim"><label>Causa <select id="ef-sim-causa" class="gx-select"></select></label>' +
+    '<label>Recuperación <input type="range" id="ef-sim-pct" min="0" max="100" value="25"> <b id="ef-sim-pct-v">25%</b></label>' +
+    '<div class="gx-sim-out" id="ef-sim-out"></div></div></section>' +
+    gxRow("one-col", [ gxBox("ef-insp-chart", "Efectividad neta por inspector", "Verde: meta individual (" + EFECTIVIDAD_META_INDIVIDUAL + "%) o más · Naranja: entre " + EFECTIVIDAD_META + "% y " + EFECTIVIDAD_META_INDIVIDUAL + "% · Rojo: por debajo de " + EFECTIVIDAD_META + "%.", 900, "tall") ]) +
+    gxTableBox("ef-causas", "Detalle por causa de cierre", "Todas las causas con el resultado de la inspección.", [
+      { key: "key", label: "Causa de cierre" }, { key: "n", label: "Órdenes", num: true }, { key: "pctShare", label: "% del total", num: true, html: function(r) { return fmtPct(r.pctShare); } },
+      { key: "efect", label: "Efectivas", num: true }, { key: "noEfect", label: "No efectivas", num: true }, { key: "err", label: "Con error", num: true }
+    ], true);
+}
+
+let _gxSim = null;
+
+function gxSimUpdate() {
+  const out = document.getElementById("ef-sim-out");
+  if (!out || !_gxSim) return;
+  const pct = +document.getElementById("ef-sim-pct").value;
+  document.getElementById("ef-sim-pct-v").textContent = pct + "%";
+  const causa = document.getElementById("ef-sim-causa").value;
+  const item = _gxSim.noef.filter(function(a) { return a.key === causa; })[0];
+  if (!item) {
+    out.innerHTML = "";
+    return;
+  }
+  const rec = Math.round(item.noEfect * pct / 100);
+  const nuevo = gxPct(_gxSim.efect - _gxSim.errores + rec, _gxSim.n);
+  const delta = round1(nuevo - _gxSim.pctEfect);
+  out.innerHTML = "<div><span>Órdenes recuperadas</span><b>" + fmtInt(rec) + "</b><small>de " + fmtInt(item.noEfect) + " no efectivas por " + item.key + "</small></div>" +
+    "<div><span>Efectividad neta estimada</span><b>" + fmtPct(nuevo) + "</b><small>hoy " + fmtPct(_gxSim.pctEfect) + "</small></div>" +
+    "<div><span>Mejora</span><b>" + (delta >= 0 ? "+" : "−") + gxNum1(Math.abs(delta)) + " pts</b><small>" + (nuevo >= EFECTIVIDAD_META_INDIVIDUAL ? "supera la meta individual" : nuevo >= EFECTIVIDAD_META ? "cumple la meta del contrato" : "por debajo de la meta del contrato") + "</small></div>";
+}
+
+function bindGxEfectividad() {
+  document.getElementById("ef-sim-causa").addEventListener("change", gxSimUpdate);
+  document.getElementById("ef-sim-pct").addEventListener("input", gxSimUpdate);
+}
+
+function renderGxEfectividad(c) {
+  const g = c.g, insp = c.insp;
+  const causas = gxCausaAgg(c);
+  const noef = causas.filter(function(a) { return a.noEfect > 0; }).sort(function(a, b) { return b.noEfect - a.noEfect; });
+  const top = noef[0];
+  document.getElementById("ef-kpis").innerHTML =
+    gxKpiCard("green", GX_ICON.target, "Efectividad neta", fmtPct(g.pctEfect), "Meta del contrato " + fmtPct(EFECTIVIDAD_META)) +
+    gxKpiCard("blue", GX_ICON.check, "Efectivas", fmtInt(g.efect), fmtPct(g.pctEfectBruta) + " de las auditadas") +
+    gxKpiCard("amber", GX_ICON.alert, "No efectivas", fmtInt(g.n - g.efect), fmtPct(gxPct(g.n - g.efect, g.n)) + " de las auditadas") +
+    gxKpiCard("red", GX_ICON.star, "Principal motivo", '<span style="font-size:17px; line-height:1.25; display:inline-block;">' + (top ? top.key : "—") + "</span>", top ? fmtPct(gxPct(top.noEfect, g.n - g.efect)) + " de las no efectivas" : "");
+
+  const t12 = causas.slice(0, 12);
+  gxStackedH("efCausa", "ef-causa-chart", t12.map(function(a) { return a.key; }), [
+    { label: "Efectivas", data: t12.map(function(a) { return a.efect; }), color: COLORS.success },
+    { label: "No efectivas", data: t12.map(function(a) { return a.noEfect; }), color: COLORS.warning }
+  ]);
+  const t8 = noef.slice(0, 8);
+  gxHBar("efNoef", "ef-noef-chart", t8.map(function(a) { return a.key; }), t8.map(function(a) { return a.noEfect; }), "#FF7A00", "No efectivas");
+
+  const inspAll = gxInspAgg(c);
+  const inspAgg = inspAll.slice().sort(function(a, b) { return b.pctEfect - a.pctEfect; });
+  gxHBar("efInsp", "ef-insp-chart", inspAgg.map(function(a) { return a.key; }), inspAgg.map(function(a) { return a.pctEfect; }), inspAgg.map(function(a) {
+    return a.pctEfect >= EFECTIVIDAD_META_INDIVIDUAL ? COLORS.success : a.pctEfect >= EFECTIVIDAD_META ? "#FF7A00" : COLORS.danger;
+  }), "% efectividad neta");
+  if (charts.efInsp) {
+    charts.efInsp.options.scales.x.max = 100;
+    charts.efInsp.options.scales.x.ticks.callback = function(v) { return v + "%"; };
+    charts.efInsp.update();
+  }
+
+  // Distribución de inspectores por rango
+  const base = inspAll.filter(function(a) { return a.n >= 30; });
+  const bins = [ [ "< 50%", -1, 50 ], [ "50–60%", 50, 60 ], [ "60–65%", 60, 65 ], [ "65–70%", 65, 70 ], [ "70–75%", 70, 75 ], [ "75–80%", 75, 80 ], [ "≥ 80%", 80, 1000 ] ];
+  const binCount = bins.map(function(b) { return base.filter(function(a) { return a.pctEfect >= b[1] && a.pctEfect < b[2]; }).length; });
+  gxChart("efDist", "ef-dist-chart", {
+    type: "bar",
+    data: { labels: bins.map(function(b) { return b[0]; }), datasets: [ { label: "Inspectores", data: binCount, backgroundColor: bins.map(function(b) { return b[1] >= EFECTIVIDAD_META_INDIVIDUAL ? COLORS.success : b[1] >= EFECTIVIDAD_META ? "#FF7A00" : COLORS.danger; }), borderRadius: 4, maxBarThickness: 46 } ] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: GX_GRID } } } }
+  });
+  // Meta individual por equipo
+  const bySup = new Map;
+  base.forEach(function(a) {
+    const s = a.supervisor || "(Sin supervisor)";
+    const e = bySup.get(s) || { s: s, ok: 0, no: 0 };
+    if (a.pctEfect >= EFECTIVIDAD_META_INDIVIDUAL) e.ok++; else e.no++;
+    bySup.set(s, e);
+  });
+  const metaRows = Array.from(bySup.values()).sort(function(a, b) { return (b.ok + b.no) - (a.ok + a.no); });
+  gxStackedH("efMeta", "ef-meta-chart", metaRows.map(function(e) { return e.s; }), [
+    { label: "Cumplen la meta individual", data: metaRows.map(function(e) { return e.ok; }), color: COLORS.success },
+    { label: "No la alcanzan", data: metaRows.map(function(e) { return e.no; }), color: COLORS.danger }
+  ]);
+
+  // Matriz causa x equipo
+  const top8 = causas.slice(0, 8);
+  const sups = gxSupAgg(c).filter(function(s) { return s.n >= 100; }).sort(function(a, b) { return b.n - a.n; });
+  const cell = {};
+  top8.forEach(function(a) { cell[a.key] = {}; });
+  insp.forEach(function(r) {
+    const k = r.causa || "(Sin causa)";
+    if (!cell[k]) return;
+    const s = r.supervisor || "(Sin supervisor)";
+    cell[k][s] = (cell[k][s] || 0) + 1;
+  });
+  let maxP = 1;
+  top8.forEach(function(a) { sups.forEach(function(s) { const p = (cell[a.key][s.key] || 0) / s.n * 100; if (p > maxP) maxP = p; }); });
+  let html = '<thead><tr><th>Causa de cierre</th>' + sups.map(function(s) { return '<th class="num">' + s.key + "</th>"; }).join("") + '<th class="num">Total</th></tr></thead><tbody>';
+  top8.forEach(function(a) {
+    html += "<tr><td>" + a.key + "</td>" + sups.map(function(s) {
+      const n = cell[a.key][s.key] || 0, p = n / s.n * 100;
+      return '<td class="num" title="' + fmtInt(n) + ' órdenes" style="background:rgba(14,110,140,' + (p ? (0.08 + 0.55 * p / maxP).toFixed(2) : 0) + ');">' + fmtPct(round1(p)) + "</td>";
+    }).join("") + '<td class="num"><b>' + fmtPct(a.pctShare) + "</b></td></tr>";
+  });
+  document.getElementById("ef-heat").innerHTML = html + "</tbody>";
+
+  // Simulador
+  _gxSim = { noef: noef, n: g.n, efect: g.efect, errores: g.errores, pctEfect: g.pctEfect };
+  const sel = document.getElementById("ef-sim-causa");
+  const prev = sel.value;
+  sel.innerHTML = noef.map(function(a) { return '<option value="' + a.key + '">' + a.key + " (" + fmtInt(a.noEfect) + " no efectivas)</option>"; }).join("");
+  if (prev && noef.some(function(a) { return a.key === prev; })) sel.value = prev;
+  gxSimUpdate();
+  gxTable("ef-causas", "efectividad", causas, _gxTables["ef-causas"].cols, "n", "desc", "key");
+}
+
+// ----- Auditoría (calidad de los cierres, vista gerencial) -----
+function buildGxAuditoria() {
+  return '<section class="kpi-row" id="au-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
+    gxRow("two-col", [
+      gxBox("au-tipo-chart", "Tipos de error", "Qué errores se encuentran al auditar (una orden puede tener varios).", 300, "tall"),
+      gxBox("au-sup-chart", "% de órdenes con error por equipo", "Verde: hasta 2% · Naranja: hasta 5% · Rojo: más de 5%.", 300, "tall")
+    ]) +
+    gxRow("two-col", [
+      gxBox("au-causa-chart", "Causas de cierre con más errores", "Causas en las que más se equivocan al cerrar.", 340, "tall"),
+      gxBox("au-ciclo-chart", "Ciclos con más errores", "Los 12 ciclos con más órdenes con error.", 340, "tall")
+    ]) +
+    gxRow("one-col", [ gxBox("au-insp-chart", "Inspectores con más órdenes con error", "Los 15 inspectores con mayor cantidad de órdenes con error.", 460, "tall") ]) +
+    gxTableBox("au-insp", "Calidad por inspector", "Errores por tipo y porcentaje de órdenes con error.", [
+      { key: "key", label: "Inspector" }, { key: "supervisor", label: "Supervisor" }, { key: "n", label: "Órdenes", num: true },
+      { key: "err", label: "Con error", num: true },
+      { key: "p_err", label: "% con error", num: true, html: function(r) { return '<span class="sem-badge ' + (r.p_err <= 2 ? "sem-verde" : r.p_err <= 5 ? "sem-naranja" : "sem-rojo") + '">' + fmtPct(r.p_err) + "</span>"; } },
+      { key: "campos", label: "Campos vacíos", num: true }, { key: "lectura", label: "Lectura incorrecta", num: true },
+      { key: "matriz", label: "Combinación no válida", num: true }, { key: "oblig", label: "Obligatoriedad de lectura", num: true }
+    ], true);
+}
+
+const GX_ERR_PREDS = {
+  err: function(r) { return r.estado === "Con Errores"; },
+  campos: function(r) { return r.errCampos; },
+  lectura: function(r) { return r.errLectura; },
+  matriz: function(r) { return r.errMatriz; },
+  oblig: function(r) { return r.errOblig; }
+};
+
+function gxSemErr(p) {
+  return p <= 2 ? COLORS.success : p <= 5 ? "#FF7A00" : COLORS.danger;
+}
+
+function renderGxAuditoria(c) {
+  const g = c.g, insp = c.insp;
+  const tipos = [ { k: "Campos vacíos", n: insp.filter(GX_ERR_PREDS.campos).length }, { k: "Lectura incorrecta", n: insp.filter(GX_ERR_PREDS.lectura).length }, { k: "Combinación no válida en matriz", n: insp.filter(GX_ERR_PREDS.matriz).length }, { k: "Obligatoriedad de lectura", n: insp.filter(GX_ERR_PREDS.oblig).length } ];
+  const topTipo = tipos.slice().sort(function(a, b) { return b.n - a.n; })[0];
+  const nErr = g.n - g.correctas;
+  document.getElementById("au-kpis").innerHTML =
+    gxKpiCard("green", GX_ICON.check, "Cierres correctos", fmtPct(g.pctCorrecto), fmtInt(g.correctas) + " de " + fmtInt(g.n) + " auditadas") +
+    gxKpiCard("red", GX_ICON.alert, "Órdenes con error", fmtInt(nErr), fmtPct(gxPct(nErr, g.n)) + " de las auditadas") +
+    gxKpiCard("amber", GX_ICON.star, "Error más frecuente", '<span style="font-size:17px; line-height:1.25; display:inline-block;">' + (topTipo && topTipo.n ? topTipo.k : "—") + "</span>", topTipo && topTipo.n ? fmtInt(topTipo.n) + " órdenes" : "") +
+    gxKpiCard("blue", GX_ICON.bars, "Órdenes por cada error", nErr ? fmtInt(Math.round(g.n / nErr)) : "—", "Una orden con error cada " + (nErr ? fmtInt(Math.round(g.n / nErr)) : "—"));
+  gxDonut("auTipo", "au-tipo-chart", tipos.filter(function(t) { return t.n > 0; }), [ COLORS.warning, COLORS.danger, COLORS.purple || "#7C4DFF", COLORS.teal ]);
+  const sups = gxGroup(insp, function(r) { return r.supervisor || "(Sin supervisor)"; }, GX_ERR_PREDS).sort(function(a, b) { return b.p_err - a.p_err; });
+  gxHBar("auSup", "au-sup-chart", sups.map(function(s) { return s.key; }), sups.map(function(s) { return s.p_err; }), sups.map(function(s) { return gxSemErr(s.p_err); }), "% con error");
+  const causas = gxGroup(insp, function(r) { return r.causa || "(Sin causa)"; }, GX_ERR_PREDS).sort(function(a, b) { return b.err - a.err; }).slice(0, 10);
+  gxHBar("auCausa", "au-causa-chart", causas.map(function(s) { return s.key; }), causas.map(function(s) { return s.err; }), COLORS.danger, "Órdenes con error");
+  const ciclos = gxGroup(insp, function(r) { return r.ciclo || "(Sin ciclo)"; }, GX_ERR_PREDS).sort(function(a, b) { return b.err - a.err; }).slice(0, 12);
+  gxHBar("auCiclo", "au-ciclo-chart", ciclos.map(function(s) { return s.key; }), ciclos.map(function(s) { return s.err; }), "#FF7A00", "Órdenes con error");
+  const inspG = gxGroup(insp, function(r) { return r.inspector; }, GX_ERR_PREDS);
+  const top15 = inspG.slice().sort(function(a, b) { return b.err - a.err; }).slice(0, 15);
+  gxHBar("auInsp", "au-insp-chart", top15.map(function(s) { return s.key; }), top15.map(function(s) { return s.err; }), top15.map(function(s) { return gxSemErr(s.p_err); }), "Órdenes con error");
+  gxTable("au-insp", "auditoria", inspG, _gxTables["au-insp"].cols, "err", "desc", "key");
+}
+
+// ----- Medidores y hallazgos de campo -----
 function buildGxMedidores() {
   return '<section class="kpi-row" id="me-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
     gxRow("two-col", [
       gxBox("me-estado-chart", "Novedades reportadas en el medidor", "Estados distintos de «sin novedad».", 320, "tall"),
       gxBox("me-irreg-chart", "Irregularidades reportadas", "Tipos de irregularidad verificados en campo.", 320, "tall")
     ]) +
-    gxRow("three-col", [
-      gxBox("me-marca-chart", "Marcas de medidor", "Las 10 más frecuentes.", 320),
-      gxBox("me-uso-chart", "Tipo de uso", "Clasificación del predio.", 320),
-      gxBox("me-serv-chart", "Cuenta con servicio", "Resultado de la verificación.", 320)
+    gxRow("two-col", [
+      gxBox("me-marca-chart", "Marcas de medidor", "Las 10 más frecuentes.", 320, "tall"),
+      gxBox("me-novmarca-chart", "Novedades según la marca", "% de medidores con novedad por marca (mínimo 100 visitas).", 320, "tall")
     ]) +
-    gxRow("one-col", [ gxBox("me-dif-chart", "Diferencia de lectura", "Lectura del inspector menos lectura actual del sistema.", 300, "tall") ]) +
+    gxRow("two-col", [
+      gxBox("me-dif-chart", "Diferencia de lectura", "Lectura del inspector menos lectura actual del sistema.", 300, "tall"),
+      gxBox("me-ciclo-chart", "Ciclos con más irregularidades", "Los 12 ciclos con más irregularidades reportadas.", 300, "tall")
+    ]) +
     gxTableBox("me-insp", "Hallazgos por inspector", "Ordenado por irregularidades reportadas.", [
       { key: "key", label: "Inspector" }, { key: "supervisor", label: "Supervisor" }, { key: "n", label: "Órdenes", num: true },
       { key: "novedad", label: "Medidor con novedad", num: true }, { key: "irreg", label: "Irregularidades", num: true }, { key: "sinServ", label: "Sin servicio", num: true },
       { key: "difGt10", label: "Dif. lectura > 10", num: true }, { key: "lecMenor", label: "Lectura menor a la del sistema", num: true }
+    ], true) +
+    gxTableBox("me-ciclo", "Hallazgos por ciclo", "Dónde se concentran las novedades y las irregularidades.", [
+      { key: "key", label: "Ciclo" }, { key: "n", label: "Órdenes", num: true },
+      { key: "novedad", label: "Medidor con novedad", num: true }, { key: "p_novedad", label: "% con novedad", num: true, html: function(r) { return fmtPct(r.p_novedad); } },
+      { key: "irreg", label: "Irregularidades", num: true }, { key: "sinServ", label: "Sin servicio", num: true }, { key: "difGt10", label: "Dif. lectura > 10", num: true }
     ], true);
 }
 
+const GX_HALLAZGO_PREDS = {
+  novedad: function(r) { return GX_ESTADO_SIN_NOVEDAD.indexOf(r.estadoMedidor) === -1; },
+  irreg: function(r) { return !!r.irreg; },
+  sinServ: function(r) { return r.servicio === "NO"; },
+  difGt10: function(r) { return r.dif !== null && r.dif > 10; }
+};
+
 function renderGxMedidores(c) {
   const g = c.g, insp = c.insp;
-  const novedades = insp.filter(function(r) { return GX_ESTADO_SIN_NOVEDAD.indexOf(r.estadoMedidor) === -1; }).length;
-  const irreg = insp.filter(function(r) { return r.irreg; }).length;
-  const sinServ = insp.filter(function(r) { return r.servicio === "NO"; }).length;
+  const novedades = insp.filter(GX_HALLAZGO_PREDS.novedad).length;
+  const irreg = insp.filter(GX_HALLAZGO_PREDS.irreg).length;
+  const sinServ = insp.filter(GX_HALLAZGO_PREDS.sinServ).length;
   const comp = insp.filter(function(r) { return r.dif !== null; });
   const exact = comp.filter(function(r) { return r.dif === 0; }).length;
   const menor = comp.filter(function(r) { return r.dif < 0; }).length;
@@ -3654,9 +4251,8 @@ function renderGxMedidores(c) {
   gxHBar("meIrreg", "me-irreg-chart", irr.map(function(i) { return gxIrregLabel(i.k); }), irr.map(function(i) { return i.n; }), COLORS.danger, "Órdenes");
   const marca = gxCountBy(insp, function(r) { return r.marca; }, [ "No se puede comprobar" ]).slice(0, 10);
   gxHBar("meMarca", "me-marca-chart", marca.map(function(i) { return i.k; }), marca.map(function(i) { return i.n; }), COLORS.primary, "Órdenes");
-  gxDonut("meUso", "me-uso-chart", gxTopN(gxCountBy(insp, function(r) { return r.tipoUso; }, [ "No Se pudo Comprobar" ]), 5));
-  const servItems = gxCountBy(insp, function(r) { return r.servicio; });
-  gxDonut("meServ", "me-serv-chart", servItems, gxColorsFor(servItems, { "SI": COLORS.success, "NO": COLORS.danger }));
+  const nm = gxGroup(insp.filter(function(r) { return r.marca && r.marca !== "No se puede comprobar"; }), function(r) { return r.marca; }, GX_HALLAZGO_PREDS).filter(function(a) { return a.n >= 100; }).sort(function(a, b) { return b.p_novedad - a.p_novedad; }).slice(0, 10);
+  gxHBar("meNovMarca", "me-novmarca-chart", nm.map(function(a) { return a.key; }), nm.map(function(a) { return a.p_novedad; }), nm.map(function(a) { return a.p_novedad >= 15 ? COLORS.danger : a.p_novedad >= 8 ? "#FF7A00" : COLORS.success; }), "% con novedad");
   const buckets = [ [ "Menor (< 0)", -1e12, 0 ], [ "Igual (0)", 0, 1 ], [ "+1", 1, 2 ], [ "+2", 2, 3 ], [ "+3 a +5", 3, 6 ], [ "+6 a +10", 6, 11 ], [ "Más de +10", 11, 1e12 ] ];
   const bc = buckets.map(function() { return 0; });
   comp.forEach(function(r) {
@@ -3668,10 +4264,149 @@ function renderGxMedidores(c) {
     }
   });
   gxColumns("meDif", "me-dif-chart", buckets.map(function(b) { return b[0]; }), bc, COLORS.teal, "Órdenes");
-  gxTable("me-insp", "medidores", gxAggregate(insp, function(r) { return r.inspector; }), _gxTables["me-insp"].cols, "irreg", "desc", "key");
+  const cic = gxGroup(insp, function(r) { return r.ciclo || "(Sin ciclo)"; }, GX_HALLAZGO_PREDS);
+  const topIrr = cic.slice().sort(function(a, b) { return b.irreg - a.irreg; }).slice(0, 12);
+  gxHBar("meCiclo", "me-ciclo-chart", topIrr.map(function(a) { return a.key; }), topIrr.map(function(a) { return a.irreg; }), COLORS.danger, "Irregularidades");
+  gxTable("me-insp", "medidores", gxInspAgg(c), _gxTables["me-insp"].cols, "irreg", "desc", "key");
+  gxTable("me-ciclo", "medidores", cic, _gxTables["me-ciclo"].cols, "irreg", "desc", "key");
 }
 
-// ----- Usuarios (atención al cliente) -----
+// ----- Consumos -----
+function buildGxConsumos() {
+  return '<section class="kpi-row" id="co-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
+    gxRow("two-col", [
+      gxBox("co-dist-chart", "Distribución del consumo", "Consumo facturado (lectura actual − lectura anterior) en m³.", 320, "tall"),
+      gxBox("co-uso-chart", "Consumo mediano por tipo de uso", "Mediana en m³ de los consumos válidos (mínimo 30 predios).", 320, "tall")
+    ]) +
+    gxRow("two-col", [
+      gxBox("co-cero-chart", "Ciclos con más consumo cero", "% de predios con consumo cero (mínimo 50 comparados).", 340, "tall"),
+      gxBox("co-estado-chart", "Qué estado tiene el medidor con consumo cero", "Estado reportado por el inspector en los predios con consumo cero.", 340, "tall")
+    ]) +
+    gxRow("one-col", [ gxBox("co-muni-chart", "Consumo mediano por municipio", "Según el sufijo del ciclo (BQ, SO, ...).", 280, "tall") ]) +
+    gxTableBox("co-ciclo", "Consumo por ciclo", "Predios con consumo comparado en cada ciclo.", [
+      { key: "key", label: "Ciclo" }, { key: "n", label: "Comparados", num: true },
+      { key: "med", label: "Consumo mediano (m³)", num: true, html: function(r) { return gxNum1(round1(r.med)); } },
+      { key: "cero", label: "Consumo cero", num: true }, { key: "p_cero", label: "% cero", num: true, html: function(r) { return fmtPct(r.p_cero); } },
+      { key: "neg", label: "Consumo negativo", num: true }, { key: "irreg", label: "Irregularidades", num: true }
+    ], true);
+}
+
+function renderGxConsumos(c) {
+  const g = c.g;
+  const comp = c.insp.filter(function(r) { return r.cons !== null; });
+  const valid = comp.filter(function(r) { return r.cons > 0 && r.cons < 100000; });
+  const cero = comp.filter(function(r) { return r.cons === 0; });
+  const neg = comp.filter(function(r) { return r.cons < 0; });
+  const ext = comp.filter(function(r) { return r.cons >= 100000; });
+  document.getElementById("co-kpis").innerHTML =
+    gxKpiCard("blue", GX_ICON.bars, "Predios con consumo comparado", fmtInt(comp.length), fmtPct(gxPct(comp.length, g.n)) + " de las auditadas") +
+    gxKpiCard("green", GX_ICON.gauge, "Consumo mediano", gxNum1(round1(gxMedian(valid.map(function(r) { return r.cons; })))) + " m³", "Entre predios con consumo mayor a cero") +
+    gxKpiCard("amber", GX_ICON.alert, "Consumo cero", fmtInt(cero.length), fmtPct(gxPct(cero.length, comp.length)) + " de los comparados") +
+    gxKpiCard("red", GX_ICON.trend, "Consumo negativo", fmtInt(neg.length), fmtPct(gxPct(neg.length, comp.length)) + " de los comparados") +
+    gxKpiCard("purple", GX_ICON.star, "Consumos extremos", fmtInt(ext.length), "100.000 m³ o más");
+  const buckets = [ [ "Negativo", -1e12, 0 ], [ "Cero", 0, 1 ], [ "1–5", 1, 6 ], [ "6–10", 6, 11 ], [ "11–20", 11, 21 ], [ "21–40", 21, 41 ], [ "41–100", 41, 101 ], [ "Más de 100", 101, 100000 ], [ "Extremo", 100000, 1e18 ] ];
+  const bc = buckets.map(function(b) { return comp.filter(function(r) { return r.cons >= b[1] && r.cons < b[2]; }).length; });
+  gxColumns("coDist", "co-dist-chart", buckets.map(function(b) { return b[0]; }), bc, COLORS.teal, "Predios");
+  const medBy = function(fn, minN) {
+    const m = new Map;
+    valid.forEach(function(r) {
+      const k = fn(r);
+      if (!k) return;
+      (m.get(k) || m.set(k, []).get(k)).push(r.cons);
+    });
+    return Array.from(m.entries()).filter(function(e) { return e[1].length >= minN; }).map(function(e) { return { k: e[0], v: round1(gxMedian(e[1])), n: e[1].length }; }).sort(function(a, b) { return b.n - a.n; });
+  };
+  const uso = medBy(function(r) { return r.tipoUso === "No Se pudo Comprobar" ? "" : r.tipoUso; }, 30);
+  gxHBar("coUso", "co-uso-chart", uso.map(function(a) { return a.k; }), uso.map(function(a) { return a.v; }), COLORS.primary, "Consumo mediano (m³)");
+  const cic = new Map;
+  comp.forEach(function(r) {
+    const k = r.ciclo || "(Sin ciclo)";
+    const a = cic.get(k) || { key: k, n: 0, cero: 0, neg: 0, irreg: 0, vals: [] };
+    a.n++;
+    if (r.cons === 0) a.cero++;
+    if (r.cons < 0) a.neg++;
+    if (r.irreg) a.irreg++;
+    if (r.cons > 0 && r.cons < 100000) a.vals.push(r.cons);
+    cic.set(k, a);
+  });
+  const cicRows = Array.from(cic.values()).map(function(a) {
+    a.med = gxMedian(a.vals);
+    a.p_cero = gxPct(a.cero, a.n);
+    return a;
+  });
+  const topCero = cicRows.filter(function(a) { return a.n >= 50; }).sort(function(a, b) { return b.p_cero - a.p_cero; }).slice(0, 12);
+  gxHBar("coCero", "co-cero-chart", topCero.map(function(a) { return a.key; }), topCero.map(function(a) { return a.p_cero; }), topCero.map(function(a) { return a.p_cero >= 25 ? COLORS.danger : a.p_cero >= 15 ? "#FF7A00" : COLORS.teal; }), "% consumo cero");
+  const est = gxCountBy(cero, function(r) { return r.estadoMedidor; }).slice(0, 8);
+  gxHBar("coEstado", "co-estado-chart", est.map(function(i) { return i.k; }), est.map(function(i) { return i.n; }), COLORS.warning, "Predios");
+  const mun = medBy(function(r) { return r.muni; }, 30);
+  gxColumns("coMuni", "co-muni-chart", mun.map(function(a) { return a.k; }), mun.map(function(a) { return a.v; }), COLORS.primary, "Consumo mediano (m³)");
+  gxTable("co-ciclo", "consumos", cicRows, _gxTables["co-ciclo"].cols, "p_cero", "desc", "key");
+}
+
+// ----- Predios -----
+function buildGxPredios() {
+  return '<section class="kpi-row" id="pd-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
+    gxRow("three-col", [
+      gxBox("pd-uso-chart", "Tipo de uso", "Clasificación del predio.", 300),
+      gxBox("pd-serv-chart", "Cuenta con servicio", "Resultado de la verificación.", 300),
+      gxBox("pd-unid-chart", "Unidades del predio", "Habitadas y desocupadas encontradas.", 300)
+    ]) +
+    gxRow("three-col", [
+      gxBox("pd-pers-chart", "Personas por vivienda", "Cantidad de personas que viven en el predio.", 300),
+      gxBox("pd-punt-chart", "Puntos hidráulicos", "Cantidad de puntos hidráulicos por predio.", 300),
+      gxBox("pd-verif-chart", "Verificación del punto potable", "¿Se verificó el estado del punto potable?", 300)
+    ]) +
+    gxTableBox("pd-ciclo", "Perfil de los predios por ciclo", "Cómo son los predios visitados en cada ciclo.", [
+      { key: "key", label: "Ciclo" }, { key: "n", label: "Predios", num: true },
+      { key: "p_resid", label: "% residencial", num: true, html: function(r) { return fmtPct(r.p_resid); } },
+      { key: "p_desoc", label: "% con unidades desocupadas", num: true, html: function(r) { return fmtPct(r.p_desoc); } },
+      { key: "personas", label: "Personas por vivienda", num: true, html: function(r) { return gxNum1(round1(r.personas)); } },
+      { key: "puntos", label: "Puntos hidráulicos (mediana)", num: true, html: function(r) { return gxNum1(round1(r.puntos)); } },
+      { key: "sinServ", label: "Sin servicio", num: true }
+    ], true);
+}
+
+function renderGxPredios(c) {
+  const g = c.g, insp = c.insp;
+  const uHab = insp.reduce(function(s, r) { return s + (r.uHab || 0); }, 0);
+  const uDes = insp.reduce(function(s, r) { return s + (r.uDes || 0); }, 0);
+  const personas = insp.filter(function(r) { return r.personas !== null; }).map(function(r) { return r.personas; });
+  const puntos = insp.filter(function(r) { return r.puntos !== null; }).map(function(r) { return r.puntos; });
+  const usoOk = insp.filter(function(r) { return r.tipoUso && r.tipoUso !== "No Se pudo Comprobar"; });
+  const resid = usoOk.filter(function(r) { return r.tipoUso === "Residencial"; }).length;
+  document.getElementById("pd-kpis").innerHTML =
+    gxKpiCard("blue", GX_ICON.home, "Predios visitados", fmtInt(g.n), "Órdenes auditadas") +
+    gxKpiCard("green", GX_ICON.users, "Unidades habitadas", fmtInt(uHab), "Encontradas en las visitas") +
+    gxKpiCard("amber", GX_ICON.alert, "Unidades desocupadas", fmtInt(uDes), fmtPct(gxPct(uDes, uDes + uHab)) + " de las unidades") +
+    gxKpiCard("purple", GX_ICON.users, "Personas por vivienda", gxNum1(round1(gxMean(personas))), "Promedio de las visitas con dato") +
+    gxKpiCard("red", GX_ICON.gauge, "Puntos hidráulicos", gxNum1(round1(gxMedian(puntos))), "Mediana por predio") +
+    gxKpiCard("blue", GX_ICON.check, "Predios residenciales", fmtPct(gxPct(resid, usoOk.length)), fmtInt(resid) + " de " + fmtInt(usoOk.length) + " clasificados");
+  gxDonut("pdUso", "pd-uso-chart", gxTopN(gxCountBy(insp, function(r) { return r.tipoUso; }, [ "No Se pudo Comprobar" ]), 5));
+  const servItems = gxCountBy(insp, function(r) { return r.servicio; });
+  gxDonut("pdServ", "pd-serv-chart", servItems, gxColorsFor(servItems, { "SI": COLORS.success, "NO": COLORS.danger }));
+  gxDonut("pdUnid", "pd-unid-chart", [ { k: "Habitadas", n: uHab }, { k: "Desocupadas", n: uDes } ], [ COLORS.success, COLORS.warning ]);
+  const pb = [ [ "1", 1, 2 ], [ "2", 2, 3 ], [ "3", 3, 4 ], [ "4", 4, 5 ], [ "5", 5, 6 ], [ "6", 6, 7 ], [ "7 o más", 7, 1000 ] ];
+  gxColumns("pdPers", "pd-pers-chart", pb.map(function(b) { return b[0]; }), pb.map(function(b) { return personas.filter(function(v) { return v >= b[1] && v < b[2]; }).length; }), COLORS.primary, "Predios");
+  const ub = [ [ "0", 0, 1 ], [ "1–2", 1, 3 ], [ "3", 3, 4 ], [ "4", 4, 5 ], [ "5", 5, 6 ], [ "6–8", 6, 9 ], [ "9–20", 9, 21 ], [ "Más de 20", 21, 1000 ] ];
+  gxColumns("pdPunt", "pd-punt-chart", ub.map(function(b) { return b[0]; }), ub.map(function(b) { return puntos.filter(function(v) { return v >= b[1] && v < b[2]; }).length; }), COLORS.teal, "Predios");
+  const vItems = gxCountBy(insp, function(r) { return r.verifPunto; });
+  gxDonut("pdVerif", "pd-verif-chart", vItems, gxColorsFor(vItems, { "SI": COLORS.success, "NO": COLORS.danger }));
+  const rows = Array.from(groupBy(insp, "ciclo").entries()).map(function(e) {
+    const rs = e[1];
+    const uso = rs.filter(function(r) { return r.tipoUso && r.tipoUso !== "No Se pudo Comprobar"; });
+    return {
+      key: e[0] || "(Sin ciclo)", supervisor: rs[0].supervisor, n: rs.length,
+      p_resid: gxPct(uso.filter(function(r) { return r.tipoUso === "Residencial"; }).length, uso.length),
+      p_desoc: gxPct(rs.filter(function(r) { return r.uDes > 0; }).length, rs.length),
+      personas: gxMean(rs.filter(function(r) { return r.personas !== null; }).map(function(r) { return r.personas; })),
+      puntos: gxMedian(rs.filter(function(r) { return r.puntos !== null; }).map(function(r) { return r.puntos; })),
+      sinServ: rs.filter(function(r) { return r.servicio === "NO"; }).length
+    };
+  });
+  gxTable("pd-ciclo", "predios", rows, _gxTables["pd-ciclo"].cols, "n", "desc", "key");
+}
+
+// ----- Usuarios (atención al cliente y datos del usuario) -----
 function buildGxUsuarios() {
   return '<section class="kpi-row" id="us-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
     gxRow("three-col", [
@@ -3684,12 +4419,19 @@ function buildGxUsuarios() {
       gxBox("us-factura-chart", "Entrega de factura", "¿Recibió la factura?", 280),
       gxBox("us-explico-chart", "Explicación de la desviación", "¿Se explicó el porqué?", 280)
     ]) +
+    gxRow("three-col", [
+      gxBox("us-tel-chart", "Teléfono del usuario", "Dato de contacto capturado.", 280),
+      gxBox("us-doc-chart", "Documento del usuario", "Número de documento capturado.", 280),
+      gxBox("us-mail-chart", "Correo del usuario", "Correo electrónico capturado.", 280)
+    ]) +
     gxTableBox("us-insp", "Atención al usuario por inspector", "Porcentajes sobre las órdenes auditadas de cada inspector (factura y explicación sobre las órdenes donde se respondió).", [
       { key: "key", label: "Inspector" }, { key: "supervisor", label: "Supervisor" }, { key: "n", label: "Órdenes", num: true },
       { key: "pPresente", label: "Persona facultada", num: true, html: function(r) { return fmtPct(r.pPresente); } },
       { key: "pFirma", label: "Con firma", num: true, html: function(r) { return fmtPct(r.pFirma); } },
       { key: "pFactura", label: "Recibió factura", num: true, html: function(r) { return fmtPct(r.pFactura); } },
-      { key: "pExplico", label: "Se explicó", num: true, html: function(r) { return fmtPct(r.pExplico); } }
+      { key: "pExplico", label: "Se explicó", num: true, html: function(r) { return fmtPct(r.pExplico); } },
+      { key: "pTel", label: "Dio teléfono", num: true, html: function(r) { return fmtPct(r.pTel); } },
+      { key: "pDoc", label: "Dio documento", num: true, html: function(r) { return fmtPct(r.pDoc); } }
     ], true);
 }
 
@@ -3705,11 +4447,17 @@ function renderGxUsuarios(c) {
   const firma = insp.filter(function(r) { return r.firma !== ""; }).length;
   const fac = gxSiNo(insp, "factura");
   const exp = gxSiNo(insp, "explico");
+  const tel = insp.filter(function(r) { return r.tel === "ok"; }).length;
+  const doc = insp.filter(function(r) { return r.doc === "ok"; }).length;
+  const mail = insp.filter(function(r) { return r.mail === "ok"; }).length;
+  const rechaza = insp.filter(function(r) { return r.tel === "neg" || r.doc === "neg" || r.mail === "neg"; }).length;
   document.getElementById("us-kpis").innerHTML =
     gxKpiCard("blue", GX_ICON.users, "Persona facultada presente", fmtInt(presente), fmtPct(gxPct(presente, g.n)) + " de las auditadas") +
     gxKpiCard("green", GX_ICON.pen, "Visitas con firma", fmtInt(firma), fmtPct(gxPct(firma, g.n)) + " de las auditadas") +
     gxKpiCard("amber", GX_ICON.check, "Recibió la factura", fmtPct(fac.pct), fmtInt(fac.si) + " SI · " + fmtInt(fac.no) + " NO") +
-    gxKpiCard("purple", GX_ICON.home, "Se explicó la desviación", fmtPct(exp.pct), fmtInt(exp.si) + " SI · " + fmtInt(exp.no) + " NO");
+    gxKpiCard("purple", GX_ICON.home, "Se explicó la desviación", fmtPct(exp.pct), fmtInt(exp.si) + " SI · " + fmtInt(exp.no) + " NO") +
+    gxKpiCard("blue", GX_ICON.pen, "Dieron datos de contacto", fmtInt(tel + doc + mail), "Teléfono " + fmtInt(tel) + " · documento " + fmtInt(doc) + " · correo " + fmtInt(mail)) +
+    gxKpiCard("red", GX_ICON.alert, "Se negaron a dar datos", fmtInt(rechaza), fmtPct(gxPct(rechaza, g.n)) + " de las auditadas");
   const rel = gxCountBy(insp, function(r) { return r.relacion; }).slice(0, 10);
   gxHBar("usRel", "us-rel-chart", rel.map(function(i) { return i.k; }), rel.map(function(i) { return i.n; }), COLORS.primary, "Órdenes");
   const facu = gxCountBy(insp, function(r) { return r.facultada; }).slice(0, 8);
@@ -3720,6 +4468,13 @@ function renderGxUsuarios(c) {
   gxDonut("usFirma", "us-firma-chart", firmaItems, gxColorsFor(firmaItems, { "Usuario": COLORS.success, "Testigo": COLORS.teal, "No firmó": COLORS.danger }));
   gxDonut("usFactura", "us-factura-chart", [ { k: "Sí recibió", n: fac.si }, { k: "No recibió", n: fac.no } ], [ COLORS.success, COLORS.danger ]);
   gxDonut("usExplico", "us-explico-chart", [ { k: "Sí se explicó", n: exp.si }, { k: "No se explicó", n: exp.no } ], [ COLORS.success, COLORS.danger ]);
+  const contactItems = function(field) {
+    return [ { k: "Capturado", n: insp.filter(function(r) { return r[field] === "ok"; }).length }, { k: "Se negó o no lo dio", n: insp.filter(function(r) { return r[field] === "neg"; }).length }, { k: "Sin dato", n: insp.filter(function(r) { return r[field] === ""; }).length } ];
+  };
+  const contactColors = [ COLORS.success, COLORS.danger, COLORS.gray ];
+  gxDonut("usTel", "us-tel-chart", contactItems("tel"), contactColors);
+  gxDonut("usDoc", "us-doc-chart", contactItems("doc"), contactColors);
+  gxDonut("usMail", "us-mail-chart", contactItems("mail"), contactColors);
   const rows = Array.from(groupBy(insp, "inspector").entries()).map(function(e) {
     const rs = e[1];
     const f = gxSiNo(rs, "factura"), x = gxSiNo(rs, "explico");
@@ -3727,50 +4482,199 @@ function renderGxUsuarios(c) {
       key: e[0], supervisor: rs[0].supervisor, n: rs.length,
       pPresente: gxPct(rs.filter(function(r) { return r.facultada === "SI"; }).length, rs.length),
       pFirma: gxPct(rs.filter(function(r) { return r.firma !== ""; }).length, rs.length),
-      pFactura: f.pct, pExplico: x.pct
+      pFactura: f.pct, pExplico: x.pct,
+      pTel: gxPct(rs.filter(function(r) { return r.tel === "ok"; }).length, rs.length),
+      pDoc: gxPct(rs.filter(function(r) { return r.doc === "ok"; }).length, rs.length)
     };
   });
   gxTable("us-insp", "usuarios", rows, _gxTables["us-insp"].cols, "n", "desc", "key");
 }
 
+// ----- Equipos (supervisores) -----
+function buildGxEquipos() {
+  return '<section class="gx-team-grid" id="eq-cards"></section>' +
+    gxRow("two-col", [
+      gxBox("eq-comp-chart", "Efectividad y calidad por equipo", "Efectividad neta y % de cierres correctos de cada supervisor.", 320, "tall"),
+      gxBox("eq-prod-chart", "Productividad por equipo", "Órdenes por inspector por día trabajado.", 320, "tall")
+    ]) +
+    gxTableBox("eq-tabla", "Tablero por equipo", "Todos los indicadores de cada supervisor.", [
+      { key: "key", label: "Supervisor" }, { key: "insp", label: "Inspectores", num: true }, { key: "n", label: "Órdenes", num: true },
+      { key: "prodDia", label: "Órd./inspector/día", num: true, html: function(r) { return gxNum1(r.prodDia); } },
+      { key: "pctEfect", label: "% Efectividad neta", num: true, html: function(r) { return semBadge(r.pctEfect); } },
+      { key: "pctCorrecto", label: "% Correctas", num: true, html: function(r) { return fmtPct(r.pctCorrecto); } },
+      { key: "irreg", label: "Irregularidades", num: true }, { key: "novedad", label: "Medidor con novedad", num: true },
+      { key: "err", label: "Con error", num: true }
+    ], false) +
+    '<section class="table-section"><div class="table-header"><h3>Ficha del equipo</h3><div class="table-actions"><select id="eq-sel" class="gx-select"></select></div></div>' +
+    '<div id="eq-ficha-kpis" class="kpi-row" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));"></div>' +
+    gxRow("two-col", [
+      gxBox("eq-f-dia-chart", "Producción y efectividad del equipo", "Órdenes por día (barras) y efectividad neta (línea).", 300, "tall"),
+      gxBox("eq-f-causa-chart", "Causas de cierre del equipo", "Las 8 causas más frecuentes.", 300, "tall")
+    ]) + "</section>" +
+    gxTableBox("eq-insp", "Inspectores del equipo", "Resumen de cada inspector del equipo seleccionado.", [
+      { key: "key", label: "Inspector" }, { key: "n", label: "Órdenes", num: true }, { key: "dias", label: "Días", num: true },
+      { key: "prodDia", label: "Órd./día", num: true, html: function(r) { return gxNum1(r.prodDia); } },
+      { key: "pctEfect", label: "% Efectividad neta", num: true, html: function(r) { return semBadge(r.pctEfect); } },
+      { key: "pctCorrecto", label: "% Correctas", num: true, html: function(r) { return fmtPct(r.pctCorrecto); } },
+      { key: "irreg", label: "Irregularidades", num: true }
+    ], false);
+}
+
+function renderGxEquipos(c) {
+  const sups = gxSupAgg(c).filter(function(s) { return s.n >= 30; }).sort(function(a, b) { return b.n - a.n; });
+  document.getElementById("eq-cards").innerHTML = sups.map(function(s) {
+    return '<div class="gx-team"><div class="gx-team-head"><b>' + s.key + "</b>" + semBadge(s.pctEfect) + "</div>" +
+      '<div class="gx-team-stats"><div><span>Órdenes</span><b>' + fmtInt(s.n) + "</b></div><div><span>Inspectores</span><b>" + fmtInt(s.insp) + "</b></div>" +
+      "<div><span>Correctas</span><b>" + fmtPct(s.pctCorrecto) + "</b></div><div><span>Irregularidades</span><b>" + fmtInt(s.irreg) + "</b></div></div></div>";
+  }).join("");
+  gxChart("eqComp", "eq-comp-chart", {
+    type: "bar",
+    data: { labels: sups.map(function(s) { return s.key; }), datasets: [
+      { label: "Efectividad neta", data: sups.map(function(s) { return s.pctEfect; }), backgroundColor: COLORS.teal, borderRadius: 4, maxBarThickness: 30 },
+      { label: "% correctas", data: sups.map(function(s) { return s.pctCorrecto; }), backgroundColor: COLORS.success, borderRadius: 4, maxBarThickness: 30 }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { grid: { display: false } }, y: { min: 0, max: 100, grid: { color: GX_GRID }, ticks: { callback: function(v) { return v + "%"; } } } } }
+  });
+  gxColumns("eqProd", "eq-prod-chart", sups.map(function(s) { return s.key; }), sups.map(function(s) { return s.prodDia; }), COLORS.primary, "Órdenes por inspector por día");
+  gxTable("eq-tabla", "equipos", sups, _gxTables["eq-tabla"].cols, "n", "desc");
+
+  // Ficha del equipo
+  const sel = document.getElementById("eq-sel");
+  const prev = sel.value;
+  sel.innerHTML = sups.map(function(s) { return '<option value="' + s.key + '">' + s.key + "</option>"; }).join("");
+  if (prev && sups.some(function(s) { return s.key === prev; })) sel.value = prev;
+  const team = sel.value;
+  const rows = c.insp.filter(function(r) { return (r.supervisor || "(Sin supervisor)") === team; });
+  const t = sups.filter(function(s) { return s.key === team; })[0];
+  const total = c.g;
+  document.getElementById("eq-ficha-kpis").innerHTML = t ?
+    gxKpiCard("blue", GX_ICON.bars, "Órdenes", fmtInt(t.n), fmtPct(gxPct(t.n, total.n)) + " del total auditado") +
+    gxKpiCard("green", GX_ICON.target, "Efectividad neta", fmtPct(t.pctEfect), gxDeltaText(t.pctEfect, total.pctEfect).replace("meta", "total")) +
+    gxKpiCard("purple", GX_ICON.users, "Inspectores", fmtInt(t.insp), gxNum1(t.prodDia) + " órdenes por inspector por día") +
+    gxKpiCard("red", GX_ICON.alert, "Irregularidades", fmtInt(t.irreg), fmtPct(t.pctCorrecto) + " de cierres correctos") : "";
+  const days = gxDailyStats(rows);
+  gxChart("eqFDia", "eq-f-dia-chart", {
+    data: { labels: days.map(function(d) { return formatDateShort(d.fecha); }), datasets: [
+      { type: "bar", label: "Órdenes", data: days.map(function(d) { return d.n; }), backgroundColor: COLORS.primary, borderRadius: 3, maxBarThickness: 30, yAxisID: "y" },
+      { type: "line", label: "% efectividad neta", data: days.map(function(d) { return d.pctEfect; }), borderColor: COLORS.success, backgroundColor: COLORS.success, tension: 0.25, pointRadius: 3, yAxisID: "y2" }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: GX_GRID } }, y2: { position: "right", min: 0, max: 100, grid: { display: false }, ticks: { callback: function(v) { return v + "%"; } } } } }
+  });
+  const cs = gxTopN(gxCountBy(rows, function(r) { return r.causa || "(Sin causa)"; }), 8);
+  gxHBar("eqFCausa", "eq-f-causa-chart", cs.map(function(i) { return i.k; }), cs.map(function(i) { return i.n; }), COLORS.teal, "Órdenes");
+  gxTable("eq-insp", "equipos", gxAggregate(rows, function(r) { return r.inspector; }), _gxTables["eq-insp"].cols, "n", "desc");
+}
+
 // ----- Inspectores -----
 function buildGxInspectores() {
-  return gxRow("one-col", [ gxBox("in-prod-chart", "Órdenes por inspector", "Total de órdenes auditadas en el periodo.", 900, "tall") ]) +
-    gxTableBox("in-tabla", "Tablero por inspector", "Resumen completo de cada inspector: producción, efectividad neta, jornada y calidad.", [
+  return '<section class="kpi-row" id="in-kpis" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));"></section>' +
+    gxRow("one-col", [ gxBox("in-prod-chart", "Órdenes por inspector", "Total de órdenes auditadas en el periodo.", 900, "tall") ]) +
+    gxTableBox("in-tabla", "Tablero por inspector", "Resumen completo de cada inspector: producción, efectividad neta, calidad y rodamiento estimado según el Consolidado del Excel.", [
       { key: "key", label: "Inspector" }, { key: "supervisor", label: "Supervisor" }, { key: "n", label: "Órdenes", num: true },
       { key: "dias", label: "Días", num: true }, { key: "prodDia", label: "Órd./día", num: true, html: function(r) { return gxNum1(r.prodDia); } },
       { key: "pctEfect", label: "% Efectividad neta", num: true, html: function(r) { return semBadge(r.pctEfect); } },
       { key: "pctJornada", label: "% Jornada", num: true, time: true, html: function(r) { return gxMetaBadge(r.pctJornada, JORNADA_META); } },
       { key: "pctCorrecto", label: "% Correctas", num: true, html: function(r) { return fmtPct(r.pctCorrecto); } },
-      { key: "err", label: "Con error", num: true }, { key: "irreg", label: "Irregularidades", num: true }
-    ], true);
+      { key: "err", label: "Con error", num: true }, { key: "irreg", label: "Irregularidades", num: true },
+      { key: "rod", label: "Rodamiento estimado", num: true, html: function(r) { return gxMoney(r.rod); } }
+    ], true) +
+    '<section class="table-section"><div class="table-header"><h3>Ficha del inspector</h3><div class="table-actions"><select id="in-sel" class="gx-select"></select></div></div>' +
+    '<div id="in-f-kpis" class="kpi-row" style="grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));"></div>' +
+    gxRow("two-col", [
+      gxBox("in-f-dia-chart", "Producción y efectividad por día", "Órdenes (barras) y efectividad neta (línea).", 300, "tall"),
+      gxBox("in-f-causa-chart", "Causas de cierre", "Las 8 causas más frecuentes del inspector.", 300, "tall")
+    ]) +
+    gxRow("one-col", [ gxBox("in-f-comp-chart", "Comparado con su equipo y con el total", "Efectividad neta, % de cierres correctos y órdenes por día.", 280, "tall") ]) + "</section>";
 }
 
 function renderGxInspectores(c) {
-  const insp = c.insp;
-  const agg = gxAggregate(insp, function(r) { return r.inspector; });
+  const g = c.g;
+  const agg = gxInspAgg(c);
+  agg.forEach(function(a) { a.rod = gxRodamiento(a.pctEfect); });
+  const activos = agg.filter(function(a) { return a.n >= 30; });
+  const bajoMeta = activos.filter(function(a) { return a.pctEfect < EFECTIVIDAD_META; }).length;
+  const sobreInd = activos.filter(function(a) { return a.pctEfect >= EFECTIVIDAD_META_INDIVIDUAL; }).length;
+  const rodTotal = activos.reduce(function(s, a) { return s + a.rod; }, 0);
+  document.getElementById("in-kpis").innerHTML =
+    gxKpiCard("blue", GX_ICON.users, "Inspectores con producción", fmtInt(activos.length), "Con 30 órdenes o más") +
+    gxKpiCard("green", GX_ICON.target, "Alcanzan la meta individual", fmtInt(sobreInd), fmtPct(gxPct(sobreInd, activos.length)) + " de los inspectores (" + EFECTIVIDAD_META_INDIVIDUAL + "%)") +
+    gxKpiCard("red", GX_ICON.alert, "Por debajo de la meta del contrato", fmtInt(bajoMeta), "Efectividad neta menor a " + EFECTIVIDAD_META + "%") +
+    gxKpiCard("amber", GX_ICON.star, "Rodamiento estimado", gxMoney(rodTotal), "Según la efectividad neta, igual que el Consolidado");
   const byN = agg.slice().sort(function(a, b) { return b.n - a.n; });
   gxHBar("inProd", "in-prod-chart", byN.map(function(a) { return a.key; }), byN.map(function(a) { return a.n; }), COLORS.primary, "Órdenes");
   gxTable("in-tabla", "gx-inspectores", agg, _gxTables["in-tabla"].cols, "n", "desc", "key");
+
+  // Ficha del inspector
+  const sel = document.getElementById("in-sel");
+  const prev = sel.value;
+  const names = byN.map(function(a) { return a.key; });
+  sel.innerHTML = names.map(function(n) { return '<option value="' + n + '">' + n + "</option>"; }).join("");
+  if (prev && names.indexOf(prev) !== -1) sel.value = prev;
+  const name = sel.value;
+  const a = agg.filter(function(x) { return x.key === name; })[0];
+  if (!a) {
+    document.getElementById("in-f-kpis").innerHTML = "";
+    return;
+  }
+  const team = gxSupAgg(c).filter(function(s) { return s.key === (a.supervisor || "(Sin supervisor)"); })[0] || { pctEfect: 0, pctCorrecto: 0, prodDia: 0 };
+  document.getElementById("in-f-kpis").innerHTML =
+    gxKpiCard("blue", GX_ICON.bars, "Órdenes", fmtInt(a.n), fmtInt(a.dias) + " días trabajados · " + gxNum1(a.prodDia) + " por día") +
+    gxKpiCard("green", GX_ICON.target, "Efectividad neta", fmtPct(a.pctEfect), gxDeltaText(a.pctEfect, team.pctEfect).replace("meta", "su equipo")) +
+    gxKpiCard("purple", GX_ICON.check, "Cierres correctos", fmtPct(a.pctCorrecto), fmtInt(a.err) + " órdenes con error") +
+    gxKpiCard("red", GX_ICON.alert, "Irregularidades", fmtInt(a.irreg), fmtInt(a.novedad) + " medidores con novedad") +
+    gxKpiCard("amber", GX_ICON.star, "Rodamiento estimado", gxMoney(a.rod), "Equipo: " + (a.supervisor || "—"));
+  const rows = c.insp.filter(function(r) { return r.inspector === name; });
+  const days = gxDailyStats(rows);
+  gxChart("inFDia", "in-f-dia-chart", {
+    data: { labels: days.map(function(d) { return formatDateShort(d.fecha); }), datasets: [
+      { type: "bar", label: "Órdenes", data: days.map(function(d) { return d.n; }), backgroundColor: COLORS.primary, borderRadius: 3, maxBarThickness: 30, yAxisID: "y" },
+      { type: "line", label: "% efectividad neta", data: days.map(function(d) { return d.pctEfect; }), borderColor: COLORS.success, backgroundColor: COLORS.success, tension: 0.25, pointRadius: 3, yAxisID: "y2" },
+      { type: "line", label: "Meta " + EFECTIVIDAD_META_INDIVIDUAL + "%", data: days.map(function() { return EFECTIVIDAD_META_INDIVIDUAL; }), borderColor: COLORS.danger, borderDash: [6, 5], borderWidth: 1.5, pointRadius: 0, yAxisID: "y2" }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: GX_GRID } }, y2: { position: "right", min: 0, max: 100, grid: { display: false }, ticks: { callback: function(v) { return v + "%"; } } } } }
+  });
+  const cs = gxTopN(gxCountBy(rows, function(r) { return r.causa || "(Sin causa)"; }), 8);
+  gxHBar("inFCausa", "in-f-causa-chart", cs.map(function(i) { return i.k; }), cs.map(function(i) { return i.n; }), COLORS.teal, "Órdenes");
+  gxChart("inFComp", "in-f-comp-chart", {
+    type: "bar",
+    data: { labels: [ "Efectividad neta (%)", "Cierres correctos (%)", "Órdenes por día" ], datasets: [
+      { label: name, data: [ a.pctEfect, a.pctCorrecto, a.prodDia ], backgroundColor: COLORS.primary, borderRadius: 4, maxBarThickness: 40 },
+      { label: "Su equipo", data: [ team.pctEfect, team.pctCorrecto, team.prodDia ], backgroundColor: COLORS.teal, borderRadius: 4, maxBarThickness: 40 },
+      { label: "Total", data: [ g.pctEfect, g.pctCorrecto, g.prodDia ], backgroundColor: COLORS.gray, borderRadius: 4, maxBarThickness: 40 }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, grid: { color: GX_GRID } } } }
+  });
 }
 
-// ----- Ciclos -----
+// ----- Ciclos y municipios -----
 function buildGxCiclos() {
   return gxRow("two-col", [
     gxBox("ci-top-chart", "Ciclos con más órdenes", "Los 15 ciclos con mayor volumen, separados en efectivas y no efectivas.", 460, "tall"),
     gxBox("ci-low-chart", "Ciclos con menor efectividad", "Los 15 ciclos con menor efectividad neta (mínimo 50 órdenes).", 460, "tall")
   ]) +
+    gxRow("two-col", [
+      gxBox("ci-muni-chart", "Órdenes y efectividad por municipio", "Según el sufijo del ciclo (BQ, SO, ...).", 300, "tall"),
+      gxBox("ci-novedad-chart", "Ciclos con más medidores con novedad", "% de predios con novedad en el medidor (mínimo 50 órdenes).", 300, "tall")
+    ]) +
+    gxTableBox("ci-muni", "Detalle por municipio", "Resumen de cada municipio según el sufijo del ciclo.", [
+      { key: "key", label: "Municipio" }, { key: "ciclos", label: "Ciclos", num: true }, { key: "n", label: "Órdenes", num: true },
+      { key: "pctEfect", label: "% Efectividad neta", num: true, html: function(r) { return semBadge(r.pctEfect); } },
+      { key: "pctNoEfect", label: "% No efectivas", num: true, html: function(r) { return fmtPct(r.pctNoEfect); } },
+      { key: "pctCorrecto", label: "% Correctas", num: true, html: function(r) { return fmtPct(r.pctCorrecto); } },
+      { key: "irreg", label: "Irregularidades", num: true }
+    ], false) +
     gxTableBox("ci-tabla", "Detalle por ciclo", "Todos los ciclos del periodo.", [
       { key: "key", label: "Ciclo" }, { key: "n", label: "Órdenes", num: true }, { key: "insp", label: "Inspectores", num: true },
       { key: "pctEfect", label: "% Efectividad neta", num: true, html: function(r) { return semBadge(r.pctEfect); } },
       { key: "pctNoEfect", label: "% No efectivas", num: true, html: function(r) { return fmtPct(r.pctNoEfect); } },
       { key: "pctJornada", label: "% Jornada", num: true, time: true, html: function(r) { return gxMetaBadge(r.pctJornada, JORNADA_META); } },
-      { key: "err", label: "Con error", num: true }, { key: "pctCorrecto", label: "% Correctas", num: true, html: function(r) { return fmtPct(r.pctCorrecto); } }
+      { key: "err", label: "Con error", num: true }, { key: "pctCorrecto", label: "% Correctas", num: true, html: function(r) { return fmtPct(r.pctCorrecto); } },
+      { key: "irreg", label: "Irregularidades", num: true }
     ], true);
 }
 
 function renderGxCiclos(c) {
-  const agg = gxAggregate(c.insp, function(r) { return r.ciclo || "(Sin ciclo)"; });
+  const agg = gxCicloAgg(c);
   const top = agg.slice().sort(function(a, b) { return b.n - a.n; }).slice(0, 15);
   gxStackedH("ciTop", "ci-top-chart", top.map(function(a) { return a.key; }), [
     { label: "Efectivas", data: top.map(function(a) { return a.efect; }), color: COLORS.success },
@@ -3783,17 +4687,39 @@ function renderGxCiclos(c) {
     charts.ciLow.options.scales.x.ticks.callback = function(v) { return v + "%"; };
     charts.ciLow.update();
   }
+  const mun = gxAggregate(c.insp, function(r) { return r.muni || "(Sin municipio)"; }).sort(function(a, b) { return b.n - a.n; });
+  const ciclosPorMuni = {};
+  agg.forEach(function(a) {
+    const m = (a.key.split(" - ").pop() || "").trim() || "(Sin municipio)";
+    ciclosPorMuni[m] = (ciclosPorMuni[m] || 0) + 1;
+  });
+  mun.forEach(function(m) { m.ciclos = ciclosPorMuni[m.key] || 0; });
+  gxChart("ciMuni", "ci-muni-chart", {
+    data: { labels: mun.map(function(m) { return m.key; }), datasets: [
+      { type: "bar", label: "Órdenes", data: mun.map(function(m) { return m.n; }), backgroundColor: COLORS.primary, borderRadius: 4, maxBarThickness: 40, yAxisID: "y" },
+      { type: "line", label: "% efectividad neta", data: mun.map(function(m) { return m.pctEfect; }), borderColor: COLORS.success, backgroundColor: COLORS.success, pointRadius: 4, showLine: false, yAxisID: "y2" }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false }, plugins: { legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } } }, scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: GX_GRID } }, y2: { position: "right", min: 0, max: 100, grid: { display: false }, ticks: { callback: function(v) { return v + "%"; } } } } }
+  });
+  const nov = gxGroup(c.insp, function(r) { return r.ciclo || "(Sin ciclo)"; }, GX_HALLAZGO_PREDS).filter(function(a) { return a.n >= 50; }).sort(function(a, b) { return b.p_novedad - a.p_novedad; }).slice(0, 12);
+  gxHBar("ciNov", "ci-novedad-chart", nov.map(function(a) { return a.key; }), nov.map(function(a) { return a.p_novedad; }), COLORS.warning, "% con novedad");
+  gxTable("ci-muni", "ciclos", mun, _gxTables["ci-muni"].cols, "n", "desc");
   gxTable("ci-tabla", "ciclos", agg, _gxTables["ci-tabla"].cols, "n", "desc", "key");
 }
 
 const GX_RENDER = {
-  panorama: renderGxPanorama, produccion: renderGxProduccion, efectividad: renderGxEfectividad, jornada: renderGxJornada,
-  medidores: renderGxMedidores, usuarios: renderGxUsuarios, "gx-inspectores": renderGxInspectores, ciclos: renderGxCiclos
+  panorama: renderGxPanorama, tendencias: renderGxTendencias, produccion: renderGxProduccion, efectividad: renderGxEfectividad, auditoria: renderGxAuditoria,
+  jornada: renderGxJornada, medidores: renderGxMedidores, consumos: renderGxConsumos, predios: renderGxPredios, usuarios: renderGxUsuarios,
+  equipos: renderGxEquipos, "gx-inspectores": renderGxInspectores, ciclos: renderGxCiclos
 };
 
 // Crea el esqueleto (HTML, tablas, eventos) de las hojas de gestión que no están en el HTML estático.
 function buildGxPages() {
-  const builders = { produccion: buildGxProduccion, efectividad: buildGxEfectividad, jornada: buildGxJornada, medidores: buildGxMedidores, usuarios: buildGxUsuarios, "gx-inspectores": buildGxInspectores, ciclos: buildGxCiclos };
+  const builders = {
+    tendencias: buildGxTendencias, produccion: buildGxProduccion, efectividad: buildGxEfectividad, auditoria: buildGxAuditoria, jornada: buildGxJornada,
+    medidores: buildGxMedidores, consumos: buildGxConsumos, predios: buildGxPredios, usuarios: buildGxUsuarios, equipos: buildGxEquipos,
+    "gx-inspectores": buildGxInspectores, ciclos: buildGxCiclos
+  };
   const anchor = document.getElementById("page-panorama");
   Object.keys(builders).forEach(function(page) {
     const div = document.createElement("div");
@@ -3804,18 +4730,29 @@ function buildGxPages() {
     anchor.parentNode.insertBefore(div, document.getElementById("page-hoy"));
   });
   const defs = {
+    "td-dia": { page: "tendencias", file: "detalle_diario", search: false },
     "ef-causas": { page: "efectividad", file: "efectividad_por_causa", search: true },
+    "au-insp": { page: "auditoria", file: "calidad_por_inspector", search: true },
     "jo-insp": { page: "jornada", file: "jornada_por_inspector", search: true },
     "jo-ciclo": { page: "jornada", file: "jornada_por_ciclo", search: true },
     "me-insp": { page: "medidores", file: "hallazgos_por_inspector", search: true },
+    "me-ciclo": { page: "medidores", file: "hallazgos_por_ciclo", search: true },
+    "co-ciclo": { page: "consumos", file: "consumo_por_ciclo", search: true },
+    "pd-ciclo": { page: "predios", file: "perfil_predios_por_ciclo", search: true },
     "us-insp": { page: "usuarios", file: "atencion_por_inspector", search: true },
+    "eq-tabla": { page: "equipos", file: "tablero_equipos", search: false },
+    "eq-insp": { page: "equipos", file: "inspectores_del_equipo", search: false },
     "in-tabla": { page: "gx-inspectores", file: "tablero_inspectores", search: true },
+    "ci-muni": { page: "ciclos", file: "detalle_por_municipio", search: false },
     "ci-tabla": { page: "ciclos", file: "detalle_por_ciclo", search: true }
   };
   Object.keys(defs).forEach(function(id) {
     gxBindTable(id, defs[id].page, defs[id].file, defs[id].search);
   });
   bindGxProduccion();
+  bindGxEfectividad();
+  document.getElementById("eq-sel").addEventListener("change", function() { gxRerender("equipos"); });
+  document.getElementById("in-sel").addEventListener("change", function() { gxRerender("gx-inspectores"); });
 }
 
 
