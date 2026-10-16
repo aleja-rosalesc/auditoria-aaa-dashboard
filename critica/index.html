@@ -885,13 +885,6 @@
     </div>
   </section>
 
-  <section class="table-section" id="gx-cobertura-sec">
-    <div class="table-header">
-      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg> Cobertura: del ORM al Validador</h3>
-    </div>
-    <div id="gx-cobertura"></div>
-  </section>
-
   <section class="table-section">
     <div class="table-header">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l7 3v6c0 4.4-3 7.6-7 9-4-1.4-7-4.6-7-9V6z"/></svg> Tablero por supervisor</h3>
@@ -2924,7 +2917,8 @@ function gxJoinedRows() {
   });
   ALL_BASE_ROWS.forEach(function(b) {
     const v = vmap.get(b.orden);
-    b.rol = v ? "insp" : /LECTURA\s+TOMADA/i.test(b.resultado) || /ADMINISTRATIVA/i.test(b.unidad) ? "admin" : "pend";
+    // Las unidades administrativas (interventoría, prefacturación, lectura recuperada) no se ven ni entran a ningún cálculo.
+    b.rol = /LECTURA\s+TOMADA/i.test(b.resultado) || /ADMINISTRATIVA/i.test(b.unidad) ? "admin" : v ? "insp" : "pend";
     b.inspector = v ? v.inspector : "";
     b.supervisor = v ? v.supervisor : "";
     b.efectiva = v ? v.efectividad === "Efectiva" : false;
@@ -2941,10 +2935,11 @@ function gxJoinedRows() {
 
 function gxFilteredRows() {
   return gxJoinedRows().filter(function(r) {
+    if (r.rol !== "insp") return false;
     if (filterMonths.length && filterMonths.indexOf(r.fecha.slice(0, 7)) === -1) return false;
     if (dateFrom && r.fecha < dateFrom) return false;
     if (dateTo && r.fecha > dateTo) return false;
-    if (currentScopes.length && (r.rol !== "insp" || currentScopes.indexOf(r.supervisor) === -1)) return false;
+    if (currentScopes.length && currentScopes.indexOf(r.supervisor) === -1) return false;
     return true;
   });
 }
@@ -2958,9 +2953,7 @@ function gxNum1(n) {
 }
 
 function gxCompute(rows) {
-  const insp = rows.filter(function(r) { return r.rol === "insp"; });
-  const admin = rows.filter(function(r) { return r.rol === "admin"; });
-  const pend = rows.filter(function(r) { return r.rol === "pend"; });
+  const insp = rows;
   const n = insp.length;
   const jc = { cumple: 0, excluida: 0, no: 0, sin: 0 };
   let efect = 0, correctas = 0, errores = 0;
@@ -3015,22 +3008,14 @@ function gxCompute(rows) {
       pctCorrecto: gxPct(s.corr, s.n), prodDia: s.ids.size ? round1(s.n / s.ids.size) : 0
     };
   });
-  const admMap = new Map;
-  admin.forEach(function(r) {
-    const k = r.usuario + "|" + r.unidad;
-    const a = admMap.get(k) || { usuario: r.usuario, unidad: r.unidad, n: 0 };
-    a.n++;
-    admMap.set(k, a);
-  });
   return {
-    total: rows.length, n: n, adminN: admin.length, pendN: pend.length,
+    n: n,
     efect: efect, errores: errores, pctEfect: gxPct(efect - errores, n), pctEfectBruta: gxPct(efect, n),
     jc: jc, pctJornada: gxPct(jc.cumple + jc.excluida, jDen),
     correctas: correctas, pctCorrecto: gxPct(correctas, n),
     diasN: days.size, promDiario: days.size ? round1(n / days.size) : 0,
     inspActivos: inspSet.size, prodDia: inspDays.size ? round1(n / inspDays.size) : 0,
     daily: daily, supervisores: supervisores,
-    adminUsers: Array.from(admMap.values()).sort(function(a, b) { return b.n - a.n; }),
     fechaMin: rows.length ? rows.reduce(function(m, r) { return r.fecha < m ? r.fecha : m; }, rows[0].fecha) : "",
     fechaMax: rows.length ? rows.reduce(function(m, r) { return r.fecha > m ? r.fecha : m; }, rows[0].fecha) : ""
   };
@@ -3315,22 +3300,24 @@ function renderGxPanorama(c) {
     label: "Calidad de los cierres", value: g.pctCorrecto, legend: "Auditoría del Validador",
     sub: fmtInt(g.correctas) + " correctas · " + fmtInt(g.n - g.correctas) + " con error"
   });
+  const inspBase = gxInspAgg(c).filter(function(a) { return a.n >= 30; });
+  const okInd = inspBase.filter(function(a) { return a.pctEfect >= EFECTIVIDAD_META_INDIVIDUAL; }).length;
   cards += gxIndicatorCard({
-    label: "Cierres de inspectores", value: gxPct(g.n, g.total), legend: "Del total de cierres del ORM",
-    sub: fmtInt(g.n) + " de " + fmtInt(g.total) + " cierres · " + fmtInt(g.adminN) + " administrativos" + (g.pendN ? " · " + fmtInt(g.pendN) + " por validar" : "")
+    label: "Inspectores en la meta individual", value: gxPct(okInd, inspBase.length), legend: "Meta individual de efectividad neta: " + fmtPct(EFECTIVIDAD_META_INDIVIDUAL),
+    sub: fmtInt(okInd) + " de " + fmtInt(inspBase.length) + " inspectores alcanzan la meta individual"
   });
   document.getElementById("gx-indicators").innerHTML = cards;
   renderGxInsights(c);
 
+  const bestDay = g.daily.reduce(function(m, d) { return d.n > m.n ? d : m; }, { n: 0, fecha: "" });
   document.getElementById("gx-kpis").innerHTML =
-    gxKpiCard("blue", GX_ICON.bars, "Cierres ORM", fmtInt(g.total), "Todos los usuarios del ORM") +
-    gxKpiCard("green", GX_ICON.check, "Auditadas", fmtInt(g.n), "Pasan por el Validador") +
-    gxKpiCard("amber", GX_ICON.clock, "Promedio diario", fmtInt(Math.round(g.promDiario)), "En " + fmtInt(g.diasN) + " días con producción") +
+    gxKpiCard("green", GX_ICON.check, "Órdenes auditadas", fmtInt(g.n), "En " + fmtInt(g.diasN) + " días con producción") +
+    gxKpiCard("blue", GX_ICON.bars, "Promedio diario", fmtInt(Math.round(g.promDiario)), "Órdenes por día trabajado") +
+    gxKpiCard("amber", GX_ICON.star, "Mejor día", fmtInt(bestDay.n), bestDay.fecha ? formatDateLong(bestDay.fecha) : "—") +
     gxKpiCard("purple", GX_ICON.users, "Inspectores activos", fmtInt(g.inspActivos), "Con cierres en el periodo") +
     gxKpiCard("red", GX_ICON.trend, "Órd. por inspector/día", gxNum1(g.prodDia), "Productividad media");
 
   renderGxPanoramaCharts(g);
-  renderGxCobertura(g);
   renderGxSupervisores(g);
 }
 
@@ -3375,23 +3362,6 @@ function renderGxPanoramaCharts(g) {
     }
   });
   gxDonut("gxJornadaDon", "gx-jornada-don-chart", [ { k: "Cumplen", n: g.jc.cumple }, { k: "Excluidas", n: g.jc.excluida }, { k: "No cumplen", n: g.jc.no } ], [ COLORS.success, COLORS.gray, COLORS.danger ]);
-}
-
-function renderGxCobertura(g) {
-  const pi = gxPct(g.n, g.total), pa = gxPct(g.adminN, g.total), pp = gxPct(g.pendN, g.total);
-  let html = '<div class="gx-split"><span style="width:' + pi + "%; background:" + COLORS.success + '"></span><span style="width:' + pa + "%; background:" + COLORS.teal + '"></span><span style="width:' + pp + "%; background:" + COLORS.warning + '"></span></div>';
-  html += '<div class="gx-split-legend"><span><i style="background:' + COLORS.success + '"></i>De inspectores (en el Validador): <b>' + fmtInt(g.n) + "</b> · " + fmtPct(pi) + "</span>";
-  html += '<span><i style="background:' + COLORS.teal + '"></i>Administrativos / recuperación de lectura: <b>' + fmtInt(g.adminN) + "</b> · " + fmtPct(pa) + "</span>";
-  if (g.pendN) html += '<span><i style="background:' + COLORS.warning + '"></i>Por validar: <b>' + fmtInt(g.pendN) + "</b> · " + fmtPct(pp) + "</span>";
-  html += "</div>";
-  if (g.adminUsers.length) {
-    html += '<ul style="margin:12px 0 0; padding-left:18px; font-size:12.5px; color:var(--text-2); line-height:1.7;">';
-    g.adminUsers.slice(0, 5).forEach(function(a) {
-      html += "<li><b>" + a.usuario + "</b> — " + a.unidad + ": " + fmtInt(a.n) + " cierres</li>";
-    });
-    html += "</ul>";
-  }
-  document.getElementById("gx-cobertura").innerHTML = html;
 }
 
 let _gxSupSorted = [];
@@ -3827,7 +3797,6 @@ function gxInsights(c) {
     const topC = gxCountBy(irr, function(r) { return r.ciclo; })[0];
     out.push({ tone: "info", text: "Se reportaron <b>" + fmtInt(irr.length) + "</b> irregularidades (" + fmtPct(gxPct(irr.length, g.n)) + " de las órdenes)" + (topC ? "; el ciclo con más reportes es " + topC.k + " (" + fmtInt(topC.n) + ")." : ".") });
   }
-  if (g.adminN) out.push({ tone: "info", text: "Además de las " + fmtInt(g.n) + " órdenes de inspectores, el ORM registró <b>" + fmtInt(g.adminN) + "</b> cierres administrativos (" + fmtPct(gxPct(g.adminN, g.total)) + " del total)." });
   const pr = gxMonthProjection();
   if (pr && pr.rem > 0) out.push({ tone: "info", text: "Con el ritmo actual (" + fmtInt(Math.round(pr.avg)) + " órdenes por día trabajado) se proyectan <b>" + fmtInt(pr.projected) + "</b> órdenes al cierre de " + GX_MESES[+pr.ym.slice(5, 7) - 1] + "." });
   return out;
