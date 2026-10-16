@@ -255,9 +255,13 @@
   .table-header{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
   .table-header h3{ font-size:14.5px; font-weight:700; margin:0; color:var(--text); }
   .table-actions{ display:flex; gap:8px; align-items:center; }
-  #table-search{
+  #table-search, #dh-search{
     padding: 8px 12px; border-radius:8px; border:1px solid var(--border);
     font-size:13px; font-family: var(--font-body); min-width:260px; background:#F7FAFB;
+  }
+  #dh-estado-select{
+    padding: 8px 10px; border-radius:8px; border:1px solid var(--border);
+    font-size:13px; font-family: var(--font-body); background:#F7FAFB;
   }
   .table-scroll{ overflow-x:auto; }
   .data-table{ width:100%; border-collapse: collapse; font-size:12.8px; }
@@ -532,7 +536,9 @@
     .btn{ padding: 10px 14px; font-size:13px; }
     .tab-bar .tab-btn{ font-size:9.5px; }
     .table-actions{ width:100%; }
-    #table-search, #inspector-search{ flex:1; min-width:0; }
+    #table-search, #inspector-search, #dh-search{ flex:1; min-width:0; }
+    #sec-dh-detalle .table-actions{ flex-wrap:wrap; }
+    #dh-search{ flex:1 1 100%; order:-1; }
     .back-to-top{ width:42px; height:42px; bottom:80px; right:16px; }
   }
 
@@ -1033,9 +1039,19 @@
         <div class="kpi-sub" id="kpi-ranking-vi-sub">&nbsp;</div>
       </div>
     </div>
+    <div class="kpi-card">
+      <div class="kpi-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg>
+      </div>
+      <div>
+        <div class="kpi-label">Total cierres DH</div>
+        <div class="kpi-value" id="kpi-ranking-dh">—</div>
+        <div class="kpi-sub" id="kpi-ranking-dh-sub">&nbsp;</div>
+      </div>
+    </div>
   </section>
 
-  <section class="chart-row two-col">
+  <section class="chart-row three-col">
     <div class="chart-container tall">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 3H7v6a5 5 0 0 0 10 0V3z"/><path d="M17 5h3a2 2 0 0 1-2 4M7 5H4a2 2 0 0 0 2 4"/></svg> Top 10 — más cierres NC</h3>
       <p class="chart-sub">Inspectores con más cierres clasificados NC</p>
@@ -1050,6 +1066,14 @@
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Top 10 — más cierres VI</h3>
       <p class="chart-sub">Inspectores con más cierres en Verificación Incompleta</p>
       <div style="height:320px; position:relative;"><canvas id="ranking-vi-chart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="chart-row two-col">
+    <div class="chart-container tall">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg> Top 10 — más cierres DH</h3>
+      <p class="chart-sub">Inspectores con más cierres como Deshabitado</p>
+      <div style="height:320px; position:relative;"><canvas id="ranking-dh-chart"></canvas></div>
     </div>
     <div class="chart-container tall">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg> Composición de NC</h3>
@@ -1121,6 +1145,61 @@
         </thead>
         <tbody id="ranking-vi-tbody"></tbody>
       </table>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg> Ranking DH — Deshabitado</h3>
+      <div class="table-actions">
+        <button class="btn ghost" id="export-ranking-dh-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 12px;">Quiénes están cerrando más órdenes con causa DH-Deshabitado. Correctas / Con error según la auditoría (ESTADO_AUDITORIA). No hace parte de NC: es un cierre con toma de lectura.</p>
+    <div class="table-scroll">
+      <table class="data-table" id="ranking-dh-table">
+        <thead>
+          <tr>
+            <th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th><th data-key="total" class="num">Auditadas</th>
+            <th data-key="dh" class="num sorted">Cierres DH</th><th data-key="pct_dh" class="num">% del total</th>
+            <th data-key="dh_correcto" class="num">Correctas</th><th data-key="dh_con_errores" class="num">Con error</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-dh-tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="table-section" id="sec-dh-detalle">
+    <div class="table-header">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 4h9l3 3v13H6z"/><path d="M9 11h6M9 15h6"/></svg> Detalle de cierres DH (<span id="dh-detail-count">0</span>)</h3>
+      <div class="table-actions">
+        <select id="dh-estado-select">
+          <option value="">Todas</option>
+          <option value="Correcto">Solo correctas</option>
+          <option value="Con Errores">Solo con error</option>
+        </select>
+        <input type="text" id="dh-search" placeholder="Buscar por orden, cuenta, inspector o ciclo…">
+        <button class="btn" id="export-dh-detail-btn">Exportar CSV</button>
+      </div>
+    </div>
+    <p class="chart-sub" style="margin:-4px 0 12px;">Orden por orden, respetando el filtro de periodo de arriba (usa "Solo hoy" para auditar las del día).</p>
+    <div class="table-scroll">
+      <table class="data-table" id="dh-detail-table">
+        <thead>
+          <tr>
+            <th data-key="fecha" class="sorted">Fecha</th><th data-key="orden">Orden</th><th data-key="cuenta">Cuenta</th>
+            <th data-key="ciclo">Ciclo</th><th data-key="inspector">Inspector</th><th data-key="supervisor">Supervisor</th>
+            <th data-key="obs_1">Obs. 1</th><th data-key="estado">Estado</th><th data-key="tipo_error">Tipo de error</th><th data-key="efectividad">Efectividad</th>
+          </tr>
+        </thead>
+        <tbody id="dh-detail-tbody"></tbody>
+      </table>
+    </div>
+    <div class="table-pagination">
+      <button id="dh-prev-page">‹ Anterior</button>
+      <span id="dh-page-info">—</span>
+      <button id="dh-next-page">Siguiente ›</button>
     </div>
   </section>
   </div>
@@ -1705,6 +1784,9 @@ function topInspectoresEfectivosBlock(sub, n, minTotal) {
 // manual de Critica. Confirmado con el usuario: exactamente estas 5.
 const NC_CAUSAS = [ "LT-Lote", "SSA-Sector Sin Agua", "PNF-Persona No Facultada", "VI-Verificación Incompleta", "SP-Sector Peligroso" ];
 
+// DH no es NC (es un cierre con toma de lectura), pero se sigue aparte en Ranking.
+const DH_CAUSA = "DH-Deshabitado";
+
 function rankingCausaGroupBlock(sub) {
   const by = groupBy(sub, "inspector");
   let out = Array.from(by.entries()).map(function(e) {
@@ -1718,10 +1800,14 @@ function rankingCausaGroupBlock(sub) {
     const viRows = rows.filter(function(r) {
       return r.causa_cierre === "VI-Verificación Incompleta";
     });
-    const nc = ncRows.length, sp = spRows.length, vi = viRows.length;
+    const dhRows = rows.filter(function(r) {
+      return r.causa_cierre === DH_CAUSA;
+    });
+    const nc = ncRows.length, sp = spRows.length, vi = viRows.length, dh = dhRows.length;
     const nc_correcto = ncRows.filter(function(r) { return r.estado === "Correcto"; }).length;
     const sp_correcto = spRows.filter(function(r) { return r.estado === "Correcto"; }).length;
     const vi_correcto = viRows.filter(function(r) { return r.estado === "Correcto"; }).length;
+    const dh_correcto = dhRows.filter(function(r) { return r.estado === "Correcto"; }).length;
     return {
       inspector: e[0],
       supervisor: rows[0].supervisor,
@@ -1737,7 +1823,11 @@ function rankingCausaGroupBlock(sub) {
       vi: vi,
       pct_vi: total ? round1(vi / total * 100) : 0,
       vi_correcto: vi_correcto,
-      vi_con_errores: vi - vi_correcto
+      vi_con_errores: vi - vi_correcto,
+      dh: dh,
+      pct_dh: total ? round1(dh / total * 100) : 0,
+      dh_correcto: dh_correcto,
+      dh_con_errores: dh - dh_correcto
     };
   });
   return out;
@@ -1747,18 +1837,21 @@ function rankingBreakdownBlock(sub) {
   const ncRows = sub.filter(function(r) { return NC_CAUSAS.indexOf(r.causa_cierre) !== -1; });
   const spRows = sub.filter(function(r) { return r.causa_cierre === "SP-Sector Peligroso"; });
   const viRows = sub.filter(function(r) { return r.causa_cierre === "VI-Verificación Incompleta"; });
-  const totalNC = ncRows.length, totalSP = spRows.length, totalVI = viRows.length;
+  const dhRows = sub.filter(function(r) { return r.causa_cierre === DH_CAUSA; });
+  const totalNC = ncRows.length, totalSP = spRows.length, totalVI = viRows.length, totalDH = dhRows.length;
   const ncCorrecto = ncRows.filter(function(r) { return r.estado === "Correcto"; }).length;
   const spCorrecto = spRows.filter(function(r) { return r.estado === "Correcto"; }).length;
   const viCorrecto = viRows.filter(function(r) { return r.estado === "Correcto"; }).length;
+  const dhCorrecto = dhRows.filter(function(r) { return r.estado === "Correcto"; }).length;
   const porCausa = NC_CAUSAS.map(function(c) {
     return { causa: c, count: sub.filter(function(r) { return r.causa_cierre === c; }).length };
   }).sort(function(a, b) { return b.count - a.count; });
   return {
-    totalNC: totalNC, totalSP: totalSP, totalVI: totalVI, porCausa: porCausa,
+    totalNC: totalNC, totalSP: totalSP, totalVI: totalVI, totalDH: totalDH, porCausa: porCausa,
     ncCorrecto: ncCorrecto, ncConErrores: totalNC - ncCorrecto, pctNcCorrecto: totalNC ? round1(ncCorrecto / totalNC * 100) : 0,
     spCorrecto: spCorrecto, spConErrores: totalSP - spCorrecto, pctSpCorrecto: totalSP ? round1(spCorrecto / totalSP * 100) : 0,
-    viCorrecto: viCorrecto, viConErrores: totalVI - viCorrecto, pctViCorrecto: totalVI ? round1(viCorrecto / totalVI * 100) : 0
+    viCorrecto: viCorrecto, viConErrores: totalVI - viCorrecto, pctViCorrecto: totalVI ? round1(viCorrecto / totalVI * 100) : 0,
+    dhCorrecto: dhCorrecto, dhConErrores: totalDH - dhCorrecto, pctDhCorrecto: totalDH ? round1(dhCorrecto / totalDH * 100) : 0
   };
 }
 
@@ -2234,6 +2327,24 @@ function rebuildData() {
         efectividad: r.efectividad,
         obs_1: r.obs_1
       };
+    }),
+    dh_detalle: clean.filter(function(r) {
+      return r.causa_cierre === DH_CAUSA;
+    }).sort(function(a, b) {
+      return b.fecha.localeCompare(a.fecha);
+    }).map(function(r) {
+      return {
+        orden: r.orden,
+        cuenta: r.cuenta,
+        ciclo: r.ciclo,
+        inspector: r.inspector,
+        supervisor: r.supervisor,
+        fecha: r.fecha,
+        obs_1: r.obs_1,
+        estado: r.estado,
+        tipo_error: r.tipo_error,
+        efectividad: r.efectividad
+      };
     })
   };
   newData.overall.supervisores = supervisoresBlock(cleanForSupervisorCompare);
@@ -2359,7 +2470,7 @@ function clearAllFiltersEverywhere() {
   detailSupervisorSel = "";
   hoyInspectorScope = "ALL";
   hoySearchTerm = "";
-  [ "detail-date-from", "detail-date-to", "detail-month-select", "detail-inspector-select", "detail-ciclo-select", "detail-tipo-select", "detail-supervisor-select", "table-search", "hoy-inspector-search" ].forEach(function(id) {
+  [ "detail-date-from", "detail-date-to", "detail-month-select", "detail-inspector-select", "detail-ciclo-select", "detail-tipo-select", "detail-supervisor-select", "table-search", "dh-search", "dh-estado-select", "hoy-inspector-search" ].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.value = "";
   });
@@ -2455,6 +2566,8 @@ function renderAll() {
   renderRankingKPIs();
   renderRankingCharts();
   renderRankingTables();
+  dhPage = 0;
+  renderDhDetail();
   computeInspectorFiltered();
   renderInspectorTable();
   populateDetailFilterOptions();
@@ -3807,6 +3920,76 @@ function renderRankingTables() {
     viTbody.appendChild(tr);
   });
   if (!viTbody.children.length) viTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Sin cierres VI en este periodo/filtro.</td></tr>';
+
+  const dhTbody = document.getElementById("ranking-dh-tbody");
+  attachTableSort("ranking-dh-table", "dh", "desc", renderRankingTables);
+  const dhList = sortByState(list, getTableSort("ranking-dh-table", "dh", "desc"));
+  dhTbody.innerHTML = "";
+  dhList.forEach(function(r) {
+    if (!r.dh) return;
+    const tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + '<td class="num">' + fmtInt(r.total) + "</td>" + '<td class="num">' + fmtInt(r.dh) + "</td>" + '<td class="num">' + fmtPct(r.pct_dh) + "</td>" + '<td class="num">' + fmtInt(r.dh_correcto) + "</td>" + '<td class="num">' + fmtInt(r.dh_con_errores) + "</td>";
+    dhTbody.appendChild(tr);
+  });
+  if (!dhTbody.children.length) dhTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-2);">Sin cierres DH en este periodo/filtro.</td></tr>';
+}
+
+let dhPage = 0;
+let dhFiltered = [];
+
+function computeDhFiltered() {
+  const q = document.getElementById("dh-search").value.trim().toLowerCase();
+  const est = document.getElementById("dh-estado-select").value;
+  let rows = DATA.dh_detalle.filter(function(r) {
+    if (currentScopes.length && currentScopes.indexOf(r.supervisor) === -1) return false;
+    if (est && r.estado !== est) return false;
+    if (!q) return true;
+    return String(r.orden).toLowerCase().indexOf(q) !== -1 || String(r.cuenta).toLowerCase().indexOf(q) !== -1 || String(r.inspector).toLowerCase().indexOf(q) !== -1 || String(r.ciclo).toLowerCase().indexOf(q) !== -1;
+  });
+  dhFiltered = sortByState(rows, getTableSort("dh-detail-table", "fecha", "desc"));
+}
+
+function renderDhDetail() {
+  attachTableSort("dh-detail-table", "fecha", "desc", function() {
+    dhPage = 0;
+    renderDhDetail();
+  });
+  computeDhFiltered();
+  const total = dhFiltered.length;
+  const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+  dhPage = Math.min(dhPage, maxPage);
+  const start = dhPage * PAGE_SIZE;
+  const tbody = document.getElementById("dh-detail-tbody");
+  tbody.innerHTML = "";
+  dhFiltered.slice(start, start + PAGE_SIZE).forEach(function(r) {
+    const tr = document.createElement("tr");
+    const estBadge = r.estado === "Correcto" ? '<span class="badge efectiva">Correcto</span>' : '<span class="badge error">Con error</span>';
+    const efBadge = r.efectividad === "Efectiva" ? '<span class="badge efectiva">Efectiva</span>' : '<span class="badge no-efectiva">No efectiva</span>';
+    tr.innerHTML = "<td>" + formatDateShort(r.fecha) + "</td>" + "<td>" + r.orden + "</td>" + "<td>" + r.cuenta + "</td>" + "<td>" + r.ciclo + "</td>" + "<td>" + r.inspector + "</td>" + "<td>" + r.supervisor + "</td>" + "<td>" + (r.obs_1 || "—") + "</td>" + "<td>" + estBadge + "</td>" + "<td>" + (r.tipo_error || "—") + "</td>" + "<td>" + efBadge + "</td>";
+    tbody.appendChild(tr);
+  });
+  if (!tbody.children.length) tbody.innerHTML = '<tr><td colspan="10" style="text-align:center; color:var(--text-2);">Sin cierres DH en este periodo/filtro.</td></tr>';
+  document.getElementById("dh-detail-count").textContent = fmtInt(total);
+  const from = total === 0 ? 0 : start + 1;
+  const to = Math.min(start + PAGE_SIZE, total);
+  document.getElementById("dh-page-info").textContent = "Mostrando " + from + "–" + to + " de " + total;
+  document.getElementById("dh-prev-page").disabled = dhPage <= 0;
+  document.getElementById("dh-next-page").disabled = dhPage >= maxPage;
+}
+
+function changeDhPage(delta) {
+  dhPage = Math.max(0, dhPage + delta);
+  renderDhDetail();
+}
+
+function exportDhDetailCSV() {
+  const headers = [
+    { key: "fecha", label: "Fecha" }, { key: "orden", label: "Orden" }, { key: "cuenta", label: "Cuenta" },
+    { key: "ciclo", label: "Ciclo" }, { key: "inspector", label: "Inspector2" }, { key: "supervisor", label: "Supervisor" },
+    { key: "obs_1", label: "Obs. 1" }, { key: "estado", label: "Estado auditoría" }, { key: "tipo_error", label: "Tipo de error" },
+    { key: "efectividad", label: "Efectividad" }
+  ];
+  downloadCSV("detalle_cierres_dh_" + scopeLabelText() + ".csv", dhFiltered, headers);
 }
 
 function renderRankingKPIs() {
@@ -3818,6 +4001,8 @@ function renderRankingKPIs() {
   document.getElementById("kpi-ranking-sp-sub").textContent = fmtPct(total ? round1(b.totalSP / total * 100) : 0) + " del total · " + fmtPct(b.pctSpCorrecto) + " cerradas correctamente";
   document.getElementById("kpi-ranking-vi").textContent = fmtInt(b.totalVI);
   document.getElementById("kpi-ranking-vi-sub").textContent = fmtPct(total ? round1(b.totalVI / total * 100) : 0) + " del total · " + fmtPct(b.pctViCorrecto) + " cerradas correctamente";
+  document.getElementById("kpi-ranking-dh").textContent = fmtInt(b.totalDH);
+  document.getElementById("kpi-ranking-dh-sub").textContent = fmtPct(total ? round1(b.totalDH / total * 100) : 0) + " del total · " + fmtPct(b.pctDhCorrecto) + " cerradas correctamente";
 }
 
 function renderRankingCharts() {
@@ -3869,6 +4054,21 @@ function renderRankingCharts() {
     }
   });
 
+  const topDh = list.slice().filter(function(r) { return r.dh > 0; }).sort(function(a, b) { return b.dh - a.dh; }).slice(0, 10);
+  if (charts.rankingDh) charts.rankingDh.destroy();
+  charts.rankingDh = new Chart(document.getElementById("ranking-dh-chart"), {
+    type: "bar",
+    data: {
+      labels: topDh.map(function(r) { return r.inspector; }),
+      datasets: [ { label: "Cierres DH", data: topDh.map(function(r) { return r.dh; }), backgroundColor: COLORS.teal, borderRadius: 4, maxBarThickness: 18 } ]
+    },
+    options: {
+      indexAxis: "y", responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { precision: 0 }, grid: { color: "#EEF2F5" } }, y: { grid: { display: false } } }
+    }
+  });
+
   const porCausa = DATA.overall.ranking_breakdown.porCausa;
   const causaColors = [ COLORS.danger, "#FF7A00", COLORS.warning, COLORS.teal, COLORS.gray ];
   if (charts.rankingCausa) charts.rankingCausa.destroy();
@@ -3888,7 +4088,7 @@ function renderRankingCharts() {
 function exportRankingCSV(which) {
   const key = which;
   const pctKey = "pct_" + which;
-  const labelMap = { nc: "Cierres NC", sp: "Cierres SP", vi: "Cierres VI" };
+  const labelMap = { nc: "Cierres NC", sp: "Cierres SP", vi: "Cierres VI", dh: "Cierres DH" };
   const label = labelMap[which] || ("Cierres " + which.toUpperCase());
   const correctoKey = which + "_correcto";
   const conErroresKey = which + "_con_errores";
@@ -4281,6 +4481,18 @@ function init() {
   document.getElementById("export-ranking-nc-btn").addEventListener("click", function() { exportRankingCSV("nc"); });
   document.getElementById("export-ranking-sp-btn").addEventListener("click", function() { exportRankingCSV("sp"); });
   document.getElementById("export-ranking-vi-btn").addEventListener("click", function() { exportRankingCSV("vi"); });
+  document.getElementById("export-ranking-dh-btn").addEventListener("click", function() { exportRankingCSV("dh"); });
+  document.getElementById("dh-search").addEventListener("input", function() {
+    dhPage = 0;
+    renderDhDetail();
+  });
+  document.getElementById("dh-estado-select").addEventListener("change", function() {
+    dhPage = 0;
+    renderDhDetail();
+  });
+  document.getElementById("dh-prev-page").addEventListener("click", function() { changeDhPage(-1); });
+  document.getElementById("dh-next-page").addEventListener("click", function() { changeDhPage(1); });
+  document.getElementById("export-dh-detail-btn").addEventListener("click", exportDhDetailCSV);
   document.getElementById("export-inspector-btn").addEventListener("click", exportInspectorCSV);
   document.getElementById("refresh-btn").addEventListener("click", function() {
     loadData(true);
