@@ -773,7 +773,7 @@
   <section class="chart-row two-col">
     <div class="chart-container tall">
       <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V10M11 19V4M18 19v-7"/></svg> Cierres por día y % de efectividad</h3>
-      <p class="chart-sub">Órdenes de inspectores, apiladas por resultado. La línea es el % de efectividad del día frente a la meta.</p>
+      <p class="chart-sub">Órdenes de inspectores, apiladas por resultado. La línea es el % de efectividad neta de errores del día frente a la meta.</p>
       <div style="height:320px; position:relative;"><canvas id="gx-daily-chart"></canvas></div>
     </div>
     <div class="chart-container tall">
@@ -815,13 +815,13 @@
         <button class="btn ghost" id="export-gx-sup-btn">Exportar CSV</button>
       </div>
     </div>
-    <p class="chart-sub" style="margin:-4px 0 12px;">Efectividad frente a la meta del contrato (65%) y jornada frente a su meta (85%). Cada orden se asigna al supervisor del inspector real, cruzando la BASE con el Validador por número de orden.</p>
+    <p class="chart-sub" style="margin:-4px 0 12px;">Efectividad neta de errores de auditoría (igual que el Consolidado del Excel: efectivas − órdenes con error) frente a la meta del contrato (65%) y jornada frente a su meta (85%). Cada orden se asigna al supervisor del inspector real, cruzando la BASE con el Validador por número de orden.</p>
     <div class="table-scroll">
       <table class="data-table" id="gx-sup-table">
         <thead>
           <tr>
             <th data-key="supervisor">Supervisor</th><th data-key="insp" class="num">Inspectores</th><th data-key="n" class="num sorted">Auditadas</th>
-            <th data-key="pctEfect" class="num">% Efectividad</th><th data-key="pctJornada" class="num">% Jornada</th>
+            <th data-key="pctEfect" class="num">% Efectividad neta</th><th data-key="pctJornada" class="num">% Jornada</th>
             <th data-key="pctCorrecto" class="num">% Correctas</th><th data-key="prodDia" class="num">Órd./inspector/día</th>
           </tr>
         </thead>
@@ -2818,7 +2818,7 @@ function gxCompute(rows) {
   const pend = rows.filter(function(r) { return r.rol === "pend"; });
   const n = insp.length;
   const jc = { cumple: 0, excluida: 0, no: 0, sin: 0 };
-  let efect = 0, correctas = 0;
+  let efect = 0, correctas = 0, errores = 0;
   const days = new Map;
   const inspDays = new Set;
   const inspSet = new Set;
@@ -2827,13 +2827,15 @@ function gxCompute(rows) {
     jc[r.jst]++;
     if (r.efectiva) efect++;
     if (r.estado === "Correcto") correctas++;
+    if (r.estado === "Con Errores") errores++;
     let d = days.get(r.fecha);
     if (!d) {
-      d = { fecha: r.fecha, n: 0, efect: 0, jok: 0, jden: 0 };
+      d = { fecha: r.fecha, n: 0, efect: 0, err: 0, jok: 0, jden: 0 };
       days.set(r.fecha, d);
     }
     d.n++;
     if (r.efectiva) d.efect++;
+    if (r.estado === "Con Errores") d.err++;
     if (r.jst !== "sin") {
       d.jden++;
       if (r.jst === "cumple" || r.jst === "excluida") d.jok++;
@@ -2842,11 +2844,12 @@ function gxCompute(rows) {
     inspSet.add(r.inspector);
     let s = supMap.get(r.supervisor);
     if (!s) {
-      s = { supervisor: r.supervisor || "(Sin supervisor)", n: 0, efect: 0, jok: 0, jden: 0, corr: 0, insps: new Set, ids: new Set };
+      s = { supervisor: r.supervisor || "(Sin supervisor)", n: 0, efect: 0, err: 0, jok: 0, jden: 0, corr: 0, insps: new Set, ids: new Set };
       supMap.set(r.supervisor, s);
     }
     s.n++;
     if (r.efectiva) s.efect++;
+    if (r.estado === "Con Errores") s.err++;
     if (r.jst !== "sin") {
       s.jden++;
       if (r.jst === "cumple" || r.jst === "excluida") s.jok++;
@@ -2859,11 +2862,11 @@ function gxCompute(rows) {
   const daily = Array.from(days.values()).sort(function(a, b) {
     return a.fecha < b.fecha ? -1 : 1;
   }).map(function(d) {
-    return { fecha: d.fecha, n: d.n, efect: d.efect, noEfect: d.n - d.efect, pctEfect: gxPct(d.efect, d.n), pctJornada: gxPct(d.jok, d.jden) };
+    return { fecha: d.fecha, n: d.n, efect: d.efect, noEfect: d.n - d.efect, pctEfect: gxPct(d.efect - d.err, d.n), pctJornada: gxPct(d.jok, d.jden) };
   });
   const supervisores = Array.from(supMap.values()).map(function(s) {
     return {
-      supervisor: s.supervisor, insp: s.insps.size, n: s.n, pctEfect: gxPct(s.efect, s.n), pctJornada: gxPct(s.jok, s.jden),
+      supervisor: s.supervisor, insp: s.insps.size, n: s.n, pctEfect: gxPct(s.efect - s.err, s.n), pctJornada: gxPct(s.jok, s.jden),
       pctCorrecto: gxPct(s.corr, s.n), prodDia: s.ids.size ? round1(s.n / s.ids.size) : 0
     };
   });
@@ -2876,7 +2879,7 @@ function gxCompute(rows) {
   });
   return {
     total: rows.length, n: n, adminN: admin.length, pendN: pend.length,
-    efect: efect, pctEfect: gxPct(efect, n),
+    efect: efect, errores: errores, pctEfect: gxPct(efect - errores, n), pctEfectBruta: gxPct(efect, n),
     jc: jc, pctJornada: gxPct(jc.cumple + jc.excluida, jDen),
     correctas: correctas, pctCorrecto: gxPct(correctas, n),
     diasN: days.size, promDiario: days.size ? round1(n / days.size) : 0,
@@ -2950,7 +2953,7 @@ function renderPanorama() {
   document.getElementById("gx-indicators").innerHTML =
     gxIndicatorCard({
       label: "Efectividad de la inspección", value: g.pctEfect, meta: EFECTIVIDAD_META,
-      sub: fmtInt(g.efect) + " efectivas de " + fmtInt(g.n) + " inspecciones atendidas"
+      sub: fmtInt(g.efect - g.errores) + " efectivas netas de " + fmtInt(g.n) + " atendidas (" + fmtInt(g.efect) + " efectivas − " + fmtInt(g.errores) + " con error) · bruta " + fmtPct(g.pctEfectBruta)
     }) +
     gxIndicatorCard({
       label: "Cumplimiento de jornada", value: g.pctJornada, meta: JORNADA_META,
@@ -2988,7 +2991,7 @@ function renderGxCharts(g) {
       datasets: [
         { type: "bar", label: "Efectivas", data: g.daily.map(function(d) { return d.efect; }), backgroundColor: COLORS.success, stack: "s", borderRadius: 3, maxBarThickness: 34, yAxisID: "y" },
         { type: "bar", label: "No efectivas", data: g.daily.map(function(d) { return d.noEfect; }), backgroundColor: COLORS.warning, stack: "s", borderRadius: 3, maxBarThickness: 34, yAxisID: "y" },
-        { type: "line", label: "% efectividad", data: g.daily.map(function(d) { return d.pctEfect; }), borderColor: COLORS.primaryDark, backgroundColor: COLORS.primaryDark, tension: 0.25, pointRadius: 3, yAxisID: "y2" },
+        { type: "line", label: "% efectividad neta", data: g.daily.map(function(d) { return d.pctEfect; }), borderColor: COLORS.primaryDark, backgroundColor: COLORS.primaryDark, tension: 0.25, pointRadius: 3, yAxisID: "y2" },
         { type: "line", label: "Meta " + EFECTIVIDAD_META + "%", data: g.daily.map(function() { return EFECTIVIDAD_META; }), borderColor: COLORS.danger, borderDash: [6, 5], borderWidth: 1.5, pointRadius: 0, yAxisID: "y2" }
       ]
     },
@@ -3087,7 +3090,7 @@ function renderGxSupervisores(g) {
 function exportGxSupervisoresCSV() {
   const headers = [
     { key: "supervisor", label: "Supervisor" }, { key: "insp", label: "Inspectores" }, { key: "n", label: "Auditadas" },
-    { key: "pctEfect", label: "% Efectividad" }, { key: "pctJornada", label: "% Jornada" }, { key: "pctCorrecto", label: "% Correctas" },
+    { key: "pctEfect", label: "% Efectividad neta" }, { key: "pctJornada", label: "% Jornada" }, { key: "pctCorrecto", label: "% Correctas" },
     { key: "prodDia", label: "Órdenes por inspector por día" }
   ];
   downloadCSV("tablero_supervisores.csv", _gxSupSorted, headers);
