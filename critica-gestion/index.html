@@ -4766,14 +4766,20 @@ function gxAreaLabel(a) {
 // Lee la tabla por el nombre de sus columnas (así no importa si traen más columnas) y descarta cédulas y demás datos personales.
 function gxPersonalFromGviz(resp) {
   if (!resp || !resp.table || !resp.table.cols) return null;
-  const labels = resp.table.cols.map(function(c) { return gxNormText(c.label || ""); });
+  let labels = resp.table.cols.map(function(c) { return gxNormText(c.label || ""); });
+  let dataRows = resp.table.rows || [];
+  // Una hoja con todo en texto llega sin encabezados: en ese caso la primera fila es el encabezado.
+  if (labels.every(function(l) { return l === ""; }) && dataRows.length) {
+    labels = (dataRows[0].c || []).map(function(c) { return gxNormText(c && c.v !== null && c.v !== undefined ? c.v : ""); });
+    dataRows = dataRows.slice(1);
+  }
   const iIns = labels.indexOf("inspector"), iUsr = labels.indexOf("usuario"), iSup = labels.indexOf("supervisor"), iAr = labels.indexOf("area");
   if (iUsr < 0 || iAr < 0) return null;
   const cell = function(row, i) {
     const c = i >= 0 ? row.c[i] : null;
     return c && c.v !== null && c.v !== undefined ? String(c.v).trim() : "";
   };
-  return (resp.table.rows || []).map(function(row) {
+  return dataRows.map(function(row) {
     return { inspector: cell(row, iIns), usuario: cell(row, iUsr).toUpperCase(), supervisor: cell(row, iSup), area: gxAreaLabel(cell(row, iAr)) };
   }).filter(function(r) { return r.usuario; });
 }
