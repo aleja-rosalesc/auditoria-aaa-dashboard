@@ -33,7 +33,6 @@ function doPost(e) {
     if (a === 'guardar') return out_(guardar_(req, who));
     if (!admin) return out_({ ok: false, error: 'Solo administrador' });
     if (a === 'cargar') return out_(cargar_(req));
-    if (a === 'cargarAuditorias') return out_(cargarAuditorias_(req));
     if (a === 'eliminarAuditadas') return out_(eliminarAuditadas_());
     if (a === 'guardarSupervisor') return out_(guardarSupervisor_(req));
     if (a === 'eliminarSupervisor') return out_(eliminarSupervisor_(req));
@@ -193,22 +192,6 @@ function marcarAuditada_(orden) {
   rows_(ord, ORDEN_COLS).forEach(function (r) {
     if (String(r['Orden']) === String(orden)) ord.getRange(r._row, 7).setValue('Auditada');
   });
-}
-
-// req.rows: [{Orden, datos:{...}}] — el administrador registra auditorías en lote (sin fotos)
-function cargarAuditorias_(req) {
-  var lock = LockService.getScriptLock(); lock.waitLock(30000);
-  try {
-    var aud = sheet_('AUDITORIAS', AUD_COLS), ok = 0, noEncontradas = [];
-    (req.rows || []).forEach(function (r) {
-      var o = datosOrden_(r.Orden);
-      if (!o) { noEncontradas.push(r.Orden); return; }
-      escribirAud_(aud, ['b' + new Date().getTime().toString(36) + Math.random().toString(36).slice(2, 7), String(o['Orden']), String(o['Supervisor']).trim(), new Date(), JSON.stringify(r.datos || {}), '', '', '', o['Dirección'], o['Tipo de trabajo'], o['Inspector']]);
-      marcarAuditada_(o['Orden']);
-      ok++;
-    });
-    return { ok: true, cargadas: ok, noEncontradas: noEncontradas };
-  } finally { lock.releaseLock(); }
 }
 
 // Borra de ORDENES las órdenes ya auditadas. El historial queda en AUDITORIAS (con dirección, tipo e inspector).

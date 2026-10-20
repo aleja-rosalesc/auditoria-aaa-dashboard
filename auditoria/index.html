@@ -94,7 +94,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
 
-let S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "carga" };
+let S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica" };
 
 /* ---------- API ---------- */
 async function api(body) {
@@ -134,7 +134,7 @@ window.addEventListener("online", flushQueue);
 
 /* ---------- Sesión ---------- */
 function saveSession() { store.set("aud_sess", JSON.stringify({ role: S.role, key: S.key, supervisor: S.supervisor })); }
-function logout() { store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "carga" }; renderLogin(); }
+function logout() { store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica" }; S.cr = crNuevo(); renderLogin(); }
 $("btn-logout").onclick = logout;
 $("btn-refresh").onclick = () => (S.role === "admin" ? loadAdmin() : loadOrdenes());
 
@@ -297,29 +297,26 @@ async function loadAdmin() {
   catch (e) { $("app").innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
   renderAdmin();
 }
-const ADMIN_TABS = [["carga", "Cargar"], ["seg", "Seguimiento"], ["sup", "Supervisores"]];
+const ADMIN_TABS = [["critica", "Desde Crítica"], ["carga", "Pegar Excel"], ["seg", "Seguimiento"], ["sup", "Supervisores"]];
 function renderAdmin(msg) {
-  const body = S.adminTab === "carga" ? adminCarga() : S.adminTab === "sup" ? adminSup() : adminSeg();
+  const body = S.adminTab === "critica" ? adminCritica() : S.adminTab === "carga" ? adminCarga() : S.adminTab === "sup" ? adminSup() : adminSeg();
   $("app").innerHTML = `<div id="adm"><div class="chips">${ADMIN_TABS.map(([t, n]) => `<button class="chip ${S.adminTab === t ? "on" : ""}" data-t="${t}">${n}</button>`).join("")}</div>
     ${msg || ""}${body}</div>`;
   document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { S.adminTab = b.dataset.t; renderAdmin(); });
-  if (S.adminTab === "carga") { $("ld-go").onclick = cargar; $("la-go").onclick = cargarAuds; }
+  if (S.adminTab === "critica") bindCritica();
+  if (S.adminTab === "carga") { $("ld-go").onclick = cargar; }
   if (S.adminTab === "seg") { $("dl-csv").onclick = descargarCsv; $("del-aud").onclick = eliminarAuditadas; }
   if (S.adminTab === "sup") bindSup();
 }
 const okMsg = t => `<div class="card" style="background:var(--success-bg)">✓ ${t}</div>`;
 const errMsg = t => `<div class="err" style="margin-bottom:10px">${esc(t)}</div>`;
 
-/* --- Cargar órdenes y auditorías en lote --- */
+/* --- Pegar órdenes desde Excel --- */
 function adminCarga() {
-  const cols = FORM_FIELDS.map(f => f.label).join(", ");
   return `<div class="card"><b>Cargar órdenes</b><p class="muted">Copia las filas desde Excel (con la fila de encabezados) y pégalas aquí. Encabezados reconocidos: <b>Orden</b>, <b>Supervisor</b> (obligatorios), Dirección, Tipo de trabajo, Inspector, Observación. Cualquier otra columna se muestra como detalle al supervisor.</p>
     <textarea id="ld-txt" style="min-height:140px;font-size:13px" placeholder="Orden&#9;Supervisor&#9;Dirección&#10;1053925&#9;Juan Pérez&#9;Cra 1 # 2-3"></textarea>
     <label class="opt"><input type="checkbox" id="ld-rep"> Reemplazar las órdenes actuales (borra la lista anterior)</label>
-    <button class="primary" id="ld-go">Cargar órdenes</button></div>
-    <div class="card"><b>Cargar auditorías en lote</b><p class="muted">Para registrar auditorías ya hechas sin que el supervisor las diligencie (sin fotos). Pega desde Excel con encabezados: <b>Orden</b> y las columnas: ${esc(cols)}. En campos de varias opciones sepáralas con punto y coma (;). Las órdenes deben estar ya cargadas.</p>
-    <textarea id="la-txt" style="min-height:120px;font-size:13px"></textarea>
-    <button class="primary" id="la-go">Cargar auditorías</button></div>`;
+    <button class="primary" id="ld-go">Cargar órdenes</button></div>`;
 }
 const normH = h => h.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 function tsvLines(txt) {
@@ -333,13 +330,6 @@ function parseTsv(txt) {
   if (!names.includes("Orden") || !names.includes("Supervisor")) throw new Error("Faltan las columnas Orden y Supervisor");
   return L.slice(1).map(c => { const r = {}; names.forEach((n, i) => { if (n) r[n] = c[i] || ""; }); return r; });
 }
-function parseAuds(txt) {
-  const L = tsvLines(txt), head = L[0].map(normH), iOrd = head.indexOf("orden");
-  if (iOrd < 0) throw new Error("Falta la columna Orden");
-  const map = FORM_FIELDS.map(f => ({ f, i: Math.max(head.indexOf(normH(f.label)), head.indexOf(normH(f.id))) })).filter(m => m.i >= 0);
-  if (!map.length) throw new Error("No se reconoció ninguna columna del formulario");
-  return L.slice(1).filter(c => c[iOrd]).map(c => { const datos = {}; map.forEach(m => { const v = c[m.i] || ""; datos[m.f.id] = m.f.type === "check" ? v.split(";").map(x => x.trim()).filter(Boolean) : v; }); return { Orden: c[iOrd], datos }; });
-}
 async function refreshAdmin() { const j = await api({ action: "ordenes" }); S.ordenes = j.ordenes; S.auditorias = j.auditorias; S.supervisores = j.supervisores; }
 async function cargar() {
   try {
@@ -351,14 +341,125 @@ async function cargar() {
     renderAdmin(okMsg(`${j.cargadas} órdenes cargadas${j.omitidas ? ", " + j.omitidas + " omitidas (repetidas o sin número)" : ""}.`));
   } catch (e) { renderAdmin(errMsg(e.message)); }
 }
-async function cargarAuds() {
+/* --- Desde Crítica: filtrar por fecha e inspector, elegir órdenes y enviarlas a auditoría --- */
+// Hoja Validador de Crítica (pública). Columnas por letra: A ORDEN, B CUENTA, C CICLO, F CAUSA_CIERRE, G COMENTARIO,
+// I OBS_1, J FECHA_FINALIZACIÓN, L INSPECTOR2 (inspector real), N EFECTIVIDAD, P SUPERVISOR.
+const CRITICA_SHEET_ID = "1_NTcyMn3xX0MYqP40qdFc9hiAVpgOXdkfwJEEhRwL3o", CRITICA_GID = "205567382", CRITICA_MAX_FILAS = 3000;
+const CR_DETALLE = [["cuenta", "Cuenta"], ["ciclo", "Ciclo"], ["causa", "Causa de cierre"], ["comentario", "Comentario"], ["obs1", "Obs. 1"], ["efectividad", "Efectividad"], ["fecha", "Fecha de cierre"]];
+const crNuevo = () => ({ desde: "", hasta: "", insp: "", inspList: null, rows: null, sel: new Set(), q: "", msg: "", detalle: new Set(CR_DETALLE.map(d => d[0])), asignar: "__cr", nota: "" });
+S.cr = crNuevo();
+
+let gvN = 0;
+function gviz(tq) {
+  return new Promise((res, rej) => {
+    const cb = "gv_cb" + (++gvN), sc = document.createElement("script");
+    const done = () => { delete window[cb]; sc.remove(); };
+    window[cb] = r => { done(); if (r.status !== "ok") return rej(new Error((r.errors && r.errors[0] && r.errors[0].detailed_message) || "Error leyendo la hoja de Crítica")); res(r.table); };
+    sc.onerror = () => { done(); rej(new Error("No se pudo leer la hoja de Crítica")); };
+    sc.src = "https://docs.google.com/spreadsheets/d/" + CRITICA_SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:" + cb + "&gid=" + CRITICA_GID + "&tq=" + encodeURIComponent(tq) + "&_=" + Date.now();
+    document.head.appendChild(sc);
+  });
+}
+const cv = c => (c == null || c.v == null ? "" : c.v);
+function gvIso(c) { const m = /^Date\((\d+),(\d+),(\d+)/.exec(String(cv(c))); return m ? m[1] + "-" + String(+m[2] + 1).padStart(2, "0") + "-" + m[3].padStart(2, "0") : ""; }
+const fmtFecha = iso => iso ? iso.split("-").reverse().join("/") : "";
+const crWhere = () => "where J >= date '" + S.cr.desde + "' and J <= date '" + S.cr.hasta + "'" + (S.cr.insp ? ' and L = "' + S.cr.insp.replace(/"/g, "") + '"' : "");
+
+function adminCritica() {
+  const c = S.cr;
+  return `<div class="card"><b>Órdenes de Crítica</b><p class="muted" style="margin-top:4px">Elige la fecha de cierre y el inspector, mira las órdenes y selecciona cuáles mandar a auditar.</p>
+    <div class="row"><div class="grow"><label>Desde</label><input type="date" id="cr-d" value="${c.desde}"></div><div class="grow"><label>Hasta</label><input type="date" id="cr-h" value="${c.hasta}"></div></div>
+    <label>Inspector (unidad de trabajo)</label>
+    <select id="cr-i" ${c.inspList ? "" : "disabled"}><option value="">${c.inspList ? "Todos los inspectores" : "Cargando…"}</option>${(c.inspList || []).map(i => `<option value="${esc(i.n)}" ${i.n === c.insp ? "selected" : ""}>${esc(i.n)} (${i.c})</option>`).join("")}</select>
+    <button class="primary" id="cr-go" ${c.desde && c.hasta ? "" : "disabled"}>Ver órdenes</button>${c.msg}</div>
+    <div id="cr-res">${c.rows ? crResultado() : ""}</div>`;
+}
+function crResultado() {
+  const c = S.cr, ya = new Set(S.ordenes.map(o => String(o["Orden"])));
+  const q = c.q.toLowerCase();
+  const vis = c.rows.filter(r => !q || (r.orden + " " + r.cuenta + " " + r.ciclo + " " + r.insp + " " + r.causa).toLowerCase().includes(q));
+  const libres = vis.filter(r => !ya.has(r.orden));
+  const sups = (S.supervisores || []).map(s => s.Supervisor);
+  return `<div class="card"><div class="row"><b class="grow">${c.rows.length} órdenes${c.rows.length >= CRITICA_MAX_FILAS ? " (tope: acota el filtro)" : ""}</b><span class="muted" id="cr-cnt">${c.sel.size} seleccionadas</span></div>
+    <div class="row" style="margin:10px 0"><input id="cr-q" type="search" placeholder="Buscar en estas órdenes" value="${esc(c.q)}" class="grow"><button class="secondary" id="cr-all">Seleccionar visibles</button><button class="secondary" id="cr-none">Ninguna</button></div>
+    <div style="overflow-x:auto"><table><tr><th></th><th>Orden</th><th>Fecha</th><th>Inspector</th><th>Ciclo</th><th>Causa de cierre</th><th>Efect.</th><th>Sup. Crítica</th></tr>
+    ${vis.map(r => `<tr><td><input type="checkbox" class="cr-ck" data-o="${esc(r.orden)}" ${ya.has(r.orden) ? "disabled" : ""} ${c.sel.has(r.orden) ? "checked" : ""} style="width:20px;height:20px"></td><td>${esc(r.orden)}${ya.has(r.orden) ? '<br><span class="tag a">Ya cargada</span>' : ""}</td><td>${fmtFecha(r.fecha)}</td><td>${esc(r.insp)}</td><td>${esc(r.ciclo)}</td><td>${esc(r.causa)}</td><td>${esc(r.efectividad)}</td><td>${esc(r.sup)}</td></tr>`).join("") || '<tr><td colspan="8" class="muted">Sin órdenes con ese filtro.</td></tr>'}</table></div>
+    ${libres.length < vis.length ? `<p class="muted" style="margin:8px 0 0">Las marcadas "Ya cargada" ya están en la lista de auditoría.</p>` : ""}</div>
+    <div class="card"><b>Enviar a auditoría</b>
+      <label>Asignar a</label><select id="cr-as"><option value="__cr" ${c.asignar === "__cr" ? "selected" : ""}>El supervisor que figura en Crítica</option>${sups.map(n => `<option value="${esc(n)}" ${c.asignar === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
+      <label>Indicación para el supervisor (opcional)</label><textarea id="cr-nota" placeholder="Qué debe revisar o verificar en estas órdenes">${esc(c.nota)}</textarea>
+      <label>Información de Crítica que verá el supervisor</label>
+      <div class="opts">${CR_DETALLE.map(([k, n]) => `<label class="opt ${c.detalle.has(k) ? "sel" : ""}"><input type="checkbox" class="cr-det" data-k="${k}" ${c.detalle.has(k) ? "checked" : ""}> ${n}</label>`).join("")}</div>
+      <button class="primary" id="cr-send">Enviar ${c.sel.size} órdenes a auditoría</button></div>`;
+}
+async function crCargarInspectores() {
+  const c = S.cr; c.inspList = null; c.insp = ""; c.rows = null;
+  if (!c.desde || !c.hasta) return;
+  const desde = c.desde, hasta = c.hasta;
   try {
-    const rows = parseAuds($("la-txt").value);
-    $("la-go").disabled = true; $("la-go").textContent = "Cargando…";
-    const j = await api({ action: "cargarAuditorias", rows });
-    await refreshAdmin();
-    renderAdmin(okMsg(`${j.cargadas} auditorías registradas${j.noEncontradas.length ? ". No se encontraron estas órdenes: " + esc(j.noEncontradas.join(", ")) : ""}.`));
-  } catch (e) { renderAdmin(errMsg(e.message)); }
+    const t = await gviz("select L, count(A) where J >= date '" + desde + "' and J <= date '" + hasta + "' group by L order by L");
+    if (c.desde !== desde || c.hasta !== hasta) return;   // el usuario ya cambió las fechas
+    c.inspList = t.rows.map(r => ({ n: String(cv(r.c[0])), c: cv(r.c[1]) })).filter(i => i.n);
+    c.msg = "";
+  } catch (e) { c.inspList = []; c.msg = errMsg(e.message); }
+  if (S.adminTab === "critica") renderAdmin();
+}
+async function crIniciar() {
+  const c = S.cr;
+  if (c.desde) return;
+  try {
+    const t = await gviz("select max(J)");
+    c.hasta = c.desde = gvIso(t.rows[0].c[0]);
+  } catch (e) { c.msg = errMsg(e.message); c.inspList = []; renderAdmin(); return; }
+  renderAdmin(); crCargarInspectores();
+}
+async function crVer() {
+  const c = S.cr; $("cr-go").disabled = true; $("cr-go").textContent = "Cargando…";
+  try {
+    const t = await gviz("select A,B,C,F,G,I,J,L,N,P " + crWhere() + " order by J, L limit " + CRITICA_MAX_FILAS);
+    c.rows = t.rows.map(r => { const x = r.c.map(cv); return { orden: String(x[0]).replace(/\.0$/, ""), cuenta: String(x[1]), ciclo: x[2], causa: x[3], comentario: x[4], obs1: x[5], fecha: gvIso(r.c[6]), insp: x[7], efectividad: x[8], sup: x[9] }; }).filter(r => r.orden);
+    c.sel = new Set(); c.q = ""; c.msg = "";
+    await refreshAdmin().catch(() => {});
+  } catch (e) { c.rows = null; c.msg = errMsg(e.message); }
+  renderAdmin();
+}
+function bindCritica() {
+  const c = S.cr;
+  if (!c.desde) { crIniciar(); return; }
+  $("cr-d").onchange = e => { c.desde = e.target.value; if (c.hasta < c.desde) c.hasta = c.desde; crCargarInspectores(); renderAdmin(); };
+  $("cr-h").onchange = e => { c.hasta = e.target.value; if (c.hasta < c.desde) c.desde = c.hasta; crCargarInspectores(); renderAdmin(); };
+  $("cr-i").onchange = e => { c.insp = e.target.value; c.rows = null; renderAdmin(); };
+  $("cr-go").onclick = crVer;
+  if (!c.rows) return;
+  const cnt = () => { $("cr-cnt").textContent = c.sel.size + " seleccionadas"; $("cr-send").textContent = "Enviar " + c.sel.size + " órdenes a auditoría"; };
+  document.querySelectorAll(".cr-ck").forEach(k => k.onchange = () => { k.checked ? c.sel.add(k.dataset.o) : c.sel.delete(k.dataset.o); cnt(); });
+  $("cr-q").oninput = e => { c.q = e.target.value; c.nota = $("cr-nota").value; const p = e.target.selectionStart; $("cr-res").innerHTML = crResultado(); bindCritica(); $("cr-q").focus(); $("cr-q").setSelectionRange(p, p); };
+  const visibles = () => [...document.querySelectorAll(".cr-ck:not(:disabled)")].map(k => k.dataset.o);
+  $("cr-all").onclick = () => { visibles().forEach(o => c.sel.add(o)); document.querySelectorAll(".cr-ck:not(:disabled)").forEach(k => k.checked = true); cnt(); };
+  $("cr-none").onclick = () => { c.sel.clear(); document.querySelectorAll(".cr-ck").forEach(k => k.checked = false); cnt(); };
+  $("cr-as").onchange = e => { c.asignar = e.target.value; };
+  $("cr-nota").oninput = e => { c.nota = e.target.value; };
+  document.querySelectorAll(".cr-det").forEach(k => k.onchange = () => { k.checked ? c.detalle.add(k.dataset.k) : c.detalle.delete(k.dataset.k); k.closest(".opt").classList.toggle("sel", k.checked); });
+  $("cr-send").onclick = crEnviar;
+}
+async function crEnviar() {
+  const c = S.cr, elegidas = c.rows.filter(r => c.sel.has(r.orden));
+  if (!elegidas.length) return alert("Selecciona al menos una orden");
+  const sinSup = c.asignar === "__cr" ? elegidas.filter(r => !String(r.sup).trim()) : [];
+  if (sinSup.length) return alert(sinSup.length + " de las órdenes no tienen supervisor en Crítica. Elige un supervisor en \"Asignar a\".");
+  const rows = elegidas.map(r => {
+    const o = { Orden: r.orden, Supervisor: c.asignar === "__cr" ? String(r.sup).trim() : c.asignar, Inspector: r.insp };
+    if (c.nota.trim()) o["Observación"] = c.nota.trim();
+    CR_DETALLE.forEach(([k, n]) => { if (c.detalle.has(k) && r[k] !== "" && r[k] != null) o[n] = k === "fecha" ? fmtFecha(r[k]) : String(r[k]); });
+    return o;
+  });
+  $("cr-send").disabled = true; $("cr-send").textContent = "Enviando…";
+  try {
+    const j = await api({ action: "cargar", rows, reemplazar: false });
+    await refreshAdmin(); c.sel = new Set(); c.nota = "";
+    c.msg = okMsg(`${j.cargadas} órdenes enviadas a auditoría${j.omitidas ? ", " + j.omitidas + " ya estaban cargadas" : ""}. Si el supervisor es nuevo, asígnale su clave en la pestaña Supervisores.`);
+  } catch (e) { c.msg = errMsg(e.message); }
+  renderAdmin();
 }
 
 /* --- Seguimiento, descarga y limpieza --- */
