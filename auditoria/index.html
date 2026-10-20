@@ -20,6 +20,9 @@
   header h1{ font-size:16px; margin:0; flex:1; }
   header small{ display:block; font-weight:400; opacity:.75; font-size:11.5px; }
   header button{ background:rgba(255,255,255,.15); color:#fff; border:0; border-radius:8px; padding:7px 10px; font-size:13px; }
+  .logo-badge{ background:#fff; border-radius:9px; padding:5px 9px; display:inline-flex; }
+  .logo-badge img{ height:20px; display:block; }
+  .login-logo{ text-align:center; padding:6px 0 10px; } .login-logo img{ height:44px; }
   main{ max-width:720px; margin:0 auto; padding:14px 14px 80px; }
   .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:10px; }
   label{ display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
@@ -58,6 +61,7 @@
 </head>
 <body>
 <header>
+  <span class="logo-badge"><img src="logo.png" alt="LECTA"></span>
   <h1 id="title">Auditoría<small id="subtitle"></small></h1>
   <button id="btn-back" class="hidden">← Volver</button>
   <button id="btn-refresh" class="hidden">⟳</button>
@@ -145,32 +149,27 @@ function chrome(opts) {
 /* ---------- Login ---------- */
 function renderLogin(msg) {
   chrome({ sub: "Inspecciones AAA" });
-  $("app").innerHTML = `<div class="card">
+  $("app").innerHTML = `<div class="card" style="margin-top:8px">
+    <div class="login-logo"><img src="logo.png" alt="LECTA"></div>
     <label>Ingresar como</label>
     <select id="lg-role"><option value="supervisor">Supervisor</option><option value="admin">Administrador</option></select>
-    <label>Clave de acceso</label>
+    <label>Tu clave de acceso</label>
     <input id="lg-key" type="password" autocomplete="current-password" placeholder="Clave">
     <button class="primary" id="lg-go">Entrar</button>
     ${msg ? `<div class="err">${esc(msg)}</div>` : ""}</div>`;
+  $("lg-key").onkeydown = e => { if (e.key === "Enter") $("lg-go").click(); };
   $("lg-go").onclick = async () => {
     const key = $("lg-key").value.trim(); if (!key) return;
     $("lg-go").disabled = true;
     try {
       S.key = key; S.role = $("lg-role").value;
       const j = await api({ action: "login" });
-      if (S.role === "admin" && j.role !== "admin") throw new Error("Esa clave no es de administrador");
-      S.supervisores = j.supervisores;
-      if (S.role === "admin") { saveSession(); loadAdmin(); } else renderPickSupervisor();
+      if (j.role !== S.role) throw new Error(S.role === "admin" ? "Esa clave no es de administrador" : "Esa clave es de administrador: elige Administrador");
+      S.supervisor = j.supervisor;
+      saveSession();
+      if (S.role === "admin") loadAdmin(); else loadOrdenes();
     } catch (e) { S.key = null; renderLogin(e.message); }
   };
-}
-function renderPickSupervisor() {
-  chrome({ sub: "Supervisor" });
-  $("app").innerHTML = `<div class="card"><label>¿Quién eres?</label>
-    <select id="pk">${S.supervisores.map(s => `<option>${esc(s)}</option>`).join("")}</select>
-    ${S.supervisores.length ? "" : '<p class="muted">Aún no hay órdenes cargadas.</p>'}
-    <button class="primary" id="pk-go" ${S.supervisores.length ? "" : "disabled"}>Continuar</button></div>`;
-  $("pk-go").onclick = () => { S.supervisor = $("pk").value; saveSession(); loadOrdenes(); };
 }
 
 /* ---------- Supervisor: lista de órdenes ---------- */
@@ -294,55 +293,132 @@ async function save(orden) {
 async function loadAdmin() {
   chrome({ sub: "Administrador", refresh: true });
   if (!$("adm")) $("app").innerHTML = `<p class="muted">Cargando…</p>`;
-  try { const j = await api({ action: "ordenes" }); S.ordenes = j.ordenes; S.auditorias = j.auditorias; }
+  try { const j = await api({ action: "ordenes" }); S.ordenes = j.ordenes; S.auditorias = j.auditorias; S.supervisores = j.supervisores; }
   catch (e) { $("app").innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
   renderAdmin();
 }
+const ADMIN_TABS = [["carga", "Cargar"], ["seg", "Seguimiento"], ["sup", "Supervisores"]];
 function renderAdmin(msg) {
-  $("app").innerHTML = `<div id="adm"><div class="chips">
-    <button class="chip ${S.adminTab === "carga" ? "on" : ""}" data-t="carga">Cargar órdenes</button>
-    <button class="chip ${S.adminTab === "seg" ? "on" : ""}" data-t="seg">Seguimiento</button></div>
-    ${S.adminTab === "carga" ? adminCarga(msg) : adminSeg()}</div>`;
+  const body = S.adminTab === "carga" ? adminCarga() : S.adminTab === "sup" ? adminSup() : adminSeg();
+  $("app").innerHTML = `<div id="adm"><div class="chips">${ADMIN_TABS.map(([t, n]) => `<button class="chip ${S.adminTab === t ? "on" : ""}" data-t="${t}">${n}</button>`).join("")}</div>
+    ${msg || ""}${body}</div>`;
   document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { S.adminTab = b.dataset.t; renderAdmin(); });
-  if (S.adminTab === "carga") $("ld-go").onclick = cargar;
+  if (S.adminTab === "carga") { $("ld-go").onclick = cargar; $("la-go").onclick = cargarAuds; }
+  if (S.adminTab === "seg") { $("dl-csv").onclick = descargarCsv; $("del-aud").onclick = eliminarAuditadas; }
+  if (S.adminTab === "sup") bindSup();
 }
-function adminCarga(msg) {
-  return `<div class="card"><p class="muted" style="margin-top:0">Copia las filas desde Excel (con la fila de encabezados) y pégalas aquí. Encabezados reconocidos: <b>Orden</b>, <b>Supervisor</b> (obligatorios), Dirección, Tipo de trabajo, Inspector, Observación. Cualquier otra columna se muestra como detalle al supervisor.</p>
-    <textarea id="ld-txt" style="min-height:160px;font-size:13px" placeholder="Orden&#9;Supervisor&#9;Dirección&#10;1053925&#9;Juan Pérez&#9;Cra 1 # 2-3"></textarea>
+const okMsg = t => `<div class="card" style="background:var(--success-bg)">✓ ${t}</div>`;
+const errMsg = t => `<div class="err" style="margin-bottom:10px">${esc(t)}</div>`;
+
+/* --- Cargar órdenes y auditorías en lote --- */
+function adminCarga() {
+  const cols = FORM_FIELDS.map(f => f.label).join(", ");
+  return `<div class="card"><b>Cargar órdenes</b><p class="muted">Copia las filas desde Excel (con la fila de encabezados) y pégalas aquí. Encabezados reconocidos: <b>Orden</b>, <b>Supervisor</b> (obligatorios), Dirección, Tipo de trabajo, Inspector, Observación. Cualquier otra columna se muestra como detalle al supervisor.</p>
+    <textarea id="ld-txt" style="min-height:140px;font-size:13px" placeholder="Orden&#9;Supervisor&#9;Dirección&#10;1053925&#9;Juan Pérez&#9;Cra 1 # 2-3"></textarea>
     <label class="opt"><input type="checkbox" id="ld-rep"> Reemplazar las órdenes actuales (borra la lista anterior)</label>
-    <button class="primary" id="ld-go">Cargar órdenes</button>${msg || ""}</div>`;
+    <button class="primary" id="ld-go">Cargar órdenes</button></div>
+    <div class="card"><b>Cargar auditorías en lote</b><p class="muted">Para registrar auditorías ya hechas sin que el supervisor las diligencie (sin fotos). Pega desde Excel con encabezados: <b>Orden</b> y las columnas: ${esc(cols)}. En campos de varias opciones sepáralas con punto y coma (;). Las órdenes deben estar ya cargadas.</p>
+    <textarea id="la-txt" style="min-height:120px;font-size:13px"></textarea>
+    <button class="primary" id="la-go">Cargar auditorías</button></div>`;
 }
-function parseTsv(txt) {
+const normH = h => h.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+function tsvLines(txt) {
   const lines = txt.replace(/\r/g, "").split("\n").filter(l => l.trim());
   if (lines.length < 2) throw new Error("Pega los encabezados y al menos una fila");
-  const head = lines[0].split("\t").map(h => h.trim());
-  const norm = h => h.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-  const canon = { orden: "Orden", supervisor: "Supervisor", direccion: "Dirección", "tipo de trabajo": "Tipo de trabajo", inspector: "Inspector", observacion: "Observación" };
-  const names = head.map(h => canon[norm(h)] || h);
-  if (!names.includes("Orden") || !names.includes("Supervisor")) throw new Error("Faltan las columnas Orden y Supervisor");
-  return lines.slice(1).map(l => { const c = l.split("\t"), r = {}; names.forEach((n, i) => { if (n) r[n] = (c[i] || "").trim(); }); return r; });
+  return lines.map(l => l.split("\t").map(c => c.trim()));
 }
+function parseTsv(txt) {
+  const L = tsvLines(txt), canon = { orden: "Orden", supervisor: "Supervisor", direccion: "Dirección", "tipo de trabajo": "Tipo de trabajo", inspector: "Inspector", observacion: "Observación" };
+  const names = L[0].map(h => canon[normH(h)] || h);
+  if (!names.includes("Orden") || !names.includes("Supervisor")) throw new Error("Faltan las columnas Orden y Supervisor");
+  return L.slice(1).map(c => { const r = {}; names.forEach((n, i) => { if (n) r[n] = c[i] || ""; }); return r; });
+}
+function parseAuds(txt) {
+  const L = tsvLines(txt), head = L[0].map(normH), iOrd = head.indexOf("orden");
+  if (iOrd < 0) throw new Error("Falta la columna Orden");
+  const map = FORM_FIELDS.map(f => ({ f, i: Math.max(head.indexOf(normH(f.label)), head.indexOf(normH(f.id))) })).filter(m => m.i >= 0);
+  if (!map.length) throw new Error("No se reconoció ninguna columna del formulario");
+  return L.slice(1).filter(c => c[iOrd]).map(c => { const datos = {}; map.forEach(m => { const v = c[m.i] || ""; datos[m.f.id] = m.f.type === "check" ? v.split(";").map(x => x.trim()).filter(Boolean) : v; }); return { Orden: c[iOrd], datos }; });
+}
+async function refreshAdmin() { const j = await api({ action: "ordenes" }); S.ordenes = j.ordenes; S.auditorias = j.auditorias; S.supervisores = j.supervisores; }
 async function cargar() {
   try {
     const rows = parseTsv($("ld-txt").value);
     if ($("ld-rep").checked && !confirm("Se borrarán las órdenes actuales y se cargarán " + rows.length + ". ¿Continuar?")) return;
     $("ld-go").disabled = true; $("ld-go").textContent = "Cargando…";
     const j = await api({ action: "cargar", rows, reemplazar: $("ld-rep").checked });
-    const j2 = await api({ action: "ordenes" }); S.ordenes = j2.ordenes; S.auditorias = j2.auditorias;
-    renderAdmin(`<div class="card" style="background:var(--success-bg);margin-top:12px">✓ ${j.cargadas} órdenes cargadas${j.omitidas ? ", " + j.omitidas + " omitidas (repetidas o sin número)" : ""}.</div>`);
-  } catch (e) { renderAdmin(`<div class="err">${esc(e.message)}</div>`); }
+    await refreshAdmin();
+    renderAdmin(okMsg(`${j.cargadas} órdenes cargadas${j.omitidas ? ", " + j.omitidas + " omitidas (repetidas o sin número)" : ""}.`));
+  } catch (e) { renderAdmin(errMsg(e.message)); }
 }
+async function cargarAuds() {
+  try {
+    const rows = parseAuds($("la-txt").value);
+    $("la-go").disabled = true; $("la-go").textContent = "Cargando…";
+    const j = await api({ action: "cargarAuditorias", rows });
+    await refreshAdmin();
+    renderAdmin(okMsg(`${j.cargadas} auditorías registradas${j.noEncontradas.length ? ". No se encontraron estas órdenes: " + esc(j.noEncontradas.join(", ")) : ""}.`));
+  } catch (e) { renderAdmin(errMsg(e.message)); }
+}
+
+/* --- Seguimiento, descarga y limpieza --- */
 function adminSeg() {
   const by = {};
   S.ordenes.forEach(o => { const s = o.Supervisor || "(sin supervisor)"; (by[s] = by[s] || { t: 0, a: 0 }).t++; if (o.Estado === "Auditada") by[s].a++; });
   const tot = S.ordenes.length, aud = S.ordenes.filter(o => o.Estado === "Auditada").length;
   const lastAud = {}; S.auditorias.forEach(a => { lastAud[String(a["Orden"])] = a; });
-  const lab = id => { const f = FORM_FIELDS.find(x => x.id === id); return f ? f.label : id; };
-  return `<div class="card"><b>${aud} de ${tot} auditadas</b><div class="bar"><i style="width:${tot ? Math.round(100 * aud / tot) : 0}%"></i></div></div>
+  return `<div class="card"><b>${aud} de ${tot} auditadas</b><div class="bar"><i style="width:${tot ? Math.round(100 * aud / tot) : 0}%"></i></div>
+      <div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="secondary grow" id="dl-csv">⬇ Descargar información (CSV)</button><button class="secondary grow" id="del-aud" ${aud ? "" : "disabled"} style="color:var(--danger);border-color:var(--danger)">🗑 Eliminar diligenciadas (${aud})</button></div>
+      <p class="muted" style="margin:8px 0 0">Eliminar quita las órdenes diligenciadas de la lista de los supervisores. El historial de auditorías y las fotos se conservan. Descarga el CSV antes.</p></div>
     ${Object.keys(by).sort().map(s => `<div class="card"><div class="row"><b class="grow">${esc(s)}</b><span class="muted">${by[s].a}/${by[s].t}</span></div><div class="bar"><i style="width:${Math.round(100 * by[s].a / by[s].t)}%"></i></div></div>`).join("")}
     <div class="card"><b>Auditorías realizadas</b><table><tr><th>Orden</th><th>Supervisor</th><th>Resultado</th><th>Fotos</th></tr>
-    ${Object.values(lastAud).reverse().map(a => { let d = {}; try { d = JSON.parse(a["Datos"] || "{}"); } catch (e) {} const fotos = String(a["Fotos"] || "").split("\n").filter(Boolean);
+    ${Object.values(lastAud).reverse().map(a => { const d = datosAud(a), fotos = fotosAud(a);
       return `<tr><td>${esc(a["Orden"])}</td><td>${esc(a["Supervisor"])}</td><td>${esc(d.resultado || "")}${d.hallazgos && d.hallazgos.length ? `<br><span class="muted">${esc([].concat(d.hallazgos).join(", "))}</span>` : ""}${d.observaciones ? `<br><span class="muted">${esc(d.observaciones)}</span>` : ""}</td><td>${fotos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${i + 1}</a>`).join(" ") || "—"}</td></tr>`; }).join("") || '<tr><td colspan="4" class="muted">Aún no hay auditorías.</td></tr>'}</table></div>`;
+}
+function datosAud(a) { try { return JSON.parse(a["Datos"] || "{}"); } catch (e) { return {}; } }
+function fotosAud(a) { return String(a["Fotos"] || "").split("\n").filter(Boolean); }
+function descargarCsv() {
+  const ordMap = {}; S.ordenes.forEach(o => { ordMap[String(o["Orden"])] = o; });
+  const head = ["Orden", "Estado", "Supervisor", "Fecha auditoría", "Dirección", "Tipo de trabajo", "Inspector"].concat(FORM_FIELDS.map(f => f.label), ["Latitud", "Longitud", "Fotos"]);
+  const fila = [];
+  S.auditorias.forEach(a => {
+    const o = ordMap[String(a["Orden"])] || {}, d = datosAud(a);
+    fila.push([a["Orden"], "Auditada", a["Supervisor"], a["Fecha"] ? new Date(a["Fecha"]).toLocaleString("es-CO") : "", a["Dirección"] || o["Dirección"], a["Tipo de trabajo"] || o["Tipo de trabajo"], a["Inspector"] || o["Inspector"]]
+      .concat(FORM_FIELDS.map(f => [].concat(d[f.id] == null ? "" : d[f.id]).join("; ")), [a["Latitud"], a["Longitud"], fotosAud(a).join(" ")]));
+  });
+  S.ordenes.filter(o => o.Estado !== "Auditada").forEach(o => fila.push([o["Orden"], o.Estado, o.Supervisor, "", o["Dirección"], o["Tipo de trabajo"], o.Inspector].concat(FORM_FIELDS.map(() => ""), ["", "", ""])));
+  const cell = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+  // ";" y BOM: así Excel en español abre bien columnas y tildes
+  const csv = "﻿" + [head].concat(fila).map(r => r.map(cell).join(";")).join("\r\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+  a.download = "auditoria_" + new Date().toISOString().slice(0, 10) + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+async function eliminarAuditadas() {
+  const n = S.ordenes.filter(o => o.Estado === "Auditada").length;
+  if (!n || !confirm("Se eliminarán " + n + " órdenes ya diligenciadas de la lista. El historial de auditorías se conserva. ¿Continuar?")) return;
+  $("del-aud").disabled = true;
+  try { const j = await api({ action: "eliminarAuditadas" }); await refreshAdmin(); renderAdmin(okMsg(j.eliminadas + " órdenes eliminadas.")); }
+  catch (e) { renderAdmin(errMsg(e.message)); }
+}
+
+/* --- Supervisores y claves --- */
+const genClave = () => { const c = "abcdefghjkmnpqrstuvwxyz23456789"; let s = ""; for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
+function adminSup() {
+  return `<div class="card"><p class="muted" style="margin-top:0">Cada supervisor entra con su propia clave y solo ve sus órdenes. El nombre debe ser idéntico al de la columna Supervisor de las órdenes.</p>
+    ${S.supervisores.map((s, i) => `<div class="card" style="background:var(--bg)"><div class="row"><b class="grow">${esc(s.Supervisor)}</b>${s.Clave ? "" : '<span class="tag q">Sin clave</span>'}</div>
+      <div class="row" style="margin-top:8px"><input data-k="${i}" value="${esc(s.Clave)}" placeholder="Clave (mín. 4)" class="grow"><button class="secondary" data-g="${i}" title="Generar">🎲</button><button class="secondary" data-s="${i}">Guardar</button></div>
+      ${s.Clave ? `<button class="secondary" data-d="${i}" style="margin-top:8px;color:var(--danger);border-color:var(--danger)">Quitar acceso</button>` : ""}</div>`).join("") || '<p class="muted">Aún no hay supervisores. Carga órdenes o agrega uno abajo.</p>'}</div>
+    <div class="card"><b>Agregar supervisor</b><label>Nombre</label><input id="ns-n"><label>Clave</label><div class="row"><input id="ns-k" class="grow"><button class="secondary" id="ns-g">🎲</button></div><button class="primary" id="ns-go">Agregar</button></div>`;
+}
+function bindSup() {
+  const guardar = async (nombre, clave) => { try { await api({ action: "guardarSupervisor", nombre, clave }); await refreshAdmin(); renderAdmin(okMsg("Clave guardada para " + esc(nombre) + ".")); } catch (e) { renderAdmin(errMsg(e.message)); } };
+  document.querySelectorAll("[data-g]").forEach(b => b.onclick = () => { document.querySelector(`[data-k="${b.dataset.g}"]`).value = genClave(); });
+  document.querySelectorAll("[data-s]").forEach(b => b.onclick = () => guardar(S.supervisores[+b.dataset.s].Supervisor, document.querySelector(`[data-k="${b.dataset.s}"]`).value));
+  document.querySelectorAll("[data-d]").forEach(b => b.onclick = async () => { const n = S.supervisores[+b.dataset.d].Supervisor; if (!confirm("¿Quitar el acceso de " + n + "?")) return; try { await api({ action: "eliminarSupervisor", nombre: n }); await refreshAdmin(); renderAdmin(okMsg("Acceso quitado.")); } catch (e) { renderAdmin(errMsg(e.message)); } });
+  $("ns-g").onclick = () => { $("ns-k").value = genClave(); };
+  $("ns-go").onclick = () => guardar($("ns-n").value.trim(), $("ns-k").value);
 }
 
 /* ---------- Inicio ---------- */

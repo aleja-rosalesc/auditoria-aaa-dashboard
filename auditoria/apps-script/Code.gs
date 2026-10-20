@@ -5,28 +5,38 @@
  * 1. Crea un Google Sheet nuevo (será la base de datos) → Extensiones → Apps Script → pega este archivo.
  * 2. Configuración del proyecto → Propiedades de la secuencia de comandos → agrega:
  *      ADMIN_KEY = clave del administrador (tú)
- *      SUP_KEY   = clave que compartes con los supervisores
+ *    Cada supervisor tiene su propia clave: se crean desde el panel de administrador (pestaña Supervisores).
  * 3. Implementar → Nueva implementación → Tipo "Aplicación web"
  *      Ejecutar como: Yo   |   Quién tiene acceso: Cualquier persona
  * 4. Copia la URL que termina en /exec y pégala en API_URL dentro de auditoria/index.html.
  * Las pestañas ORDENES y AUDITORIAS se crean solas. Las fotos quedan en tu Drive (carpeta "Auditoria AAA Fotos"), privadas.
  */
 var ORDEN_COLS = ['Orden', 'Supervisor', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Observación', 'Estado', 'Cargada el', 'Detalle'];
-var AUD_COLS = ['ID', 'Orden', 'Supervisor', 'Fecha', 'Datos', 'Latitud', 'Longitud', 'Fotos'];
+var AUD_COLS = ['ID', 'Orden', 'Supervisor', 'Fecha', 'Datos', 'Latitud', 'Longitud', 'Fotos', 'Dirección', 'Tipo de trabajo', 'Inspector'];
+var SUP_COLS = ['Supervisor', 'Clave'];
 
 function doGet() { return out_({ ok: true, msg: 'API Auditoría AAA activa' }); }
 
 function doPost(e) {
   try {
     var req = JSON.parse(e.postData.contents);
-    var role = role_(req.key);
-    if (!role) return out_({ ok: false, error: 'Clave incorrecta' });
-    var a = req.action;
-    if (a === 'login') return out_({ ok: true, role: role, supervisores: supervisores_() });
-    if (a === 'ordenes') return out_({ ok: true, ordenes: ordenes_(role === 'admin' ? null : req.supervisor), auditorias: auditorias_(role === 'admin' ? null : req.supervisor) });
-    if (role !== 'admin' && a === 'cargar') return out_({ ok: false, error: 'Solo administrador' });
+    var who = auth_(req.key);
+    if (!who) return out_({ ok: false, error: 'Clave incorrecta' });
+    var a = req.action, admin = who.role === 'admin';
+    if (a === 'login') return out_({ ok: true, role: who.role, supervisor: who.supervisor || null });
+    if (a === 'ordenes') {
+      var sup = admin ? null : who.supervisor;
+      var r = { ok: true, ordenes: ordenes_(sup), auditorias: auditorias_(sup) };
+      if (admin) r.supervisores = supervisoresAdmin_();
+      return out_(r);
+    }
+    if (a === 'guardar') return out_(guardar_(req, who));
+    if (!admin) return out_({ ok: false, error: 'Solo administrador' });
     if (a === 'cargar') return out_(cargar_(req));
-    if (a === 'guardar') return out_(guardar_(req));
+    if (a === 'cargarAuditorias') return out_(cargarAuditorias_(req));
+    if (a === 'eliminarAuditadas') return out_(eliminarAuditadas_());
+    if (a === 'guardarSupervisor') return out_(guardarSupervisor_(req));
+    if (a === 'eliminarSupervisor') return out_(eliminarSupervisor_(req));
     return out_({ ok: false, error: 'Acción desconocida' });
   } catch (err) {
     return out_({ ok: false, error: String(err) });
@@ -35,17 +45,20 @@ function doPost(e) {
 
 function out_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 
-function role_(key) {
-  var p = PropertiesService.getScriptProperties();
-  if (key && key === p.getProperty('ADMIN_KEY')) return 'admin';
-  if (key && key === p.getProperty('SUP_KEY')) return 'supervisor';
-  return null;
+// Devuelve {role:'admin'} o {role:'supervisor', supervisor:nombre} según la clave
+function auth_(key) {
+  key = String(key || '').trim();
+  if (!key) return null;
+  if (key === PropertiesService.getScriptProperties().getProperty('ADMIN_KEY')) return { role: 'admin' };
+  var m = rows_(sheet_('SUPERVISORES', SUP_COLS), SUP_COLS).filter(function (r) { return String(r['Clave']).trim() === key; });
+  return m.length ? { role: 'supervisor', supervisor: String(m[0]['Supervisor']).trim() } : null;
 }
 
 function sheet_(name, cols) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(name);
   if (!sh) { sh = ss.insertSheet(name); sh.appendRow(cols); sh.setFrozenRows(1); sh.getRange(1, 1, 1, cols.length).setFontWeight('bold'); }
+  if (sh.getLastColumn() < cols.length) { sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold'); }
   return sh;
 }
 
@@ -60,13 +73,38 @@ function rows_(sh, cols) {
   return res;
 }
 
-function supervisores_() {
-  var seen = {}, list = [];
-  rows_(sheet_('ORDENES', ORDEN_COLS), ORDEN_COLS).forEach(function (r) {
-    var s = String(r['Supervisor']).trim();
-    if (s && !seen[s]) { seen[s] = 1; list.push(s); }
+// Supervisores con clave + nombres que aparecen en órdenes y aún no tienen clave
+function supervisoresAdmin_() {
+  var con = rows_(sheet_('SUPERVISORES', SUP_COLS), SUP_COLS).map(function (r) { return { Supervisor: String(r['Supervisor']).trim(), Clave: String(r['Clave']).trim() }; });
+  var have = {}; con.forEach(function (c) { have[c.Supervisor] = 1; });
+  ordenes_(null).forEach(function (r) {
+    var n = String(r['Supervisor']).trim();
+    if (n && !have[n]) { have[n] = 1; con.push({ Supervisor: n, Clave: '' }); }
   });
-  return list.sort();
+  return con.sort(function (x, y) { return x.Supervisor < y.Supervisor ? -1 : 1; });
+}
+
+function guardarSupervisor_(req) {
+  var nombre = String(req.nombre || '').trim(), clave = String(req.clave || '').trim();
+  if (!nombre || clave.length < 4) return { ok: false, error: 'Nombre y clave (mínimo 4 caracteres) son obligatorios' };
+  if (clave === PropertiesService.getScriptProperties().getProperty('ADMIN_KEY')) return { ok: false, error: 'Esa clave no está disponible' };
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var sh = sheet_('SUPERVISORES', SUP_COLS), rs = rows_(sh, SUP_COLS), fila = 0;
+    for (var i = 0; i < rs.length; i++) {
+      if (String(rs[i]['Supervisor']).trim() === nombre) fila = rs[i]._row;
+      else if (String(rs[i]['Clave']).trim() === clave) return { ok: false, error: 'Esa clave ya la usa otro supervisor' };
+    }
+    if (!fila) fila = sh.getLastRow() + 1;
+    sh.getRange(fila, 1, 1, 2).setNumberFormat('@').setValues([[nombre, clave]]);
+    return { ok: true };
+  } finally { lock.releaseLock(); }
+}
+
+function eliminarSupervisor_(req) {
+  var sh = sheet_('SUPERVISORES', SUP_COLS), nombre = String(req.nombre || '').trim();
+  rows_(sh, SUP_COLS).reverse().forEach(function (r) { if (String(r['Supervisor']).trim() === nombre) sh.deleteRow(r._row); });
+  return { ok: true };
 }
 
 function ordenes_(sup) {
@@ -114,10 +152,18 @@ function folder_() {
   return f;
 }
 
-// req: {id, orden, supervisor, datos:{...}, lat, lng, fotos:[{name,data(base64 jpeg)}]}
-function guardar_(req) {
+function datosOrden_(orden) {
+  var m = ordenes_(null).filter(function (r) { return String(r['Orden']) === String(orden); });
+  return m.length ? m[0] : null;
+}
+
+// req: {id, orden, datos:{...}, lat, lng, fotos:[{name,data(base64 jpeg)}]}. El supervisor sale de la clave, no del cliente.
+function guardar_(req, who) {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
+    var o = datosOrden_(req.orden);
+    var sup = who.role === 'supervisor' ? who.supervisor : (o ? String(o['Supervisor']).trim() : '');
+    if (who.role === 'supervisor' && (!o || String(o['Supervisor']).trim() !== sup)) return { ok: false, error: 'La orden no está asignada a este supervisor' };
     var aud = sheet_('AUDITORIAS', AUD_COLS);
     var ya = rows_(aud, AUD_COLS).filter(function (r) { return r['ID'] === req.id; });
     if (ya.length) return { ok: true, duplicado: true };   // reintento de un envío ya recibido
@@ -130,13 +176,47 @@ function guardar_(req) {
         urls.push(sub.createFile(blob).getUrl());
       });
     }
-    var fila = aud.getLastRow() + 1;
-    aud.getRange(fila, 2, 1, 1).setNumberFormat('@');
-    aud.getRange(fila, 1, 1, AUD_COLS.length).setValues([[req.id, String(req.orden), req.supervisor, new Date(), JSON.stringify(req.datos || {}), req.lat || '', req.lng || '', urls.join('\n')]]);
-    var ord = sheet_('ORDENES', ORDEN_COLS);
-    rows_(ord, ORDEN_COLS).forEach(function (r) {
-      if (String(r['Orden']) === String(req.orden)) ord.getRange(r._row, 7).setValue('Auditada');
-    });
+    escribirAud_(aud, [req.id, String(req.orden), sup, new Date(), JSON.stringify(req.datos || {}), req.lat || '', req.lng || '', urls.join('\n'), o ? o['Dirección'] : '', o ? o['Tipo de trabajo'] : '', o ? o['Inspector'] : '']);
+    marcarAuditada_(req.orden);
     return { ok: true, fotos: urls.length };
+  } finally { lock.releaseLock(); }
+}
+
+function escribirAud_(aud, fila) {
+  var n = aud.getLastRow() + 1;
+  aud.getRange(n, 2, 1, 1).setNumberFormat('@');
+  aud.getRange(n, 1, 1, AUD_COLS.length).setValues([fila]);
+}
+
+function marcarAuditada_(orden) {
+  var ord = sheet_('ORDENES', ORDEN_COLS);
+  rows_(ord, ORDEN_COLS).forEach(function (r) {
+    if (String(r['Orden']) === String(orden)) ord.getRange(r._row, 7).setValue('Auditada');
+  });
+}
+
+// req.rows: [{Orden, datos:{...}}] — el administrador registra auditorías en lote (sin fotos)
+function cargarAuditorias_(req) {
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var aud = sheet_('AUDITORIAS', AUD_COLS), ok = 0, noEncontradas = [];
+    (req.rows || []).forEach(function (r) {
+      var o = datosOrden_(r.Orden);
+      if (!o) { noEncontradas.push(r.Orden); return; }
+      escribirAud_(aud, ['b' + new Date().getTime().toString(36) + Math.random().toString(36).slice(2, 7), String(o['Orden']), String(o['Supervisor']).trim(), new Date(), JSON.stringify(r.datos || {}), '', '', '', o['Dirección'], o['Tipo de trabajo'], o['Inspector']]);
+      marcarAuditada_(o['Orden']);
+      ok++;
+    });
+    return { ok: true, cargadas: ok, noEncontradas: noEncontradas };
+  } finally { lock.releaseLock(); }
+}
+
+// Borra de ORDENES las órdenes ya auditadas. El historial queda en AUDITORIAS (con dirección, tipo e inspector).
+function eliminarAuditadas_() {
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var sh = sheet_('ORDENES', ORDEN_COLS), n = 0;
+    rows_(sh, ORDEN_COLS).reverse().forEach(function (r) { if (r['Estado'] === 'Auditada') { sh.deleteRow(r._row); n++; } });
+    return { ok: true, eliminadas: n };
   } finally { lock.releaseLock(); }
 }
