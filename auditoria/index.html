@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Auditoría - Inspecciones AAA</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#0B3D5C">
+<style>
+  :root{
+    --navy:#0B3D5C; --teal-dark:#0E6E8C; --teal:#17A2B8; --success:#1F9D66; --success-bg:#E5F5EE;
+    --warning:#F0A93A; --warning-bg:#FDF1DD; --danger:#E4572E; --danger-bg:#FCEAE3;
+    --text:#142B3C; --text-2:#5C7182; --border:#DCE4E8; --card:#fff; --bg:#EFF4F7; --radius:14px;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); background:var(--bg); padding-bottom:env(safe-area-inset-bottom); }
+  header{ background:var(--navy); color:#fff; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top)); display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:5; }
+  header h1{ font-size:16px; margin:0; flex:1; }
+  header small{ display:block; font-weight:400; opacity:.75; font-size:11.5px; }
+  header button{ background:rgba(255,255,255,.15); color:#fff; border:0; border-radius:8px; padding:7px 10px; font-size:13px; }
+  main{ max-width:720px; margin:0 auto; padding:14px 14px 80px; }
+  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:10px; }
+  label{ display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
+  input,select,textarea{ width:100%; font:inherit; font-size:16px; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--text); }
+  textarea{ min-height:90px; resize:vertical; }
+  button.primary{ width:100%; background:var(--teal-dark); color:#fff; border:0; border-radius:12px; padding:14px; font-size:16px; font-weight:600; margin-top:16px; }
+  button.secondary{ background:#fff; color:var(--teal-dark); border:1px solid var(--teal-dark); border-radius:10px; padding:10px 14px; font-size:14px; font-weight:600; }
+  button:disabled{ opacity:.5; }
+  .row{ display:flex; gap:8px; align-items:center; }
+  .grow{ flex:1; }
+  .chips{ display:flex; gap:6px; margin-bottom:10px; overflow-x:auto; }
+  .chip{ border:1px solid var(--border); background:#fff; border-radius:20px; padding:7px 13px; font-size:13px; white-space:nowrap; }
+  .chip.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
+  .ord{ display:flex; align-items:center; gap:10px; cursor:pointer; }
+  .ord b{ font-size:15px; }
+  .ord p{ margin:2px 0 0; font-size:12.5px; color:var(--text-2); }
+  .tag{ font-size:11.5px; font-weight:700; padding:4px 9px; border-radius:20px; white-space:nowrap; }
+  .tag.p{ background:var(--warning-bg); color:#9A6508; } .tag.a{ background:var(--success-bg); color:var(--success); } .tag.q{ background:var(--danger-bg); color:var(--danger); }
+  .opts{ display:flex; flex-direction:column; gap:8px; }
+  .opt{ display:flex; align-items:center; gap:10px; border:1px solid var(--border); border-radius:10px; padding:11px 12px; font-size:15px; font-weight:500; margin:0; }
+  .opt input{ width:20px; height:20px; padding:0; }
+  .opt.sel{ border-color:var(--teal-dark); background:#E4F1F6; }
+  .photos{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; }
+  .photos div{ position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:#ddd; }
+  .photos img{ width:100%; height:100%; object-fit:cover; }
+  .photos button{ position:absolute; top:4px; right:4px; width:26px; height:26px; border-radius:50%; border:0; background:rgba(0,0,0,.65); color:#fff; font-size:15px; }
+  .muted{ color:var(--text-2); font-size:13px; }
+  .err{ background:var(--danger-bg); color:var(--danger); padding:10px 12px; border-radius:10px; font-size:13.5px; margin-top:12px; }
+  .banner{ background:var(--warning-bg); color:#9A6508; padding:9px 14px; font-size:13px; text-align:center; }
+  .hidden{ display:none !important; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; } th,td{ text-align:left; padding:7px 6px; border-bottom:1px solid var(--border); vertical-align:top; }
+  th{ color:var(--text-2); font-weight:600; font-size:12px; }
+  .bar{ height:7px; background:var(--border); border-radius:6px; overflow:hidden; margin-top:6px; } .bar i{ display:block; height:100%; background:var(--success); }
+  a{ color:var(--teal-dark); }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">Auditoría<small id="subtitle"></small></h1>
+  <button id="btn-back" class="hidden">← Volver</button>
+  <button id="btn-refresh" class="hidden">⟳</button>
+  <button id="btn-logout" class="hidden">Salir</button>
+</header>
+<div id="banner" class="banner hidden"></div>
+<main id="app"></main>
+
+<script>
+/* ===== CONFIGURACIÓN ===== */
+// URL de la Web App de Apps Script (termina en /exec). Ver auditoria/apps-script/Code.gs
+const API_URL = "PEGA_AQUI_LA_URL_DE_APPS_SCRIPT";
+
+// Campos que diligencia el supervisor por orden. Editar esta lista para cambiar el formulario.
+// type: "radio" (una opción) | "check" (varias) | "text" | "textarea"
+const FORM_FIELDS = [
+  { id: "resultado",     label: "Resultado de la auditoría", type: "radio", required: true,
+    options: ["Conforme", "No conforme", "No se pudo auditar"] },
+  { id: "hallazgos",     label: "Hallazgos", type: "check",
+    options: ["Trabajo no ejecutado", "Ejecución incompleta", "Dato incorrecto en el acta", "Falta evidencia", "Otro"] },
+  { id: "observaciones", label: "Observaciones", type: "textarea" }
+];
+const MIN_FOTOS = 0;          // fotos mínimas exigidas (0 = opcionales)
+const MAX_FOTOS = 8;
+const FOTO_LADO = 1280;       // lado mayor en px tras comprimir
+const FOTO_CALIDAD = 0.72;
+/* ========================= */
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+
+let S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "carga" };
+
+/* ---------- API ---------- */
+async function api(body) {
+  if (API_URL.indexOf("PEGA_AQUI") === 0) throw new Error("Falta configurar API_URL");
+  // text/plain evita el preflight CORS que Apps Script no soporta
+  const r = await fetch(API_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ key: S.key }, body)) });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || "Error del servidor");
+  return j;
+}
+
+/* ---------- Cola sin conexión (IndexedDB) ---------- */
+const idb = () => new Promise((res, rej) => { const r = indexedDB.open("auditoria", 1); r.onupgradeneeded = () => r.result.createObjectStore("q", { keyPath: "id" }); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const qOp = async (mode, fn) => { const db = await idb(); return new Promise((res, rej) => { const t = db.transaction("q", mode); const out = fn(t.objectStore("q")); t.oncomplete = () => res(out.result); t.onerror = () => rej(t.error); }); };
+const qAll = () => qOp("readonly", s => s.getAll());
+const qPut = p => qOp("readwrite", s => s.put(p));
+const qDel = id => qOp("readwrite", s => s.delete(id));
+
+async function flushQueue() {
+  if (!S.key || !navigator.onLine) return;
+  let pend = [];
+  try { pend = await qAll(); } catch (e) { return; }
+  let sent = 0;
+  for (const p of pend) {
+    try { await api(Object.assign({ action: "guardar" }, p)); await qDel(p.id); sent++; } catch (e) { break; }
+  }
+  await updateBanner();
+  if (sent && S.role === "supervisor" && $("list")) loadOrdenes();
+}
+async function updateBanner() {
+  let n = 0; try { n = (await qAll()).length; } catch (e) {}
+  const b = $("banner");
+  b.classList.toggle("hidden", !n);
+  b.textContent = n ? n + " auditoría(s) guardada(s) en el teléfono, pendientes de enviar. Se envían solas al volver la señal." : "";
+}
+window.addEventListener("online", flushQueue);
+
+/* ---------- Sesión ---------- */
+function saveSession() { store.set("aud_sess", JSON.stringify({ role: S.role, key: S.key, supervisor: S.supervisor })); }
+function logout() { store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "carga" }; renderLogin(); }
+$("btn-logout").onclick = logout;
+$("btn-refresh").onclick = () => (S.role === "admin" ? loadAdmin() : loadOrdenes());
+
+function chrome(opts) {
+  $("subtitle").textContent = opts.sub || "";
+  $("btn-back").classList.toggle("hidden", !opts.back);
+  $("btn-back").onclick = opts.back || null;
+  $("btn-refresh").classList.toggle("hidden", !opts.refresh);
+  $("btn-logout").classList.toggle("hidden", !S.key);
+}
+
+/* ---------- Login ---------- */
+function renderLogin(msg) {
+  chrome({ sub: "Inspecciones AAA" });
+  $("app").innerHTML = `<div class="card">
+    <label>Ingresar como</label>
+    <select id="lg-role"><option value="supervisor">Supervisor</option><option value="admin">Administrador</option></select>
+    <label>Clave de acceso</label>
+    <input id="lg-key" type="password" autocomplete="current-password" placeholder="Clave">
+    <button class="primary" id="lg-go">Entrar</button>
+    ${msg ? `<div class="err">${esc(msg)}</div>` : ""}</div>`;
+  $("lg-go").onclick = async () => {
+    const key = $("lg-key").value.trim(); if (!key) return;
+    $("lg-go").disabled = true;
+    try {
+      S.key = key; S.role = $("lg-role").value;
+      const j = await api({ action: "login" });
+      if (S.role === "admin" && j.role !== "admin") throw new Error("Esa clave no es de administrador");
+      S.supervisores = j.supervisores;
+      if (S.role === "admin") { saveSession(); loadAdmin(); } else renderPickSupervisor();
+    } catch (e) { S.key = null; renderLogin(e.message); }
+  };
+}
+function renderPickSupervisor() {
+  chrome({ sub: "Supervisor" });
+  $("app").innerHTML = `<div class="card"><label>¿Quién eres?</label>
+    <select id="pk">${S.supervisores.map(s => `<option>${esc(s)}</option>`).join("")}</select>
+    ${S.supervisores.length ? "" : '<p class="muted">Aún no hay órdenes cargadas.</p>'}
+    <button class="primary" id="pk-go" ${S.supervisores.length ? "" : "disabled"}>Continuar</button></div>`;
+  $("pk-go").onclick = () => { S.supervisor = $("pk").value; saveSession(); loadOrdenes(); };
+}
+
+/* ---------- Supervisor: lista de órdenes ---------- */
+async function loadOrdenes() {
+  chrome({ sub: S.supervisor, refresh: true });
+  if (!$("list")) $("app").innerHTML = `<p class="muted">Cargando…</p>`;
+  try {
+    const j = await api({ action: "ordenes", supervisor: S.supervisor });
+    S.ordenes = j.ordenes; S.auditorias = j.auditorias;
+    store.set("aud_cache_" + S.supervisor, JSON.stringify(j));
+  } catch (e) {
+    const c = store.get("aud_cache_" + S.supervisor);
+    if (c) { const j = JSON.parse(c); S.ordenes = j.ordenes; S.auditorias = j.auditorias; }
+    else { $("app").innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
+  }
+  const pend = await qAll().catch(() => []);
+  const enCola = new Set(pend.map(p => String(p.orden)));
+  S.ordenes.forEach(o => { if (enCola.has(String(o["Orden"]))) o.Estado = "Por enviar"; });
+  renderLista();
+  updateBanner(); flushQueue();
+}
+function renderLista() {
+  const cnt = e => S.ordenes.filter(o => e === "Todas" || o.Estado === e).length;
+  const filtros = ["Pendiente", "Por enviar", "Auditada", "Todas"];
+  const q = S.q.toLowerCase();
+  const items = S.ordenes.filter(o => (S.filtro === "Todas" || o.Estado === S.filtro) && (!q || (o["Orden"] + " " + o["Dirección"] + " " + o["Tipo de trabajo"]).toLowerCase().includes(q)));
+  $("app").innerHTML = `
+    <div class="chips">${filtros.map(f => `<button class="chip ${f === S.filtro ? "on" : ""}" data-f="${f}">${f} (${cnt(f)})</button>`).join("")}</div>
+    <input id="q" type="search" placeholder="Buscar orden o dirección" value="${esc(S.q)}" style="margin-bottom:10px">
+    <div id="list">${items.length ? items.map(o => `<div class="card ord" data-o="${esc(o["Orden"])}">
+      <div class="grow"><b>${esc(o["Orden"])}</b><p>${esc(o["Dirección"] || "Sin dirección")}${o["Tipo de trabajo"] ? " · " + esc(o["Tipo de trabajo"]) : ""}</p></div>
+      <span class="tag ${o.Estado === "Auditada" ? "a" : o.Estado === "Por enviar" ? "q" : "p"}">${esc(o.Estado)}</span></div>`).join("") : '<p class="muted">No hay órdenes en esta vista.</p>'}</div>`;
+  document.querySelectorAll(".chip").forEach(b => b.onclick = () => { S.filtro = b.dataset.f; renderLista(); });
+  $("q").oninput = e => { S.q = e.target.value; const pos = e.target.selectionStart; renderLista(); $("q").focus(); $("q").setSelectionRange(pos, pos); };
+  document.querySelectorAll(".ord").forEach(c => c.onclick = () => renderForm(c.dataset.o));
+}
+
+/* ---------- Supervisor: formulario de auditoría ---------- */
+function renderForm(orden) {
+  const o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
+  const hecha = S.auditorias.find(a => String(a["Orden"]) === String(orden));
+  S.fotos = []; S.pos = null;
+  chrome({ sub: "Orden " + orden, back: () => renderLista() });
+  let extra = {}; try { extra = JSON.parse(o["Detalle"] || "{}"); } catch (e) {}
+  const info = [["Dirección", o["Dirección"]], ["Tipo de trabajo", o["Tipo de trabajo"]], ["Inspector", o["Inspector"]], ["Observación", o["Observación"]]].concat(Object.entries(extra)).filter(x => x[1]);
+  let prev = {}; if (hecha) try { prev = JSON.parse(hecha["Datos"] || "{}"); } catch (e) {}
+
+  $("app").innerHTML = `
+    <div class="card"><b style="font-size:17px">${esc(orden)}</b>
+      ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${esc(v)}</p>`).join("")}</div>
+    ${hecha ? `<div class="card"><span class="tag a">Auditada</span> <span class="muted">${esc(prev.resultado || "")}. Si guardas de nuevo se registra otra auditoría.</span></div>` : ""}
+    <form id="f" class="card" onsubmit="return false">
+      ${FORM_FIELDS.map(fieldHtml).join("")}
+      <label>Fotos (${MIN_FOTOS ? "mínimo " + MIN_FOTOS + ", " : ""}máximo ${MAX_FOTOS})</label>
+      <div class="row"><button type="button" class="secondary grow" id="ph-cam">📷 Tomar foto</button><button type="button" class="secondary grow" id="ph-gal">🖼 Galería</button></div>
+      <input id="ph-in-cam" type="file" accept="image/*" capture="environment" class="hidden">
+      <input id="ph-in-gal" type="file" accept="image/*" multiple class="hidden">
+      <div class="photos" id="photos"></div>
+      <label>Ubicación</label>
+      <div class="row"><button type="button" class="secondary" id="gps">📍 Registrar ubicación</button><span class="muted" id="gps-st">Sin registrar</span></div>
+      <div id="f-err"></div>
+      <button class="primary" id="save">Guardar auditoría</button>
+    </form>`;
+  document.querySelectorAll(".opt input").forEach(i => i.onchange = () => document.querySelectorAll(".opt").forEach(l => l.classList.toggle("sel", l.querySelector("input").checked)));
+  $("ph-cam").onclick = () => $("ph-in-cam").click();
+  $("ph-gal").onclick = () => $("ph-in-gal").click();
+  $("ph-in-cam").onchange = $("ph-in-gal").onchange = async e => { const fs = [...e.target.files]; e.target.value = ""; for (const f of fs) { if (S.fotos.length >= MAX_FOTOS) break; try { S.fotos.push(await compress(f)); } catch (x) {} } renderFotos(); };
+  $("gps").onclick = getGps;
+  getGps();
+  $("save").onclick = () => save(orden);
+}
+function fieldHtml(f) {
+  if (f.type === "radio" || f.type === "check")
+    return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><div class="opts">${f.options.map(op => `<label class="opt"><input type="${f.type === "radio" ? "radio" : "checkbox"}" name="${f.id}" value="${esc(op)}"> ${esc(op)}</label>`).join("")}</div>`;
+  if (f.type === "textarea") return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><textarea name="${f.id}"></textarea>`;
+  return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><input name="${f.id}" type="text">`;
+}
+function renderFotos() {
+  $("photos").innerHTML = S.fotos.map((f, i) => `<div><img src="data:image/jpeg;base64,${f.data}"><button type="button" data-i="${i}">×</button></div>`).join("");
+  document.querySelectorAll("#photos button").forEach(b => b.onclick = () => { S.fotos.splice(+b.dataset.i, 1); renderFotos(); });
+}
+function compress(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, FOTO_LADO / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url);
+      res({ name: file.name, data: c.toDataURL("image/jpeg", FOTO_CALIDAD).split(",")[1] });
+    };
+    img.onerror = rej; img.src = url;
+  });
+}
+function getGps() {
+  if (!navigator.geolocation) return;
+  $("gps-st").textContent = "Buscando…";
+  navigator.geolocation.getCurrentPosition(p => { S.pos = { lat: p.coords.latitude, lng: p.coords.longitude }; $("gps-st").textContent = "✓ ±" + Math.round(p.coords.accuracy) + " m"; }, () => { $("gps-st").textContent = "No disponible"; }, { enableHighAccuracy: true, timeout: 15000 });
+}
+async function save(orden) {
+  const fd = new FormData($("f")), datos = {}, errs = [];
+  FORM_FIELDS.forEach(f => {
+    const v = f.type === "check" ? fd.getAll(f.id) : (fd.get(f.id) || "").toString().trim();
+    datos[f.id] = v;
+    if (f.required && (Array.isArray(v) ? !v.length : !v)) errs.push("Falta: " + f.label);
+  });
+  if (S.fotos.length < MIN_FOTOS) errs.push("Adjunta al menos " + MIN_FOTOS + " foto(s)");
+  if (errs.length) { $("f-err").innerHTML = `<div class="err">${errs.map(esc).join("<br>")}</div>`; return; }
+  const payload = { id: "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), orden: String(orden), supervisor: S.supervisor, datos, lat: S.pos && S.pos.lat, lng: S.pos && S.pos.lng, fotos: S.fotos };
+  $("save").disabled = true; $("save").textContent = "Guardando…";
+  try { await qPut(payload); } catch (e) { $("f-err").innerHTML = `<div class="err">No se pudo guardar en el teléfono: ${esc(e.message)}</div>`; $("save").disabled = false; $("save").textContent = "Guardar auditoría"; return; }
+  // La auditoría ya está a salvo en el teléfono; intenta enviarla
+  const o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
+  try { await api(Object.assign({ action: "guardar" }, payload)); await qDel(payload.id); o.Estado = "Auditada"; }
+  catch (e) { o.Estado = "Por enviar"; }
+  S.filtro = "Pendiente"; renderLista(); updateBanner();
+  if (o.Estado === "Auditada") loadOrdenes();
+}
+
+/* ---------- Administrador ---------- */
+async function loadAdmin() {
+  chrome({ sub: "Administrador", refresh: true });
+  if (!$("adm")) $("app").innerHTML = `<p class="muted">Cargando…</p>`;
+  try { const j = await api({ action: "ordenes" }); S.ordenes = j.ordenes; S.auditorias = j.auditorias; }
+  catch (e) { $("app").innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
+  renderAdmin();
+}
+function renderAdmin(msg) {
+  $("app").innerHTML = `<div id="adm"><div class="chips">
+    <button class="chip ${S.adminTab === "carga" ? "on" : ""}" data-t="carga">Cargar órdenes</button>
+    <button class="chip ${S.adminTab === "seg" ? "on" : ""}" data-t="seg">Seguimiento</button></div>
+    ${S.adminTab === "carga" ? adminCarga(msg) : adminSeg()}</div>`;
+  document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { S.adminTab = b.dataset.t; renderAdmin(); });
+  if (S.adminTab === "carga") $("ld-go").onclick = cargar;
+}
+function adminCarga(msg) {
+  return `<div class="card"><p class="muted" style="margin-top:0">Copia las filas desde Excel (con la fila de encabezados) y pégalas aquí. Encabezados reconocidos: <b>Orden</b>, <b>Supervisor</b> (obligatorios), Dirección, Tipo de trabajo, Inspector, Observación. Cualquier otra columna se muestra como detalle al supervisor.</p>
+    <textarea id="ld-txt" style="min-height:160px;font-size:13px" placeholder="Orden&#9;Supervisor&#9;Dirección&#10;1053925&#9;Juan Pérez&#9;Cra 1 # 2-3"></textarea>
+    <label class="opt"><input type="checkbox" id="ld-rep"> Reemplazar las órdenes actuales (borra la lista anterior)</label>
+    <button class="primary" id="ld-go">Cargar órdenes</button>${msg || ""}</div>`;
+}
+function parseTsv(txt) {
+  const lines = txt.replace(/\r/g, "").split("\n").filter(l => l.trim());
+  if (lines.length < 2) throw new Error("Pega los encabezados y al menos una fila");
+  const head = lines[0].split("\t").map(h => h.trim());
+  const norm = h => h.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  const canon = { orden: "Orden", supervisor: "Supervisor", direccion: "Dirección", "tipo de trabajo": "Tipo de trabajo", inspector: "Inspector", observacion: "Observación" };
+  const names = head.map(h => canon[norm(h)] || h);
+  if (!names.includes("Orden") || !names.includes("Supervisor")) throw new Error("Faltan las columnas Orden y Supervisor");
+  return lines.slice(1).map(l => { const c = l.split("\t"), r = {}; names.forEach((n, i) => { if (n) r[n] = (c[i] || "").trim(); }); return r; });
+}
+async function cargar() {
+  try {
+    const rows = parseTsv($("ld-txt").value);
+    if ($("ld-rep").checked && !confirm("Se borrarán las órdenes actuales y se cargarán " + rows.length + ". ¿Continuar?")) return;
+    $("ld-go").disabled = true; $("ld-go").textContent = "Cargando…";
+    const j = await api({ action: "cargar", rows, reemplazar: $("ld-rep").checked });
+    const j2 = await api({ action: "ordenes" }); S.ordenes = j2.ordenes; S.auditorias = j2.auditorias;
+    renderAdmin(`<div class="card" style="background:var(--success-bg);margin-top:12px">✓ ${j.cargadas} órdenes cargadas${j.omitidas ? ", " + j.omitidas + " omitidas (repetidas o sin número)" : ""}.</div>`);
+  } catch (e) { renderAdmin(`<div class="err">${esc(e.message)}</div>`); }
+}
+function adminSeg() {
+  const by = {};
+  S.ordenes.forEach(o => { const s = o.Supervisor || "(sin supervisor)"; (by[s] = by[s] || { t: 0, a: 0 }).t++; if (o.Estado === "Auditada") by[s].a++; });
+  const tot = S.ordenes.length, aud = S.ordenes.filter(o => o.Estado === "Auditada").length;
+  const lastAud = {}; S.auditorias.forEach(a => { lastAud[String(a["Orden"])] = a; });
+  const lab = id => { const f = FORM_FIELDS.find(x => x.id === id); return f ? f.label : id; };
+  return `<div class="card"><b>${aud} de ${tot} auditadas</b><div class="bar"><i style="width:${tot ? Math.round(100 * aud / tot) : 0}%"></i></div></div>
+    ${Object.keys(by).sort().map(s => `<div class="card"><div class="row"><b class="grow">${esc(s)}</b><span class="muted">${by[s].a}/${by[s].t}</span></div><div class="bar"><i style="width:${Math.round(100 * by[s].a / by[s].t)}%"></i></div></div>`).join("")}
+    <div class="card"><b>Auditorías realizadas</b><table><tr><th>Orden</th><th>Supervisor</th><th>Resultado</th><th>Fotos</th></tr>
+    ${Object.values(lastAud).reverse().map(a => { let d = {}; try { d = JSON.parse(a["Datos"] || "{}"); } catch (e) {} const fotos = String(a["Fotos"] || "").split("\n").filter(Boolean);
+      return `<tr><td>${esc(a["Orden"])}</td><td>${esc(a["Supervisor"])}</td><td>${esc(d.resultado || "")}${d.hallazgos && d.hallazgos.length ? `<br><span class="muted">${esc([].concat(d.hallazgos).join(", "))}</span>` : ""}${d.observaciones ? `<br><span class="muted">${esc(d.observaciones)}</span>` : ""}</td><td>${fotos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${i + 1}</a>`).join(" ") || "—"}</td></tr>`; }).join("") || '<tr><td colspan="4" class="muted">Aún no hay auditorías.</td></tr>'}</table></div>`;
+}
+
+/* ---------- Inicio ---------- */
+(function init() {
+  if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).catch(() => {}));
+  try { const s = JSON.parse(store.get("aud_sess") || "null"); if (s && s.key) { S.role = s.role; S.key = s.key; S.supervisor = s.supervisor; return S.role === "admin" ? loadAdmin() : S.supervisor ? loadOrdenes() : renderLogin(); } } catch (e) {}
+  renderLogin();
+})();
+</script>
+</body>
+</html>

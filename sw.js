@@ -20,7 +20,7 @@ self.addEventListener("fetch", function (event) {
   // Solo controla la pantalla de entrada; no intercepta pedidos hacia /critica/ ni /pregeofono/,
   // esos los maneja el service worker propio de cada tablero.
   const url = new URL(event.request.url);
-  if (url.pathname.indexOf("/critica/") !== -1 || url.pathname.indexOf("/pregeofono/") !== -1) return;
+  if (url.pathname.indexOf("/critica/") !== -1 || url.pathname.indexOf("/pregeofono/") !== -1 || url.pathname.indexOf("/auditoria/") !== -1) return;
   event.respondWith(
     fetch(event.request.url, { cache: "no-store" }).then(function (response) {
       const copy = response.clone();
