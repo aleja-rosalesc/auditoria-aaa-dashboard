@@ -46,6 +46,7 @@
   .opt{ display:flex; align-items:center; gap:10px; border:1px solid var(--border); border-radius:10px; padding:11px 12px; font-size:15px; font-weight:500; margin:0; }
   .opt input{ width:20px; height:20px; padding:0; }
   .opt.sel{ border-color:var(--teal-dark); background:#E4F1F6; }
+  .sig{ width:100%; height:170px; border:1px dashed var(--teal-dark); border-radius:10px; background:#fff; touch-action:none; display:block; }
   .photos{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; }
   .photos div{ position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:#ddd; }
   .photos img{ width:100%; height:100%; object-fit:cover; }
@@ -83,7 +84,11 @@ const FORM_FIELDS = [
     options: ["Conforme", "No conforme", "No se pudo auditar"] },
   { id: "hallazgos",     label: "Hallazgos", type: "check",
     options: ["Trabajo no ejecutado", "Ejecución incompleta", "Dato incorrecto en el acta", "Falta evidencia", "Otro"] },
-  { id: "observaciones", label: "Observaciones", type: "textarea" }
+  { id: "observaciones", label: "Observaciones", type: "textarea" },
+  // Datos del usuario que atiende (opcionales). La firma se captura aparte, justo debajo.
+  { id: "usuario_nombre",  label: "Usuario que atiende: nombre", type: "text" },
+  { id: "usuario_cedula",  label: "Usuario que atiende: cédula", type: "text", inputmode: "numeric" },
+  { id: "usuario_celular", label: "Usuario que atiende: celular", type: "text", inputmode: "tel" }
 ];
 const MIN_FOTOS = 0;          // fotos mínimas exigidas (0 = opcionales)
 const MAX_FOTOS = 8;
@@ -224,6 +229,9 @@ function renderForm(orden) {
     ${hecha ? `<div class="card"><span class="tag a">Auditada</span> <span class="muted">${esc(prev.resultado || "")}. Si guardas de nuevo se registra otra auditoría.</span></div>` : ""}
     <form id="f" class="card" onsubmit="return false">
       ${FORM_FIELDS.map(fieldHtml).join("")}
+      <label>Firma del usuario que atiende (opcional)</label>
+      <canvas id="sig" class="sig"></canvas>
+      <div class="row"><span class="muted grow">Firma con el dedo o el lápiz</span><button type="button" class="secondary" id="sig-clear">Borrar firma</button></div>
       <label>Fotos (${MIN_FOTOS ? "mínimo " + MIN_FOTOS + ", " : ""}máximo ${MAX_FOTOS})</label>
       <div class="row"><button type="button" class="secondary grow" id="ph-cam">📷 Tomar foto</button><button type="button" class="secondary grow" id="ph-gal">🖼 Galería</button></div>
       <input id="ph-in-cam" type="file" accept="image/*" capture="environment" class="hidden">
@@ -239,6 +247,7 @@ function renderForm(orden) {
   $("ph-gal").onclick = () => $("ph-in-gal").click();
   $("ph-in-cam").onchange = $("ph-in-gal").onchange = async e => { const fs = [...e.target.files]; e.target.value = ""; for (const f of fs) { if (S.fotos.length >= MAX_FOTOS) break; try { S.fotos.push(await compress(f)); } catch (x) {} } renderFotos(); };
   $("gps").onclick = getGps;
+  initSig();
   getGps();
   $("save").onclick = () => save(orden);
 }
@@ -246,7 +255,7 @@ function fieldHtml(f) {
   if (f.type === "radio" || f.type === "check")
     return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><div class="opts">${f.options.map(op => `<label class="opt"><input type="${f.type === "radio" ? "radio" : "checkbox"}" name="${f.id}" value="${esc(op)}"> ${esc(op)}</label>`).join("")}</div>`;
   if (f.type === "textarea") return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><textarea name="${f.id}"></textarea>`;
-  return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><input name="${f.id}" type="text">`;
+  return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><input name="${f.id}" type="text" inputmode="${f.inputmode || "text"}" autocomplete="off">`;
 }
 function renderFotos() {
   $("photos").innerHTML = S.fotos.map((f, i) => `<div><img src="data:image/jpeg;base64,${f.data}"><button type="button" data-i="${i}">×</button></div>`).join("");
@@ -265,6 +274,21 @@ function compress(file) {
     img.onerror = rej; img.src = url;
   });
 }
+// Lienzo de firma: funciona con dedo, lápiz o mouse (pointer events); se guarda como PNG con fondo blanco
+function initSig() {
+  const c = $("sig"), b = c.getBoundingClientRect(), k = window.devicePixelRatio || 1, x = c.getContext("2d");
+  c.width = Math.round(b.width * k); c.height = Math.round(b.height * k);
+  x.scale(k, k); x.lineWidth = 2.2; x.lineCap = x.lineJoin = "round"; x.strokeStyle = "#0B3D5C";
+  const blanco = () => { x.fillStyle = "#fff"; x.fillRect(0, 0, b.width, b.height); };
+  blanco(); S.firma = false;
+  let ultimo = null;
+  const pt = e => { const r = c.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  const trazo = (a, p) => { x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(p.x, p.y); x.stroke(); S.firma = true; };
+  c.onpointerdown = e => { e.preventDefault(); c.setPointerCapture(e.pointerId); ultimo = pt(e); trazo(ultimo, { x: ultimo.x + 0.1, y: ultimo.y }); };
+  c.onpointermove = e => { if (!ultimo) return; const p = pt(e); trazo(ultimo, p); ultimo = p; };
+  c.onpointerup = c.onpointercancel = () => { ultimo = null; };
+  $("sig-clear").onclick = () => { blanco(); S.firma = false; };
+}
 function getGps() {
   if (!navigator.geolocation) return;
   $("gps-st").textContent = "Buscando…";
@@ -279,7 +303,7 @@ async function save(orden) {
   });
   if (S.fotos.length < MIN_FOTOS) errs.push("Adjunta al menos " + MIN_FOTOS + " foto(s)");
   if (errs.length) { $("f-err").innerHTML = `<div class="err">${errs.map(esc).join("<br>")}</div>`; return; }
-  const payload = { id: "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), orden: String(orden), supervisor: S.supervisor, datos, lat: S.pos && S.pos.lat, lng: S.pos && S.pos.lng, fotos: S.fotos };
+  const payload = { id: "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), orden: String(orden), supervisor: S.supervisor, datos, lat: S.pos && S.pos.lat, lng: S.pos && S.pos.lng, fotos: S.fotos, firma: S.firma ? $("sig").toDataURL("image/png").split(",")[1] : "" };
   $("save").disabled = true; $("save").textContent = "Guardando…";
   try { await qPut(payload); } catch (e) { $("f-err").innerHTML = `<div class="err">No se pudo guardar en el teléfono: ${esc(e.message)}</div>`; $("save").disabled = false; $("save").textContent = "Guardar auditoría"; return; }
   // La auditoría ya está a salvo en el teléfono; intenta enviarla
@@ -536,6 +560,7 @@ function segOrdenHtml(x, ejec) {
       <p class="muted" style="margin:4px 0">${esc(x["Supervisor"])} · ${x["Fecha"] ? new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p>
       ${FORM_FIELDS.map(f => { const v = [].concat(d[f.id] == null ? "" : d[f.id]).join(", "); return v ? `<p style="margin:6px 0"><b>${esc(f.label)}:</b> ${esc(v)}</p>` : ""; }).join("")}
       ${x["Latitud"] ? `<p style="margin:6px 0"><b>Ubicación:</b> <a href="https://www.google.com/maps?q=${esc(x["Latitud"])},${esc(x["Longitud"])}" target="_blank" rel="noopener">Ver donde se auditó</a></p>` : ""}
+      ${x["Firma"] ? `<p style="margin:6px 0"><b>Firma del usuario:</b> <a href="${esc(x["Firma"])}" target="_blank" rel="noopener">Ver firma</a></p>` : ""}
       <p style="margin:6px 0"><b>Fotos:</b> ${fotos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">Foto ${i + 1}</a>`).join(" · ") || "sin fotos"}</p>`;
   }
   return `<div class="card" style="border-color:var(--teal-dark)"><div class="row"><b class="grow" style="font-size:16px">Orden ${esc(x["Orden"])}</b><button class="secondary" id="sg-del" style="color:var(--danger);border-color:var(--danger)">Eliminar</button><button class="secondary" id="sg-cerrar">Cerrar</button></div>
@@ -593,10 +618,10 @@ function segHojas(grupos) {
   return [
     { name: "Pendientes", head: ["Orden", "Supervisor", "Inspector", "Dirección", "Tipo de trabajo", "Indicación"].concat(kp),
       rows: P.map(({ o, _det }) => [o["Orden"], o["Supervisor"], o["Inspector"], o["Dirección"], o["Tipo de trabajo"], o["Observación"]].concat(kp.map(k => _det[k] || ""))) },
-    { name: "Ejecutadas", head: ["Orden", "Supervisor", "Fecha auditoría", "Dirección", "Tipo de trabajo", "Inspector"].concat(FORM_FIELDS.map(f => f.label), ["Latitud", "Longitud", "Fotos"], ke),
+    { name: "Ejecutadas", head: ["Orden", "Supervisor", "Fecha auditoría", "Dirección", "Tipo de trabajo", "Inspector"].concat(FORM_FIELDS.map(f => f.label), ["Latitud", "Longitud", "Fotos", "Firma"], ke),
       rows: E.map(({ a, o, _det }) => { const d = datosAud(a);
         return [a["Orden"], a["Supervisor"], a["Fecha"] ? new Date(a["Fecha"]).toLocaleString("es-CO") : "", a["Dirección"] || o["Dirección"], a["Tipo de trabajo"] || o["Tipo de trabajo"], a["Inspector"] || o["Inspector"]]
-          .concat(FORM_FIELDS.map(f => [].concat(d[f.id] == null ? "" : d[f.id]).join("; ")), [a["Latitud"], a["Longitud"], fotosAud(a).join(" ")], ke.map(k => _det[k] || "")); }) }
+          .concat(FORM_FIELDS.map(f => [].concat(d[f.id] == null ? "" : d[f.id]).join("; ")), [a["Latitud"], a["Longitud"], fotosAud(a).join(" "), a["Firma"]], ke.map(k => _det[k] || "")); }) }
   ];
 }
 

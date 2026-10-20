@@ -12,7 +12,7 @@
  * Las pestañas ORDENES y AUDITORIAS se crean solas. Las fotos quedan en tu Drive (carpeta "Auditoria AAA Fotos"), privadas.
  */
 var ORDEN_COLS = ['Orden', 'Supervisor', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Observación', 'Estado', 'Cargada el', 'Detalle'];
-var AUD_COLS = ['ID', 'Orden', 'Supervisor', 'Fecha', 'Datos', 'Latitud', 'Longitud', 'Fotos', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Detalle'];
+var AUD_COLS = ['ID', 'Orden', 'Supervisor', 'Fecha', 'Datos', 'Latitud', 'Longitud', 'Fotos', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Detalle', 'Firma'];
 var SUP_COLS = ['Supervisor', 'Clave'];
 
 function doGet() { return out_({ ok: true, msg: 'API Auditoría AAA activa' }); }
@@ -158,7 +158,7 @@ function datosOrden_(orden) {
   return m.length ? m[0] : null;
 }
 
-// req: {id, orden, datos:{...}, lat, lng, fotos:[{name,data(base64 jpeg)}]}. El supervisor sale de la clave, no del cliente.
+// req: {id, orden, datos:{...}, lat, lng, fotos:[{name,data(base64 jpeg)}], firma(base64 png, opcional)}. El supervisor sale de la clave, no del cliente.
 function guardar_(req, who) {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
@@ -168,16 +168,19 @@ function guardar_(req, who) {
     var aud = sheet_('AUDITORIAS', AUD_COLS);
     var ya = rows_(aud, AUD_COLS).filter(function (r) { return r['ID'] === req.id; });
     if (ya.length) return { ok: true, duplicado: true };   // reintento de un envío ya recibido
-    var urls = [];
-    if (req.fotos && req.fotos.length) {
+    var urls = [], firmaUrl = '';
+    if ((req.fotos && req.fotos.length) || req.firma) {
       var root = folder_(), it = root.getFoldersByName(String(req.orden));
       var sub = it.hasNext() ? it.next() : root.createFolder(String(req.orden));
+      if (req.firma) firmaUrl = sub.createFile(Utilities.newBlob(Utilities.base64Decode(req.firma), 'image/png', 'firma_' + req.orden + '_' + new Date().getTime() + '.png')).getUrl();
+    }
+    if (req.fotos && req.fotos.length) {
       req.fotos.forEach(function (f, i) {
         var blob = Utilities.newBlob(Utilities.base64Decode(f.data), 'image/jpeg', req.orden + '_' + new Date().getTime() + '_' + (i + 1) + '.jpg');
         urls.push(sub.createFile(blob).getUrl());
       });
     }
-    escribirAud_(aud, [req.id, String(req.orden), sup, new Date(), JSON.stringify(req.datos || {}), req.lat || '', req.lng || '', urls.join('\n'), o ? o['Dirección'] : '', o ? o['Tipo de trabajo'] : '', o ? o['Inspector'] : '', o ? o['Detalle'] : '']);
+    escribirAud_(aud, [req.id, String(req.orden), sup, new Date(), JSON.stringify(req.datos || {}), req.lat || '', req.lng || '', urls.join('\n'), o ? o['Dirección'] : '', o ? o['Tipo de trabajo'] : '', o ? o['Inspector'] : '', o ? o['Detalle'] : '', firmaUrl]);
     marcarAuditada_(req.orden);
     return { ok: true, fotos: urls.length };
   } finally { lock.releaseLock(); }
