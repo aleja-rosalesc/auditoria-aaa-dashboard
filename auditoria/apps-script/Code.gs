@@ -34,6 +34,8 @@ function doPost(e) {
     if (!admin) return out_({ ok: false, error: 'Solo administrador' });
     if (a === 'cargar') return out_(cargar_(req));
     if (a === 'eliminarAuditadas') return out_(eliminarAuditadas_());
+    if (a === 'eliminarOrdenes') return out_(eliminarOrdenes_(req));
+    if (a === 'vaciarTodo') return out_(vaciarTodo_());
     if (a === 'guardarSupervisor') return out_(guardarSupervisor_(req));
     if (a === 'eliminarSupervisor') return out_(eliminarSupervisor_(req));
     return out_({ ok: false, error: 'Acción desconocida' });
@@ -201,5 +203,47 @@ function eliminarAuditadas_() {
     var sh = sheet_('ORDENES', ORDEN_COLS), n = 0;
     rows_(sh, ORDEN_COLS).reverse().forEach(function (r) { if (r['Estado'] === 'Auditada') { sh.deleteRow(r._row); n++; } });
     return { ok: true, eliminadas: n };
+  } finally { lock.releaseLock(); }
+}
+
+// Quita de la hoja las filas cuya columna `col` esté en `set`; devuelve cuántas quitó
+function borrarFilas_(sh, cols, col, set) {
+  var last = sh.getLastRow();
+  if (last < 2) return 0;
+  var rng = sh.getRange(2, 1, last - 1, cols.length), v = rng.getValues(), idx = cols.indexOf(col), keep = [];
+  v.forEach(function (row) { if (!set[String(row[idx])]) keep.push(row); });
+  var n = v.length - keep.length;
+  if (!n) return 0;
+  rng.clearContent();
+  if (keep.length) sh.getRange(2, 1, keep.length, cols.length).setValues(keep);
+  return n;
+}
+
+// req.ordenes: lista de números de orden. Borra la orden, sus auditorías y manda a la papelera de Drive sus fotos.
+function eliminarOrdenes_(req) {
+  var lista = req.ordenes || [], set = {};
+  lista.forEach(function (o) { set[String(o)] = 1; });
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var a = borrarFilas_(sheet_('ORDENES', ORDEN_COLS), ORDEN_COLS, 'Orden', set);
+    var b = borrarFilas_(sheet_('AUDITORIAS', AUD_COLS), AUD_COLS, 'Orden', set);
+    var root = folder_();
+    lista.forEach(function (o) { var it = root.getFoldersByName(String(o)); while (it.hasNext()) it.next().setTrashed(true); });
+    return { ok: true, ordenes: a, auditorias: b };
+  } finally { lock.releaseLock(); }
+}
+
+// Deja ORDENES y AUDITORIAS vacías y manda a la papelera la carpeta de fotos. Los supervisores y sus claves se conservan.
+function vaciarTodo_() {
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var n = 0;
+    [['ORDENES', ORDEN_COLS], ['AUDITORIAS', AUD_COLS]].forEach(function (x) {
+      var sh = sheet_(x[0], x[1]);
+      if (sh.getLastRow() > 1) { n += sh.getLastRow() - 1; sh.getRange(2, 1, sh.getLastRow() - 1, x[1].length).clearContent(); }
+    });
+    var p = PropertiesService.getScriptProperties(), id = p.getProperty('FOLDER_ID');
+    if (id) { try { DriveApp.getFolderById(id).setTrashed(true); } catch (e) {} p.deleteProperty('FOLDER_ID'); }
+    return { ok: true, filas: n };
   } finally { lock.releaseLock(); }
 }
