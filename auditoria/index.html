@@ -23,6 +23,7 @@
   .logo-badge{ background:#fff; border-radius:9px; padding:5px 9px; display:inline-flex; }
   .logo-badge img{ height:20px; display:block; }
   .login-logo{ text-align:center; padding:6px 0 10px; } .login-logo img{ height:44px; }
+  .sup-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; } .sup-btn{ display:block; width:100%; text-align:left; margin:0; cursor:pointer; font:inherit; color:inherit; } .sup-btn:active{ border-color:var(--teal-dark); }
   main{ max-width:720px; margin:0 auto; padding:14px 14px 80px; }
   .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:10px; }
   label{ display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
@@ -94,7 +95,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
 
-let S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica" };
+let S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null };
 
 /* ---------- API ---------- */
 async function api(body) {
@@ -134,7 +135,7 @@ window.addEventListener("online", flushQueue);
 
 /* ---------- Sesión ---------- */
 function saveSession() { store.set("aud_sess", JSON.stringify({ role: S.role, key: S.key, supervisor: S.supervisor })); }
-function logout() { store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica" }; S.cr = crNuevo(); renderLogin(); }
+function logout() { store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null }; S.cr = crNuevo(); renderLogin(); }
 $("btn-logout").onclick = logout;
 $("btn-refresh").onclick = () => (S.role === "admin" ? loadAdmin() : loadOrdenes());
 
@@ -219,7 +220,7 @@ function renderForm(orden) {
 
   $("app").innerHTML = `
     <div class="card"><b style="font-size:17px">${esc(orden)}</b>
-      ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${esc(v)}</p>`).join("")}</div>
+      ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${valHtml(v)}</p>`).join("")}</div>
     ${hecha ? `<div class="card"><span class="tag a">Auditada</span> <span class="muted">${esc(prev.resultado || "")}. Si guardas de nuevo se registra otra auditoría.</span></div>` : ""}
     <form id="f" class="card" onsubmit="return false">
       ${FORM_FIELDS.map(fieldHtml).join("")}
@@ -305,7 +306,7 @@ function renderAdmin(msg) {
   document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { S.adminTab = b.dataset.t; renderAdmin(); });
   if (S.adminTab === "critica") bindCritica();
   if (S.adminTab === "carga") { $("ld-go").onclick = cargar; }
-  if (S.adminTab === "seg") { $("dl-csv").onclick = descargarCsv; $("del-aud").onclick = eliminarAuditadas; }
+  if (S.adminTab === "seg") bindSeg();
   if (S.adminTab === "sup") bindSup();
 }
 const okMsg = t => `<div class="card" style="background:var(--success-bg)">✓ ${t}</div>`;
@@ -344,19 +345,20 @@ async function cargar() {
 /* --- Desde Crítica: filtrar por fecha e inspector, elegir órdenes y enviarlas a auditoría --- */
 // Hoja Validador de Crítica (pública). Columnas por letra: A ORDEN, B CUENTA, C CICLO, F CAUSA_CIERRE, G COMENTARIO,
 // I OBS_1, J FECHA_FINALIZACIÓN, L INSPECTOR2 (inspector real), N EFECTIVIDAD, P SUPERVISOR.
-const CRITICA_SHEET_ID = "1_NTcyMn3xX0MYqP40qdFc9hiAVpgOXdkfwJEEhRwL3o", CRITICA_GID = "205567382", CRITICA_MAX_FILAS = 3000;
-const CR_DETALLE = [["cuenta", "Cuenta"], ["ciclo", "Ciclo"], ["causa", "Causa de cierre"], ["comentario", "Comentario"], ["obs1", "Obs. 1"], ["efectividad", "Efectividad"], ["fecha", "Fecha de cierre"]];
-const crNuevo = () => ({ desde: "", hasta: "", insp: "", inspList: null, rows: null, sel: new Set(), q: "", msg: "", detalle: new Set(CR_DETALLE.map(d => d[0])), asignar: "__cr", nota: "" });
+// Hoja AuditoríaOpen (mismo Sheet, solo los días auditables): C Dirección, E Orden, AQ Municipio, AS Barrio, AY Longitud, AZ Latitud, J Cerrada el.
+const CRITICA_SHEET_ID = "1_NTcyMn3xX0MYqP40qdFc9hiAVpgOXdkfwJEEhRwL3o", CRITICA_GID = "205567382", OPEN_SHEET = "AuditoríaOpen", CRITICA_MAX_FILAS = 10000;
+const CR_DETALLE = [["cuenta", "Cuenta"], ["ciclo", "Ciclo"], ["causa", "Causa de cierre"], ["comentario", "Comentario"], ["obs1", "Obs. 1"], ["efectividad", "Efectividad"], ["fecha", "Fecha de cierre"], ["municipio", "Municipio"], ["barrio", "Barrio"], ["mapa", "Ubicación en mapa"]];
+const crNuevo = () => ({ desde: "", hasta: "", insp: "", inspList: null, rows: null, sel: new Set(), q: "", msg: "", detalle: new Set(CR_DETALLE.map(d => d[0])), asignar: "__cr", nota: "", open: null, soloOpen: true });
 S.cr = crNuevo();
 
 let gvN = 0;
-function gviz(tq) {
+function gviz(tq, hoja) {
   return new Promise((res, rej) => {
     const cb = "gv_cb" + (++gvN), sc = document.createElement("script");
     const done = () => { delete window[cb]; sc.remove(); };
     window[cb] = r => { done(); if (r.status !== "ok") return rej(new Error((r.errors && r.errors[0] && r.errors[0].detailed_message) || "Error leyendo la hoja de Crítica")); res(r.table); };
     sc.onerror = () => { done(); rej(new Error("No se pudo leer la hoja de Crítica")); };
-    sc.src = "https://docs.google.com/spreadsheets/d/" + CRITICA_SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:" + cb + "&gid=" + CRITICA_GID + "&tq=" + encodeURIComponent(tq) + "&_=" + Date.now();
+    sc.src = "https://docs.google.com/spreadsheets/d/" + CRITICA_SHEET_ID + "/gviz/tq?tqx=out:json;responseHandler:" + cb + "&" + (hoja ? "sheet=" + encodeURIComponent(hoja) : "gid=" + CRITICA_GID) + "&tq=" + encodeURIComponent(tq) + "&_=" + Date.now();
     document.head.appendChild(sc);
   });
 }
@@ -364,31 +366,35 @@ const cv = c => (c == null || c.v == null ? "" : c.v);
 function gvIso(c) { const m = /^Date\((\d+),(\d+),(\d+)/.exec(String(cv(c))); return m ? m[1] + "-" + String(+m[2] + 1).padStart(2, "0") + "-" + m[3].padStart(2, "0") : ""; }
 const fmtFecha = iso => iso ? iso.split("-").reverse().join("/") : "";
 const crWhere = () => "where J >= date '" + S.cr.desde + "' and J <= date '" + S.cr.hasta + "'" + (S.cr.insp ? ' and L = "' + S.cr.insp.replace(/"/g, "") + '"' : "");
+// Open guarda las coordenadas con puntos de miles ("-7.479.699.903" = -74.79699903): se recoloca el decimal tras 2 dígitos enteros
+function coord(v) { const s = String(v == null ? "" : v), d = s.replace(/\D/g, ""); if (d.length < 3) return null; return (s.trim().startsWith("-") ? -1 : 1) * (+d / Math.pow(10, d.length - 2)); }
 
 function adminCritica() {
-  const c = S.cr;
-  return `<div class="card"><b>Órdenes de Crítica</b><p class="muted" style="margin-top:4px">Elige la fecha de cierre y el inspector, mira las órdenes y selecciona cuáles mandar a auditar.</p>
+  const c = S.cr, ok = c.open && c.open.n;
+  return `<div class="card"><b>Órdenes de Crítica</b><p class="muted" style="margin-top:4px">Elige la fecha de cierre y el inspector, mira las órdenes y selecciona cuáles mandar a auditar.${ok ? ` Se cruzan con la hoja <b>${OPEN_SHEET}</b> (${c.open.n} órdenes, del ${fmtFecha(c.open.min)} al ${fmtFecha(c.open.max)}) para traer dirección, barrio y municipio.` : ""}</p>
     <div class="row"><div class="grow"><label>Desde</label><input type="date" id="cr-d" value="${c.desde}"></div><div class="grow"><label>Hasta</label><input type="date" id="cr-h" value="${c.hasta}"></div></div>
     <label>Inspector (unidad de trabajo)</label>
     <select id="cr-i" ${c.inspList ? "" : "disabled"}><option value="">${c.inspList ? "Todos los inspectores" : "Cargando…"}</option>${(c.inspList || []).map(i => `<option value="${esc(i.n)}" ${i.n === c.insp ? "selected" : ""}>${esc(i.n)} (${i.c})</option>`).join("")}</select>
+    ${ok ? `<label class="opt ${c.soloOpen ? "sel" : ""}" style="margin-top:12px"><input type="checkbox" id="cr-so" ${c.soloOpen ? "checked" : ""}> Solo órdenes que están en ${OPEN_SHEET} (las que se pueden auditar)</label>` : ""}
     <button class="primary" id="cr-go" ${c.desde && c.hasta ? "" : "disabled"}>Ver órdenes</button>${c.msg}</div>
     <div id="cr-res">${c.rows ? crResultado() : ""}</div>`;
 }
 function crResultado() {
   const c = S.cr, ya = new Set(S.ordenes.map(o => String(o["Orden"])));
-  const q = c.q.toLowerCase();
-  const vis = c.rows.filter(r => !q || (r.orden + " " + r.cuenta + " " + r.ciclo + " " + r.insp + " " + r.causa).toLowerCase().includes(q));
-  const libres = vis.filter(r => !ya.has(r.orden));
+  const q = c.q.toLowerCase(), filtraOpen = c.soloOpen && c.open;
+  const vis = c.rows.filter(r => (!filtraOpen || r.enOpen) && (!q || (r.orden + " " + r.cuenta + " " + r.ciclo + " " + r.insp + " " + r.causa + " " + r.dir + " " + r.barrio + " " + r.municipio).toLowerCase().includes(q)));
   const sups = (S.supervisores || []).map(s => s.Supervisor);
-  return `<div class="card"><div class="row"><b class="grow">${c.rows.length} órdenes${c.rows.length >= CRITICA_MAX_FILAS ? " (tope: acota el filtro)" : ""}</b><span class="muted" id="cr-cnt">${c.sel.size} seleccionadas</span></div>
-    <div class="row" style="margin:10px 0"><input id="cr-q" type="search" placeholder="Buscar en estas órdenes" value="${esc(c.q)}" class="grow"><button class="secondary" id="cr-all">Seleccionar visibles</button><button class="secondary" id="cr-none">Ninguna</button></div>
-    <div style="overflow-x:auto"><table><tr><th></th><th>Orden</th><th>Fecha</th><th>Inspector</th><th>Ciclo</th><th>Causa de cierre</th><th>Efect.</th><th>Sup. Crítica</th></tr>
-    ${vis.map(r => `<tr><td><input type="checkbox" class="cr-ck" data-o="${esc(r.orden)}" ${ya.has(r.orden) ? "disabled" : ""} ${c.sel.has(r.orden) ? "checked" : ""} style="width:20px;height:20px"></td><td>${esc(r.orden)}${ya.has(r.orden) ? '<br><span class="tag a">Ya cargada</span>' : ""}</td><td>${fmtFecha(r.fecha)}</td><td>${esc(r.insp)}</td><td>${esc(r.ciclo)}</td><td>${esc(r.causa)}</td><td>${esc(r.efectividad)}</td><td>${esc(r.sup)}</td></tr>`).join("") || '<tr><td colspan="8" class="muted">Sin órdenes con ese filtro.</td></tr>'}</table></div>
-    ${libres.length < vis.length ? `<p class="muted" style="margin:8px 0 0">Las marcadas "Ya cargada" ya están en la lista de auditoría.</p>` : ""}</div>
+  const ocultas = c.rows.length - c.rows.filter(r => r.enOpen).length;
+  return `<div class="card"><div class="row"><b class="grow">${vis.length} órdenes${c.rows.length >= CRITICA_MAX_FILAS ? " (tope: acota el filtro)" : ""}</b><span class="muted" id="cr-cnt">${c.sel.size} seleccionadas</span></div>
+    ${filtraOpen && ocultas ? `<p class="muted" style="margin:4px 0 0">${ocultas} órdenes de ese filtro no están en ${OPEN_SHEET} y no se muestran.</p>` : ""}
+    <div class="row" style="margin:10px 0"><input id="cr-q" type="search" placeholder="Buscar orden, dirección, barrio…" value="${esc(c.q)}" class="grow"><button class="secondary" id="cr-all">Seleccionar visibles</button><button class="secondary" id="cr-none">Ninguna</button></div>
+    <div style="overflow-x:auto"><table><tr><th></th><th>Orden</th><th>Fecha</th><th>Inspector</th><th>Dirección</th><th>Barrio</th><th>Municipio</th><th>Causa de cierre</th><th>Efect.</th><th>Sup. Crítica</th></tr>
+    ${vis.map(r => `<tr><td><input type="checkbox" class="cr-ck" data-o="${esc(r.orden)}" ${ya.has(r.orden) ? "disabled" : ""} ${c.sel.has(r.orden) ? "checked" : ""} style="width:20px;height:20px"></td><td>${esc(r.orden)}${ya.has(r.orden) ? '<br><span class="tag a">Ya cargada</span>' : ""}</td><td>${fmtFecha(r.fecha)}</td><td>${esc(r.insp)}</td><td>${esc(r.dir)}</td><td>${esc(r.barrio)}</td><td>${esc(r.municipio)}</td><td>${esc(r.causa)}</td><td>${esc(r.efectividad)}</td><td>${esc(r.sup)}</td></tr>`).join("") || '<tr><td colspan="10" class="muted">Sin órdenes con ese filtro.</td></tr>'}</table></div>
+    ${vis.some(r => ya.has(r.orden)) ? `<p class="muted" style="margin:8px 0 0">Las marcadas "Ya cargada" ya están en la lista de auditoría.</p>` : ""}</div>
     <div class="card"><b>Enviar a auditoría</b>
       <label>Asignar a</label><select id="cr-as"><option value="__cr" ${c.asignar === "__cr" ? "selected" : ""}>El supervisor que figura en Crítica</option>${sups.map(n => `<option value="${esc(n)}" ${c.asignar === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
       <label>Indicación para el supervisor (opcional)</label><textarea id="cr-nota" placeholder="Qué debe revisar o verificar en estas órdenes">${esc(c.nota)}</textarea>
-      <label>Información de Crítica que verá el supervisor</label>
+      <label>Información que verá el supervisor (la dirección siempre se envía)</label>
       <div class="opts">${CR_DETALLE.map(([k, n]) => `<label class="opt ${c.detalle.has(k) ? "sel" : ""}"><input type="checkbox" class="cr-det" data-k="${k}" ${c.detalle.has(k) ? "checked" : ""}> ${n}</label>`).join("")}</div>
       <button class="primary" id="cr-send">Enviar ${c.sel.size} órdenes a auditoría</button></div>`;
 }
@@ -404,20 +410,32 @@ async function crCargarInspectores() {
   } catch (e) { c.inspList = []; c.msg = errMsg(e.message); }
   if (S.adminTab === "critica") renderAdmin();
 }
+// Carga AuditoríaOpen (cruce por orden) y fija el rango de fechas a los días que se pueden auditar
 async function crIniciar() {
   const c = S.cr;
-  if (c.desde) return;
+  if (c.desde || c.iniciando) return;
+  c.iniciando = true;
   try {
-    const t = await gviz("select max(J)");
-    c.hasta = c.desde = gvIso(t.rows[0].c[0]);
-  } catch (e) { c.msg = errMsg(e.message); c.inspList = []; renderAdmin(); return; }
+    const [rng, t] = await Promise.all([gviz("select min(J), max(J), count(E)", OPEN_SHEET), gviz("select E, C, AQ, AS, AY, AZ limit 30000", OPEN_SHEET)]);
+    const map = {};
+    t.rows.forEach(r => { const x = r.c.map(cv), o = String(x[0]).replace(/\.0$/, ""); if (!o) return; const la = coord(x[5]), lo = coord(x[4]); map[o] = { dir: x[1], municipio: x[2], barrio: x[3], mapa: la != null && lo != null ? "https://www.google.com/maps?q=" + la.toFixed(6) + "," + lo.toFixed(6) : "" }; });
+    c.open = { map, n: Object.keys(map).length, min: gvIso(rng.rows[0].c[0]), max: gvIso(rng.rows[0].c[1]) };
+    c.desde = c.open.min; c.hasta = c.open.max;
+  } catch (e) {
+    c.open = null; c.msg = errMsg("No se pudo leer la hoja " + OPEN_SHEET + " (" + e.message + "). Se muestran todas las órdenes de Crítica, sin dirección.");
+    try { const t = await gviz("select max(J)"); c.hasta = c.desde = gvIso(t.rows[0].c[0]); } catch (e2) { c.inspList = []; c.iniciando = false; renderAdmin(); return; }
+  }
+  c.iniciando = false;
   renderAdmin(); crCargarInspectores();
 }
 async function crVer() {
   const c = S.cr; $("cr-go").disabled = true; $("cr-go").textContent = "Cargando…";
   try {
     const t = await gviz("select A,B,C,F,G,I,J,L,N,P " + crWhere() + " order by J, L limit " + CRITICA_MAX_FILAS);
-    c.rows = t.rows.map(r => { const x = r.c.map(cv); return { orden: String(x[0]).replace(/\.0$/, ""), cuenta: String(x[1]), ciclo: x[2], causa: x[3], comentario: x[4], obs1: x[5], fecha: gvIso(r.c[6]), insp: x[7], efectividad: x[8], sup: x[9] }; }).filter(r => r.orden);
+    c.rows = t.rows.map(r => {
+      const x = r.c.map(cv), orden = String(x[0]).replace(/\.0$/, ""), op = c.open && c.open.map[orden];
+      return { orden, cuenta: String(x[1]), ciclo: x[2], causa: x[3], comentario: x[4], obs1: x[5], fecha: gvIso(r.c[6]), insp: x[7], efectividad: x[8], sup: x[9], enOpen: !!op, dir: op ? op.dir : "", municipio: op ? op.municipio : "", barrio: op ? op.barrio : "", mapa: op ? op.mapa : "" };
+    }).filter(r => r.orden);
     c.sel = new Set(); c.q = ""; c.msg = "";
     await refreshAdmin().catch(() => {});
   } catch (e) { c.rows = null; c.msg = errMsg(e.message); }
@@ -429,13 +447,13 @@ function bindCritica() {
   $("cr-d").onchange = e => { c.desde = e.target.value; if (c.hasta < c.desde) c.hasta = c.desde; crCargarInspectores(); renderAdmin(); };
   $("cr-h").onchange = e => { c.hasta = e.target.value; if (c.hasta < c.desde) c.desde = c.hasta; crCargarInspectores(); renderAdmin(); };
   $("cr-i").onchange = e => { c.insp = e.target.value; c.rows = null; renderAdmin(); };
+  if ($("cr-so")) $("cr-so").onchange = e => { c.soloOpen = e.target.checked; c.sel = new Set(); renderAdmin(); };
   $("cr-go").onclick = crVer;
   if (!c.rows) return;
   const cnt = () => { $("cr-cnt").textContent = c.sel.size + " seleccionadas"; $("cr-send").textContent = "Enviar " + c.sel.size + " órdenes a auditoría"; };
   document.querySelectorAll(".cr-ck").forEach(k => k.onchange = () => { k.checked ? c.sel.add(k.dataset.o) : c.sel.delete(k.dataset.o); cnt(); });
   $("cr-q").oninput = e => { c.q = e.target.value; c.nota = $("cr-nota").value; const p = e.target.selectionStart; $("cr-res").innerHTML = crResultado(); bindCritica(); $("cr-q").focus(); $("cr-q").setSelectionRange(p, p); };
-  const visibles = () => [...document.querySelectorAll(".cr-ck:not(:disabled)")].map(k => k.dataset.o);
-  $("cr-all").onclick = () => { visibles().forEach(o => c.sel.add(o)); document.querySelectorAll(".cr-ck:not(:disabled)").forEach(k => k.checked = true); cnt(); };
+  $("cr-all").onclick = () => { document.querySelectorAll(".cr-ck:not(:disabled)").forEach(k => { c.sel.add(k.dataset.o); k.checked = true; }); cnt(); };
   $("cr-none").onclick = () => { c.sel.clear(); document.querySelectorAll(".cr-ck").forEach(k => k.checked = false); cnt(); };
   $("cr-as").onchange = e => { c.asignar = e.target.value; };
   $("cr-nota").oninput = e => { c.nota = e.target.value; };
@@ -449,6 +467,7 @@ async function crEnviar() {
   if (sinSup.length) return alert(sinSup.length + " de las órdenes no tienen supervisor en Crítica. Elige un supervisor en \"Asignar a\".");
   const rows = elegidas.map(r => {
     const o = { Orden: r.orden, Supervisor: c.asignar === "__cr" ? String(r.sup).trim() : c.asignar, Inspector: r.insp };
+    if (r.dir) o["Dirección"] = r.dir;
     if (c.nota.trim()) o["Observación"] = c.nota.trim();
     CR_DETALLE.forEach(([k, n]) => { if (c.detalle.has(k) && r[k] !== "" && r[k] != null) o[n] = k === "fecha" ? fmtFecha(r[k]) : String(r[k]); });
     return o;
@@ -462,39 +481,109 @@ async function crEnviar() {
   renderAdmin();
 }
 
-/* --- Seguimiento, descarga y limpieza --- */
-function adminSeg() {
-  const by = {};
-  S.ordenes.forEach(o => { const s = o.Supervisor || "(sin supervisor)"; (by[s] = by[s] || { t: 0, a: 0 }).t++; if (o.Estado === "Auditada") by[s].a++; });
-  const tot = S.ordenes.length, aud = S.ordenes.filter(o => o.Estado === "Auditada").length;
-  const lastAud = {}; S.auditorias.forEach(a => { lastAud[String(a["Orden"])] = a; });
-  return `<div class="card"><b>${aud} de ${tot} auditadas</b><div class="bar"><i style="width:${tot ? Math.round(100 * aud / tot) : 0}%"></i></div>
-      <div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="secondary grow" id="dl-csv">⬇ Descargar información (CSV)</button><button class="secondary grow" id="del-aud" ${aud ? "" : "disabled"} style="color:var(--danger);border-color:var(--danger)">🗑 Eliminar diligenciadas (${aud})</button></div>
-      <p class="muted" style="margin:8px 0 0">Eliminar quita las órdenes diligenciadas de la lista de los supervisores. El historial de auditorías y las fotos se conservan. Descarga el CSV antes.</p></div>
-    ${Object.keys(by).sort().map(s => `<div class="card"><div class="row"><b class="grow">${esc(s)}</b><span class="muted">${by[s].a}/${by[s].t}</span></div><div class="bar"><i style="width:${Math.round(100 * by[s].a / by[s].t)}%"></i></div></div>`).join("")}
-    <div class="card"><b>Auditorías realizadas</b><table><tr><th>Orden</th><th>Supervisor</th><th>Resultado</th><th>Fotos</th></tr>
-    ${Object.values(lastAud).reverse().map(a => { const d = datosAud(a), fotos = fotosAud(a);
-      return `<tr><td>${esc(a["Orden"])}</td><td>${esc(a["Supervisor"])}</td><td>${esc(d.resultado || "")}${d.hallazgos && d.hallazgos.length ? `<br><span class="muted">${esc([].concat(d.hallazgos).join(", "))}</span>` : ""}${d.observaciones ? `<br><span class="muted">${esc(d.observaciones)}</span>` : ""}</td><td>${fotos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">${i + 1}</a>`).join(" ") || "—"}</td></tr>`; }).join("") || '<tr><td colspan="4" class="muted">Aún no hay auditorías.</td></tr>'}</table></div>`;
-}
+/* --- Seguimiento: un botón por supervisor, pendientes / ejecutadas, resultados y Excel --- */
+const valHtml = v => /^https?:\/\//.test(String(v)) ? `<a href="${esc(v)}" target="_blank" rel="noopener">Abrir mapa</a>` : esc(v);
 function datosAud(a) { try { return JSON.parse(a["Datos"] || "{}"); } catch (e) { return {}; } }
 function fotosAud(a) { return String(a["Fotos"] || "").split("\n").filter(Boolean); }
-function descargarCsv() {
-  const ordMap = {}; S.ordenes.forEach(o => { ordMap[String(o["Orden"])] = o; });
-  const head = ["Orden", "Estado", "Supervisor", "Fecha auditoría", "Dirección", "Tipo de trabajo", "Inspector"].concat(FORM_FIELDS.map(f => f.label), ["Latitud", "Longitud", "Fotos"]);
-  const fila = [];
-  S.auditorias.forEach(a => {
-    const o = ordMap[String(a["Orden"])] || {}, d = datosAud(a);
-    fila.push([a["Orden"], "Auditada", a["Supervisor"], a["Fecha"] ? new Date(a["Fecha"]).toLocaleString("es-CO") : "", a["Dirección"] || o["Dirección"], a["Tipo de trabajo"] || o["Tipo de trabajo"], a["Inspector"] || o["Inspector"]]
-      .concat(FORM_FIELDS.map(f => [].concat(d[f.id] == null ? "" : d[f.id]).join("; ")), [a["Latitud"], a["Longitud"], fotosAud(a).join(" ")]));
-  });
-  S.ordenes.filter(o => o.Estado !== "Auditada").forEach(o => fila.push([o["Orden"], o.Estado, o.Supervisor, "", o["Dirección"], o["Tipo de trabajo"], o.Inspector].concat(FORM_FIELDS.map(() => ""), ["", "", ""])));
-  const cell = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
-  // ";" y BOM: así Excel en español abre bien columnas y tildes
-  const csv = "﻿" + [head].concat(fila).map(r => r.map(cell).join(";")).join("\r\n");
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-  a.download = "auditoria_" + new Date().toISOString().slice(0, 10) + ".csv";
-  document.body.appendChild(a); a.click(); a.remove();
+function detalleOrden(o) { try { return JSON.parse((o && o["Detalle"]) || "{}"); } catch (e) { return {}; } }
+
+// Pendientes = órdenes aún sin auditar; ejecutadas = última auditoría de cada orden (el historial sobrevive a "Eliminar diligenciadas")
+function segDatos() {
+  const last = {}; S.auditorias.forEach(a => { last[String(a["Orden"])] = a; });
+  const by = {}, g = n => (by[n] = by[n] || { pend: [], ejec: [] });
+  S.ordenes.filter(o => o.Estado !== "Auditada").forEach(o => g(o.Supervisor || "(sin supervisor)").pend.push(o));
+  Object.values(last).forEach(a => g(a["Supervisor"] || "(sin supervisor)").ejec.push(a));
+  return by;
+}
+const segBar = (e, t) => `<div class="bar"><i style="width:${t ? Math.round(100 * e / t) : 0}%"></i></div>`;
+
+function adminSeg() {
+  const by = segDatos(), names = Object.keys(by).sort();
+  if (S.segSup && by[S.segSup]) return segDetalle(S.segSup, by[S.segSup]);
+  S.segSup = null;
+  let P = 0, E = 0; names.forEach(n => { P += by[n].pend.length; E += by[n].ejec.length; });
+  const hechas = S.ordenes.filter(o => o.Estado === "Auditada").length;
+  return `<div class="card"><b>${E} de ${P + E} auditadas</b>${segBar(E, P + E)}
+      <div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="secondary grow" id="dl-all">⬇ Descargar todo (Excel)</button><button class="secondary grow" id="del-aud" ${hechas ? "" : "disabled"} style="color:var(--danger);border-color:var(--danger)">🗑 Eliminar diligenciadas (${hechas})</button></div>
+      <p class="muted" style="margin:8px 0 0">Toca un supervisor para ver sus órdenes pendientes y ejecutadas. Eliminar quita de la lista las órdenes ya diligenciadas; el historial de auditorías y las fotos se conservan. Descarga el Excel antes.</p></div>
+    <div class="sup-grid">${names.map(n => { const d = by[n], t = d.pend.length + d.ejec.length;
+      return `<button class="card sup-btn" data-sup="${esc(n)}"><div class="row"><b class="grow">${esc(n)}</b><span class="muted">${d.ejec.length}/${t}</span></div>${segBar(d.ejec.length, t)}<div class="muted" style="margin-top:6px">${d.pend.length} pendientes · ${d.ejec.length} ejecutadas</div></button>`; }).join("") || '<p class="muted">Aún no hay órdenes cargadas.</p>'}</div>`;
+}
+
+function segDetalle(nombre, d) {
+  const ejec = S.segTab === "ejec", lista = ejec ? d.ejec : d.pend;
+  const sel = S.segOrden && lista.find(x => String(x["Orden"]) === S.segOrden);
+  return `<div class="row" style="margin-bottom:10px"><button class="secondary" id="sg-back">← Supervisores</button><b class="grow" style="text-align:right">${esc(nombre)}</b></div>
+    <div class="chips"><button class="chip ${ejec ? "" : "on"}" data-st="pend">Pendientes (${d.pend.length})</button><button class="chip ${ejec ? "on" : ""}" data-st="ejec">Ejecutadas (${d.ejec.length})</button></div>
+    <button class="secondary" id="sg-xls" style="width:100%;margin-bottom:10px" ${lista.length ? "" : "disabled"}>⬇ Descargar ${ejec ? "ejecutadas" : "pendientes"} (Excel)</button>
+    ${sel ? segOrdenHtml(sel, ejec) : ""}
+    ${lista.map(x => { const o = String(x["Orden"]), r = ejec ? datosAud(x) : null, dir = x["Dirección"] || (ejec ? (ordenPorId(o) || {})["Dirección"] : "");
+      return `<div class="card ord" data-o="${esc(o)}" style="${o === S.segOrden ? "border-color:var(--teal-dark)" : ""}"><div class="grow"><b>${esc(o)}</b><p>${esc(dir || "Sin dirección")}${ejec && x["Fecha"] ? " · " + new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p></div>${ejec ? `<span class="tag ${/^no conforme/i.test(r.resultado || "") ? "q" : "a"}">${esc(r.resultado || "Auditada")}</span>` : '<span class="tag p">Pendiente</span>'}</div>`; }).join("") || '<p class="muted">No hay órdenes en esta lista.</p>'}`;
+}
+const ordenPorId = id => S.ordenes.find(o => String(o["Orden"]) === String(id));
+
+// Detalle de una orden: si está ejecutada, sus resultados; si no, la información que se le asignó
+function segOrdenHtml(x, ejec) {
+  const o = ejec ? (ordenPorId(x["Orden"]) || {}) : x, det = Object.assign({}, detalleOrden(o), ejec ? detalleOrden(x) : {});
+  const info = [["Dirección", x["Dirección"] || o["Dirección"]], ["Tipo de trabajo", x["Tipo de trabajo"] || o["Tipo de trabajo"]], ["Inspector", x["Inspector"] || o["Inspector"]], ["Indicación", o["Observación"]]].concat(Object.entries(det)).filter(p => p[1]);
+  let res = "";
+  if (ejec) {
+    const d = datosAud(x), fotos = fotosAud(x);
+    res = `<hr style="border:0;border-top:1px solid var(--border);margin:10px 0"><b>Resultados de la auditoría</b>
+      <p class="muted" style="margin:4px 0">${esc(x["Supervisor"])} · ${x["Fecha"] ? new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p>
+      ${FORM_FIELDS.map(f => { const v = [].concat(d[f.id] == null ? "" : d[f.id]).join(", "); return v ? `<p style="margin:6px 0"><b>${esc(f.label)}:</b> ${esc(v)}</p>` : ""; }).join("")}
+      ${x["Latitud"] ? `<p style="margin:6px 0"><b>Ubicación:</b> <a href="https://www.google.com/maps?q=${esc(x["Latitud"])},${esc(x["Longitud"])}" target="_blank" rel="noopener">Ver donde se auditó</a></p>` : ""}
+      <p style="margin:6px 0"><b>Fotos:</b> ${fotos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">Foto ${i + 1}</a>`).join(" · ") || "sin fotos"}</p>`;
+  }
+  return `<div class="card" style="border-color:var(--teal-dark)"><div class="row"><b class="grow" style="font-size:16px">Orden ${esc(x["Orden"])}</b><button class="secondary" id="sg-cerrar">Cerrar</button></div>
+    ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${valHtml(v)}</p>`).join("")}${res}</div>`;
+}
+
+function bindSeg() {
+  document.querySelectorAll("[data-sup]").forEach(b => b.onclick = () => { S.segSup = b.dataset.sup; S.segTab = "pend"; S.segOrden = null; renderAdmin(); });
+  if ($("dl-all")) { $("dl-all").onclick = () => descargarExcel("auditoria_" + hoy(), segHojas(Object.values(segDatos()))); $("del-aud").onclick = eliminarAuditadas; }
+  if ($("sg-back")) $("sg-back").onclick = () => { S.segSup = null; S.segOrden = null; renderAdmin(); };
+  document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => { S.segTab = b.dataset.st; S.segOrden = null; renderAdmin(); });
+  document.querySelectorAll(".ord[data-o]").forEach(c => c.onclick = () => { S.segOrden = S.segOrden === c.dataset.o ? null : c.dataset.o; renderAdmin(); });
+  if ($("sg-cerrar")) $("sg-cerrar").onclick = () => { S.segOrden = null; renderAdmin(); };
+  if ($("sg-xls")) $("sg-xls").onclick = () => {
+    const d = segDatos()[S.segSup], ejec = S.segTab === "ejec", h = segHojas([d]).find(x => x.name === (ejec ? "Ejecutadas" : "Pendientes"));
+    descargarExcel((ejec ? "ejecutadas_" : "pendientes_") + S.segSup.replace(/[^\wÁÉÍÓÚÑáéíóúñ]+/g, "_") + "_" + hoy(), [h]);
+  };
+}
+const hoy = () => new Date().toISOString().slice(0, 10);
+
+// Hojas Pendientes y Ejecutadas con las columnas extra (municipio, barrio, etc.) que traigan las órdenes
+function segHojas(grupos) {
+  const pend = [].concat(...grupos.map(g => g.pend)), ejec = [].concat(...grupos.map(g => g.ejec));
+  const extra = list => { const k = []; list.forEach(x => Object.keys(x._det).forEach(n => { if (k.indexOf(n) < 0) k.push(n); })); return k; };
+  const P = pend.map(o => ({ o, _det: detalleOrden(o) })), E = ejec.map(a => ({ a, o: ordenPorId(a["Orden"]) || {}, _det: Object.assign({}, detalleOrden(ordenPorId(a["Orden"])), detalleOrden(a)) }));
+  const kp = extra(P), ke = extra(E);
+  return [
+    { name: "Pendientes", head: ["Orden", "Supervisor", "Inspector", "Dirección", "Tipo de trabajo", "Indicación"].concat(kp),
+      rows: P.map(({ o, _det }) => [o["Orden"], o["Supervisor"], o["Inspector"], o["Dirección"], o["Tipo de trabajo"], o["Observación"]].concat(kp.map(k => _det[k] || ""))) },
+    { name: "Ejecutadas", head: ["Orden", "Supervisor", "Fecha auditoría", "Dirección", "Tipo de trabajo", "Inspector"].concat(FORM_FIELDS.map(f => f.label), ["Latitud", "Longitud", "Fotos"], ke),
+      rows: E.map(({ a, o, _det }) => { const d = datosAud(a);
+        return [a["Orden"], a["Supervisor"], a["Fecha"] ? new Date(a["Fecha"]).toLocaleString("es-CO") : "", a["Dirección"] || o["Dirección"], a["Tipo de trabajo"] || o["Tipo de trabajo"], a["Inspector"] || o["Inspector"]]
+          .concat(FORM_FIELDS.map(f => [].concat(d[f.id] == null ? "" : d[f.id]).join("; ")), [a["Latitud"], a["Longitud"], fotosAud(a).join(" ")], ke.map(k => _det[k] || "")); }) }
+  ];
+}
+
+// Excel real (.xlsx) con SheetJS, cargado solo al descargar; si no carga, baja un CSV compatible con Excel
+let xlsxP = null;
+const loadXlsx = () => window.XLSX ? Promise.resolve() : (xlsxP = xlsxP || new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = res; s.onerror = () => rej(new Error("no cargó")); document.head.appendChild(s); }));
+function bajar(nombre, blob) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); }
+async function descargarExcel(nombre, hojas) {
+  const txt = v => (v == null ? "" : String(v));
+  try {
+    await loadXlsx();
+    const wb = XLSX.utils.book_new();
+    hojas.forEach(h => { const ws = XLSX.utils.aoa_to_sheet([h.head].concat(h.rows.map(r => r.map(txt)))); ws["!cols"] = h.head.map(x => ({ wch: Math.max(12, Math.min(40, x.length + 4)) })); XLSX.utils.book_append_sheet(wb, ws, h.name.slice(0, 31)); });
+    XLSX.writeFile(wb, nombre + ".xlsx");
+  } catch (e) {
+    const cell = v => '"' + txt(v).replace(/"/g, '""') + '"';
+    hojas.forEach(h => bajar(nombre + (hojas.length > 1 ? "_" + h.name : "") + ".csv", new Blob(["﻿" + [h.head].concat(h.rows).map(r => r.map(cell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" })));
+  }
 }
 async function eliminarAuditadas() {
   const n = S.ordenes.filter(o => o.Estado === "Auditada").length;
