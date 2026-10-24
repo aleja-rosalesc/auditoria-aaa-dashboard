@@ -35,6 +35,7 @@ function doPost(e) {
     if (a === 'cargar') return out_(cargar_(req));
     if (a === 'eliminarAuditadas') return out_(eliminarAuditadas_());
     if (a === 'eliminarOrdenes') return out_(eliminarOrdenes_(req));
+    if (a === 'reasignar') return out_(reasignar_(req));
     if (a === 'vaciarTodo') return out_(vaciarTodo_());
     if (a === 'guardarSupervisor') return out_(guardarSupervisor_(req));
     if (a === 'eliminarSupervisor') return out_(eliminarSupervisor_(req));
@@ -122,6 +123,10 @@ function auditorias_(sup) {
 function cargar_(req) {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
+    var reg = registrados_(), desconocidos = {};
+    (req.rows || []).forEach(function (r) { if (!reg[norm_(r['Supervisor'])]) desconocidos[String(r['Supervisor'] || '').trim() || '(vacío)'] = 1; });
+    var faltan = Object.keys(desconocidos);
+    if (faltan.length) return { ok: false, error: 'No se cargó nada. Estos supervisores no existen: ' + faltan.join(', ') + '. Créalos primero en la pestaña Supervisores o corrige el nombre.' };
     var sh = sheet_('ORDENES', ORDEN_COLS);
     if (req.reemplazar && sh.getLastRow() > 1) sh.getRange(2, 1, sh.getLastRow() - 1, ORDEN_COLS.length).clearContent();
     var existentes = {};
@@ -133,7 +138,7 @@ function cargar_(req) {
       existentes[id] = 1;
       var extra = {};
       Object.keys(r).forEach(function (k) { if (ORDEN_COLS.indexOf(k) < 0) extra[k] = r[k]; });
-      nuevas.push([id, String(r['Supervisor'] || '').trim(), r['Dirección'] || '', r['Tipo de trabajo'] || '', r['Inspector'] || '', r['Observación'] || '', 'Pendiente', now, JSON.stringify(extra)]);
+      nuevas.push([id, reg[norm_(r['Supervisor'])], r['Dirección'] || '', r['Tipo de trabajo'] || '', r['Inspector'] || '', r['Observación'] || '', 'Pendiente', now, JSON.stringify(extra)]);
     });
     if (nuevas.length) {
       var rng = sh.getRange(sh.getLastRow() + 1, 1, nuevas.length, ORDEN_COLS.length);
@@ -248,5 +253,39 @@ function vaciarTodo_() {
     var p = PropertiesService.getScriptProperties(), id = p.getProperty('FOLDER_ID');
     if (id) { try { DriveApp.getFolderById(id).setTrashed(true); } catch (e) {} p.deleteProperty('FOLDER_ID'); }
     return { ok: true, filas: n };
+  } finally { lock.releaseLock(); }
+}
+
+// Nombre sin tildes, mayúsculas ni espacios de más, para comparar nombres de supervisores
+function norm_(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+
+// Supervisores registrados en la hoja SUPERVISORES: { nombreNormalizado: nombreOficial }
+function registrados_() {
+  var m = {};
+  rows_(sheet_('SUPERVISORES', SUP_COLS), SUP_COLS).forEach(function (r) { var n = String(r['Supervisor']).trim(); if (n) m[norm_(n)] = n; });
+  return m;
+}
+
+// Cambia el supervisor de las filas cuya Orden esté en `set`; devuelve cuántas cambió
+function cambiarSup_(sh, cols, set, nuevo) {
+  var last = sh.getLastRow();
+  if (last < 2) return 0;
+  var io = cols.indexOf('Orden'), is = cols.indexOf('Supervisor'), n = last - 1;
+  var ord = sh.getRange(2, io + 1, n, 1).getValues(), rng = sh.getRange(2, is + 1, n, 1), sup = rng.getValues(), c = 0;
+  for (var i = 0; i < n; i++) if (set[String(ord[i][0])]) { sup[i][0] = nuevo; c++; }
+  if (c) rng.setValues(sup);
+  return c;
+}
+
+// req: {ordenes:[...], supervisor}. El destino debe estar registrado en la pestaña Supervisores.
+function reasignar_(req) {
+  var destino = registrados_()[norm_(req.supervisor)];
+  if (!destino) return { ok: false, error: 'El supervisor "' + req.supervisor + '" no existe. Créalo primero en la pestaña Supervisores.' };
+  var set = {}; (req.ordenes || []).forEach(function (o) { set[String(o)] = 1; });
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var a = cambiarSup_(sheet_('ORDENES', ORDEN_COLS), ORDEN_COLS, set, destino);
+    var b = cambiarSup_(sheet_('AUDITORIAS', AUD_COLS), AUD_COLS, set, destino);
+    return { ok: true, ordenes: a, auditorias: b, supervisor: destino };
   } finally { lock.releaseLock(); }
 }

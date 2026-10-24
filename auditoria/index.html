@@ -125,7 +125,7 @@ async function flushQueue() {
   try { pend = await qAll(); } catch (e) { return; }
   let sent = 0;
   for (const p of pend) {
-    try { await api(Object.assign({ action: "guardar" }, p)); await qDel(p.id); sent++; } catch (e) { break; }
+    try { await api(Object.assign({ action: "guardar" }, p)); await qDel(p.id); sent++; } catch (e) { if (/no está asignada/.test(e.message)) continue; break; }
   }
   await updateBanner();
   if (sent && S.role === "supervisor" && $("list")) loadOrdenes();
@@ -372,6 +372,9 @@ async function cargar() {
 // Hoja AuditoríaOpen (mismo Sheet, solo los días auditables): C Dirección, E Orden, AQ Municipio, AS Barrio, AY Longitud, AZ Latitud, J Cerrada el.
 const CRITICA_SHEET_ID = "1_NTcyMn3xX0MYqP40qdFc9hiAVpgOXdkfwJEEhRwL3o", CRITICA_GID = "205567382", OPEN_SHEET = "AuditoríaOpen", CRITICA_MAX_FILAS = 10000;
 const CR_DETALLE = [["cuenta", "Cuenta"], ["ciclo", "Ciclo"], ["causa", "Causa de cierre"], ["comentario", "Comentario"], ["obs1", "Obs. 1"], ["efectividad", "Efectividad"], ["fecha", "Fecha de cierre"], ["municipio", "Municipio"], ["barrio", "Barrio"], ["mapa", "Ubicación en mapa"]];
+const normN = n => String(n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+// Solo cuentan los supervisores creados en la pestaña Supervisores (los que tienen clave)
+const supRegistrados = () => (S.supervisores || []).filter(s => s.Clave).map(s => s.Supervisor);
 const crNuevo = () => ({ desde: "", hasta: "", insp: "", inspList: null, rows: null, sel: new Set(), q: "", msg: "", detalle: new Set(CR_DETALLE.map(d => d[0])), asignar: "__cr", nota: "", open: null, soloOpen: true });
 S.cr = crNuevo();
 
@@ -407,7 +410,7 @@ function crResultado() {
   const c = S.cr, ya = new Set(S.ordenes.map(o => String(o["Orden"])));
   const q = c.q.toLowerCase(), filtraOpen = c.soloOpen && c.open;
   const vis = c.rows.filter(r => (!filtraOpen || r.enOpen) && (!q || (r.orden + " " + r.cuenta + " " + r.ciclo + " " + r.insp + " " + r.causa + " " + r.dir + " " + r.barrio + " " + r.municipio).toLowerCase().includes(q)));
-  const sups = (S.supervisores || []).map(s => s.Supervisor);
+  const sups = supRegistrados();
   const ocultas = c.rows.length - c.rows.filter(r => r.enOpen).length;
   return `<div class="card"><div class="row"><b class="grow">${vis.length} órdenes${c.rows.length >= CRITICA_MAX_FILAS ? " (tope: acota el filtro)" : ""}</b><span class="muted" id="cr-cnt">${c.sel.size} seleccionadas</span></div>
     ${filtraOpen && ocultas ? `<p class="muted" style="margin:4px 0 0">${ocultas} órdenes de ese filtro no están en ${OPEN_SHEET} y no se muestran.</p>` : ""}
@@ -489,6 +492,8 @@ async function crEnviar() {
   if (!elegidas.length) return alert("Selecciona al menos una orden");
   const sinSup = c.asignar === "__cr" ? elegidas.filter(r => !String(r.sup).trim()) : [];
   if (sinSup.length) return alert(sinSup.length + " de las órdenes no tienen supervisor en Crítica. Elige un supervisor en \"Asignar a\".");
+  const reg = new Set(supRegistrados().map(normN)), desconocidos = [...new Set(elegidas.map(r => c.asignar === "__cr" ? String(r.sup).trim() : c.asignar).filter(n => !reg.has(normN(n))))];
+  if (desconocidos.length) return alert("Estos supervisores no existen: " + desconocidos.join(", ") + ".\nCréalos primero en la pestaña Supervisores o elige otro en \"Asignar a\".");
   const rows = elegidas.map(r => {
     const o = { Orden: r.orden, Supervisor: c.asignar === "__cr" ? String(r.sup).trim() : c.asignar, Inspector: r.insp };
     if (r.dir) o["Dirección"] = r.dir;
@@ -538,11 +543,14 @@ function adminSeg() {
 function segDetalle(nombre, d) {
   const ejec = S.segTab === "ejec", lista = ejec ? d.ejec : d.pend;
   const sel = S.segOrden && lista.find(x => String(x["Orden"]) === S.segOrden);
+  const destinos = supRegistrados().filter(n => n !== nombre);
+  const reasignarLista = `<div class="card" style="padding:10px"><b style="font-size:13px">Reasignar esta lista a otro supervisor</b>${destinos.length ? `<div class="row" style="margin-top:6px"><select id="sg-rl-to" class="grow">${destinos.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-rl-go" ${lista.length ? "" : "disabled"}>Reasignar (${lista.length})</button></div>` : '<p class="muted" style="margin:6px 0 0">No hay otro supervisor registrado. Créalo en la pestaña Supervisores.</p>'}</div>`;
   return `<div class="row" style="margin-bottom:10px"><button class="secondary" id="sg-back">← Supervisores</button><b class="grow" style="text-align:right">${esc(nombre)}</b></div>
     <div class="chips"><button class="chip ${ejec ? "" : "on"}" data-st="pend">Pendientes (${d.pend.length})</button><button class="chip ${ejec ? "on" : ""}" data-st="ejec">Ejecutadas (${d.ejec.length})</button></div>
     <div class="card" style="padding:10px">${segFiltroHtml([d])}</div>
     <button class="secondary" id="sg-xls" style="width:100%;margin-bottom:10px" ${lista.length ? "" : "disabled"}>⬇ Descargar ${ejec ? "ejecutadas" : "pendientes"} (Excel)</button>
     <button class="secondary" id="sg-dellist" style="width:100%;margin-bottom:10px;color:var(--danger);border-color:var(--danger)" ${lista.length ? "" : "disabled"}>🗑 Eliminar toda esta lista (${lista.length})</button>
+    ${reasignarLista}
     ${sel ? segOrdenHtml(sel, ejec) : ""}
     ${lista.map(x => { const o = String(x["Orden"]), r = ejec ? datosAud(x) : null, dir = x["Dirección"] || (ejec ? (ordenPorId(o) || {})["Dirección"] : "");
       return `<div class="card ord" data-o="${esc(o)}" style="${o === S.segOrden ? "border-color:var(--teal-dark)" : ""}"><div class="grow"><b>${esc(o)}</b><p>${esc(dir || "Sin dirección")}${ejec && x["Fecha"] ? " · " + new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p></div>${ejec ? `<span class="tag ${/^no conforme/i.test(r.resultado || "") ? "q" : "a"}">${esc(r.resultado || "Auditada")}</span>` : '<span class="tag p">Pendiente</span>'}</div>`; }).join("") || '<p class="muted">No hay órdenes en esta lista.</p>'}`;
@@ -563,8 +571,10 @@ function segOrdenHtml(x, ejec) {
       ${x["Firma"] ? `<p style="margin:6px 0"><b>Firma del usuario:</b> <a href="${esc(x["Firma"])}" target="_blank" rel="noopener">Ver firma</a></p>` : ""}
       <p style="margin:6px 0"><b>Fotos:</b> ${fotos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">Foto ${i + 1}</a>`).join(" · ") || "sin fotos"}</p>`;
   }
+  const dest = supRegistrados().filter(n => n !== S.segSup);
+  const reasignarOrden = dest.length ? `<div class="row" style="margin-top:10px"><select id="sg-ro-to" class="grow">${dest.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-ro-go">Reasignar orden</button></div>` : "";
   return `<div class="card" style="border-color:var(--teal-dark)"><div class="row"><b class="grow" style="font-size:16px">Orden ${esc(x["Orden"])}</b><button class="secondary" id="sg-del" style="color:var(--danger);border-color:var(--danger)">Eliminar</button><button class="secondary" id="sg-cerrar">Cerrar</button></div>
-    ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${valHtml(v)}</p>`).join("")}${res}</div>`;
+    ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${valHtml(v)}</p>`).join("")}${res}${reasignarOrden}</div>`;
 }
 
 function bindSeg() {
@@ -577,6 +587,13 @@ function bindSeg() {
   };
   if ($("sg-del")) $("sg-del").onclick = () => borrarOrdenes([S.segOrden], "¿Eliminar la orden " + S.segOrden + " y su auditoría?" + AVISO_FOTOS);
   if ($("sg-dellist")) $("sg-dellist").onclick = () => { const d = segDatos()[S.segSup], l = (S.segTab === "ejec" ? d.ejec : d.pend).map(x => String(x["Orden"])); borrarOrdenes(l, "¿Eliminar las " + l.length + " órdenes de esta lista y sus auditorías?" + AVISO_FOTOS); };
+  const reasignar = async (ordenes, a) => {
+    if (!ordenes.length || !confirm("¿Pasar " + ordenes.length + " orden(es) a " + a + "?")) return;
+    try { const j = await api({ action: "reasignar", ordenes, supervisor: a }); await refreshAdmin(); S.segOrden = null; renderAdmin(okMsg(j.ordenes + " órdenes reasignadas a " + esc(j.supervisor) + ".")); }
+    catch (e) { renderAdmin(errMsg(e.message)); }
+  };
+  if ($("sg-rl-go")) $("sg-rl-go").onclick = () => { const g = segDatos()[S.segSup]; reasignar((S.segTab === "ejec" ? g.ejec : g.pend).map(x => String(x["Orden"])), $("sg-rl-to").value); };
+  if ($("sg-ro-go")) $("sg-ro-go").onclick = () => reasignar([S.segOrden], $("sg-ro-to").value);
   if ($("dl-all")) { $("dl-all").onclick = () => descargarExcel("auditoria_" + hoy(), segHojas(Object.values(segDatos()))); $("del-aud").onclick = eliminarAuditadas; }
   if ($("sg-back")) $("sg-back").onclick = () => { S.segSup = null; S.segOrden = null; renderAdmin(); };
   document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => { S.segTab = b.dataset.st; S.segOrden = null; renderAdmin(); });
@@ -652,8 +669,8 @@ async function eliminarAuditadas() {
 /* --- Supervisores y claves --- */
 const genClave = () => { const c = "abcdefghjkmnpqrstuvwxyz23456789"; let s = ""; for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
 function adminSup() {
-  return `<div class="card"><p class="muted" style="margin-top:0">Cada supervisor entra con su propia clave y solo ve sus órdenes. El nombre debe ser idéntico al de la columna Supervisor de las órdenes.</p>
-    ${S.supervisores.map((s, i) => `<div class="card" style="background:var(--bg)"><div class="row"><b class="grow">${esc(s.Supervisor)}</b>${s.Clave ? "" : '<span class="tag q">Sin clave</span>'}</div>
+  return `<div class="card"><p class="muted" style="margin-top:0">Cada supervisor entra con su propia clave y solo ve sus órdenes. Este es el único lugar donde se crean supervisores: las órdenes solo se pueden cargar o reasignar a supervisores registrados aquí. Los marcados "No registrado" tienen órdenes viejas con un nombre que no existe; ponles clave para registrarlos o reasigna sus órdenes desde Seguimiento.</p>
+    ${S.supervisores.map((s, i) => `<div class="card" style="background:var(--bg)"><div class="row"><b class="grow">${esc(s.Supervisor)}</b>${s.Clave ? "" : '<span class="tag q">No registrado</span>'}</div>
       <div class="row" style="margin-top:8px"><input data-k="${i}" value="${esc(s.Clave)}" placeholder="Clave (mín. 4)" class="grow"><button class="secondary" data-g="${i}" title="Generar">🎲</button><button class="secondary" data-s="${i}">Guardar</button></div>
       ${s.Clave ? `<button class="secondary" data-d="${i}" style="margin-top:8px;color:var(--danger);border-color:var(--danger)">Quitar acceso</button>` : ""}</div>`).join("") || '<p class="muted">Aún no hay supervisores. Carga órdenes o agrega uno abajo.</p>'}</div>
     <div class="card"><b>Agregar supervisor</b><label>Nombre</label><input id="ns-n"><label>Clave</label><div class="row"><input id="ns-k" class="grow"><button class="secondary" id="ns-g">🎲</button></div><button class="primary" id="ns-go">Agregar</button></div>`;
