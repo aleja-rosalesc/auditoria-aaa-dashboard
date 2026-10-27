@@ -1,4 +1,4 @@
-const CACHE_NAME = "aaa-auditoria-v2";
+const CACHE_NAME = "aaa-auditoria-v3";
 const APP_SHELL = ["./index.html", "./manifest.json", "./icon-192.png", "./icon-512.png", "./logo.png"];
 
 self.addEventListener("install", function (event) {
@@ -35,7 +35,7 @@ self.addEventListener("push", function (event) {
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (cs) {
     cs.forEach(function (c) { c.postMessage({ tipo: "push", titulo: titulo, cuerpo: cuerpo }); });
     if (cs.some(function (c) { return c.visibilityState === "visible"; })) return;   // con la app a la vista, la propia app avisa
-    return self.registration.showNotification(titulo, { body: cuerpo, icon: "icon-192.png", badge: "icon-192.png", tag: d.tag || "aud", renotify: true, data: { url: "./" } });
+    return self.registration.showNotification(titulo, { body: cuerpo, icon: "icon-192.png", badge: "icon-192.png", tag: d.tag || "aud", renotify: true, vibrate: [200, 100, 200, 100, 400], requireInteraction: true, data: { url: "./" } });
   }));
 });
 self.addEventListener("notificationclick", function (event) {

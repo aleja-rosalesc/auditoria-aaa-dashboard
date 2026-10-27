@@ -295,6 +295,22 @@ const ICONS = {
   clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', arrow: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>'
 };
 const ico = (n, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ""}</svg>`;
+// Sonido corto para los avisos con la app abierta (el navegador solo lo permite después del primer toque del usuario)
+let audioCtx = null;
+const preparaAudio = () => { try { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if (audioCtx.state === "suspended") audioCtx.resume(); } catch (e) {} };
+["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, preparaAudio, { passive: true }));
+function pitido() {
+  try {
+    if (!audioCtx || audioCtx.state !== "running") return;
+    const t = audioCtx.currentTime;
+    [[880, 0], [1175, 0.16]].forEach(([f, d]) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = "sine"; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t + d); g.gain.exponentialRampToValueAtTime(0.25, t + d + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + d + 0.14);
+      o.connect(g); g.connect(audioCtx.destination); o.start(t + d); o.stop(t + d + 0.16);
+    });
+  } catch (e) {}
+}
 const vibra = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
 function toast(texto, tipo) {
   const t = document.createElement("div"); t.className = "toast " + (tipo || "ok");
@@ -398,7 +414,7 @@ async function activarPush(manual) {
 // Un aviso que llega con la app abierta: se muestra dentro de la app y se refrescan los datos
 if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
   if (!e.data || e.data.tipo !== "push") return;
-  toast(e.data.titulo + (e.data.cuerpo ? " · " + e.data.cuerpo : ""), "ok"); vibra([15, 40, 15]);
+  toast(e.data.titulo + (e.data.cuerpo ? " · " + e.data.cuerpo : ""), "ok"); vibra([200, 100, 200, 100, 400]); pitido();
   if (S.role === "supervisor" && $("list")) loadOrdenes();
   else if (S.role === "admin") refreshAdmin().then(() => { if (S.adminTab === "seg" || S.adminTab === "analisis") renderAdmin(); }).catch(() => {});
 });
