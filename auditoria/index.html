@@ -100,7 +100,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
 
-let S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null, segDesde: "", segHasta: "" };
+let S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null, segDesde: "", segHasta: "", segQ: "" };
 
 /* ---------- API ---------- */
 async function api(body) {
@@ -140,7 +140,7 @@ window.addEventListener("online", flushQueue);
 
 /* ---------- Sesión ---------- */
 function saveSession() { store.set("aud_sess", JSON.stringify({ role: S.role, key: S.key, supervisor: S.supervisor })); }
-function logout() { store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null, segDesde: "", segHasta: "" }; S.cr = crNuevo(); renderLogin(); }
+function logout() { store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null, segDesde: "", segHasta: "", segQ: "" }; S.cr = crNuevo(); renderLogin(); }
 $("btn-logout").onclick = logout;
 $("btn-refresh").onclick = () => (S.role === "admin" ? loadAdmin() : loadOrdenes());
 
@@ -541,7 +541,7 @@ function adminSeg() {
 }
 
 function segDetalle(nombre, d) {
-  const ejec = S.segTab === "ejec", lista = ejec ? d.ejec : d.pend;
+  const ejec = S.segTab === "ejec", lista = (ejec ? d.ejec : d.pend).filter(x => enRango(ejec ? x["Fecha"] : x["Cargada el"]) && coincide(x, ejec));
   const sel = S.segOrden && lista.find(x => String(x["Orden"]) === S.segOrden);
   const destinos = supRegistrados().filter(n => n !== nombre);
   const reasignarLista = `<div class="card" style="padding:10px"><b style="font-size:13px">Reasignar esta lista a otro supervisor</b>${destinos.length ? `<div class="row" style="margin-top:6px"><select id="sg-rl-to" class="grow">${destinos.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-rl-go" ${lista.length ? "" : "disabled"}>Reasignar (${lista.length})</button></div>` : '<p class="muted" style="margin:6px 0 0">No hay otro supervisor registrado. Créalo en la pestaña Supervisores.</p>'}</div>`;
@@ -580,19 +580,20 @@ function segOrdenHtml(x, ejec) {
 function bindSeg() {
   document.querySelectorAll("[data-sup]").forEach(b => b.onclick = () => { S.segSup = b.dataset.sup; S.segTab = "pend"; S.segOrden = null; renderAdmin(); });
   if ($("sg-fd")) { $("sg-fd").onchange = e => { S.segDesde = e.target.value; renderAdmin(); }; $("sg-fh").onchange = e => { S.segHasta = e.target.value; renderAdmin(); }; }
-  if ($("sg-fx")) $("sg-fx").onclick = e => { e.preventDefault(); S.segDesde = S.segHasta = ""; renderAdmin(); };
+  if ($("sg-fq")) $("sg-fq").onchange = e => { S.segQ = e.target.value; renderAdmin(); };
+  if ($("sg-fx")) $("sg-fx").onclick = e => { e.preventDefault(); S.segDesde = S.segHasta = S.segQ = ""; renderAdmin(); };
   if ($("vaciar")) $("vaciar").onclick = async () => {
     if (prompt("Se borrarán TODAS las órdenes y auditorías cargadas y las fotos (se conservan los supervisores y sus claves). Descarga el Excel antes. Escribe BORRAR para confirmar.") !== "BORRAR") return;
     try { const j = await api({ action: "vaciarTodo" }); await refreshAdmin(); S.segSup = null; renderAdmin(okMsg(j.filas + " filas eliminadas. Todo quedó en cero.")); } catch (e) { renderAdmin(errMsg(e.message)); }
   };
   if ($("sg-del")) $("sg-del").onclick = () => borrarOrdenes([S.segOrden], "¿Eliminar la orden " + S.segOrden + " y su auditoría?" + AVISO_FOTOS);
-  if ($("sg-dellist")) $("sg-dellist").onclick = () => { const d = segDatos()[S.segSup], l = (S.segTab === "ejec" ? d.ejec : d.pend).map(x => String(x["Orden"])); borrarOrdenes(l, "¿Eliminar las " + l.length + " órdenes de esta lista y sus auditorías?" + AVISO_FOTOS); };
+  if ($("sg-dellist")) $("sg-dellist").onclick = () => { const l = segLista().map(x => String(x["Orden"])); borrarOrdenes(l, "¿Eliminar las " + l.length + " órdenes de esta lista y sus auditorías?" + AVISO_FOTOS); };
   const reasignar = async (ordenes, a) => {
     if (!ordenes.length || !confirm("¿Pasar " + ordenes.length + " orden(es) a " + a + "?")) return;
     try { const j = await api({ action: "reasignar", ordenes, supervisor: a }); await refreshAdmin(); S.segOrden = null; renderAdmin(okMsg(j.ordenes + " órdenes reasignadas a " + esc(j.supervisor) + ".")); }
     catch (e) { renderAdmin(errMsg(e.message)); }
   };
-  if ($("sg-rl-go")) $("sg-rl-go").onclick = () => { const g = segDatos()[S.segSup]; reasignar((S.segTab === "ejec" ? g.ejec : g.pend).map(x => String(x["Orden"])), $("sg-rl-to").value); };
+  if ($("sg-rl-go")) $("sg-rl-go").onclick = () => reasignar(segLista().map(x => String(x["Orden"])), $("sg-rl-to").value);
   if ($("sg-ro-go")) $("sg-ro-go").onclick = () => reasignar([S.segOrden], $("sg-ro-to").value);
   if ($("dl-all")) { $("dl-all").onclick = () => descargarExcel("auditoria_" + hoy(), segHojas(Object.values(segDatos()))); $("del-aud").onclick = eliminarAuditadas; }
   if ($("sg-back")) $("sg-back").onclick = () => { S.segSup = null; S.segOrden = null; renderAdmin(); };
@@ -600,24 +601,40 @@ function bindSeg() {
   document.querySelectorAll(".ord[data-o]").forEach(c => c.onclick = () => { S.segOrden = S.segOrden === c.dataset.o ? null : c.dataset.o; renderAdmin(); });
   if ($("sg-cerrar")) $("sg-cerrar").onclick = () => { S.segOrden = null; renderAdmin(); };
   if ($("sg-xls")) $("sg-xls").onclick = () => {
-    const d = segDatos()[S.segSup], ejec = S.segTab === "ejec", h = segHojas([d]).find(x => x.name === (ejec ? "Ejecutadas" : "Pendientes"));
-    descargarExcel((ejec ? "ejecutadas_" : "pendientes_") + S.segSup.replace(/[^\wÁÉÍÓÚÑáéíóúñ]+/g, "_") + "_" + hoy(), [h]);
+    const ejec = S.segTab === "ejec", hs = segHojas([segDatos()[S.segSup]]);
+    descargarExcel((ejec ? "ejecutadas_" : "pendientes_") + S.segSup.replace(/[^\wÁÉÍÓÚÑáéíóúñ]+/g, "_") + "_" + hoy(), ejec ? [hs[1], hs[2]] : [hs[0]]);
   };
 }
 const hoy = () => new Date().toISOString().slice(0, 10);
 
-// Filtro de fechas para la descarga: fecha de auditoría (ejecutadas) o de carga (pendientes)
+// Filtros de la lista y de la descarga: fecha de auditoría (ejecutadas) o de carga (pendientes) y texto libre
 const diaLocal = iso => { const d = iso ? new Date(iso) : null; return d && !isNaN(d) ? d.toLocaleDateString("en-CA") : ""; };
 function enRango(iso) {
   if (!S.segDesde && !S.segHasta) return true;
   const d = diaLocal(iso);
   return !!d && (!S.segDesde || d >= S.segDesde) && (!S.segHasta || d <= S.segHasta);
 }
+const normT = t => String(t == null ? "" : t).normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+// Texto libre: cada palabra debe aparecer en orden, dirección, inspector, barrio, municipio, resultados, etc.
+function coincide(x, ejec) {
+  const q = S.segQ.trim();
+  if (!q) return true;
+  const o = ejec ? (ordenPorId(x["Orden"]) || {}) : x, d = ejec ? datosAud(x) : {};
+  const txt = normT([x["Orden"], x["Supervisor"], x["Dirección"] || o["Dirección"], x["Inspector"] || o["Inspector"], x["Tipo de trabajo"] || o["Tipo de trabajo"], o["Observación"],
+    Object.values(Object.assign({}, detalleOrden(o), detalleOrden(x))).join(" "), Object.values(d).map(v => [].concat(v).join(" ")).join(" ")].join(" "));
+  return q.split(/\s+/).every(w => txt.includes(normT(w)));
+}
+function segLista() {
+  const g = segDatos()[S.segSup], ejec = S.segTab === "ejec";
+  return (ejec ? g.ejec : g.pend).filter(x => enRango(ejec ? x["Fecha"] : x["Cargada el"]) && coincide(x, ejec));
+}
 function segFiltroHtml(grupos) {
-  const p = [].concat(...grupos.map(g => g.pend)).filter(o => enRango(o["Cargada el"])).length, e = [].concat(...grupos.map(g => g.ejec)).filter(a => enRango(a["Fecha"])).length;
-  return `<div style="margin-top:12px"><b style="font-size:13px">Fechas para descargar</b>
+  const p = [].concat(...grupos.map(g => g.pend)).filter(o => enRango(o["Cargada el"]) && coincide(o, false)).length, e = [].concat(...grupos.map(g => g.ejec)).filter(a => enRango(a["Fecha"]) && coincide(a, true)).length;
+  const activo = S.segDesde || S.segHasta || S.segQ.trim();
+  return `<div style="margin-top:12px"><b style="font-size:13px">Filtros (lista y descarga)</b>
+    <label style="margin-top:6px">Buscar por orden, dirección, barrio, inspector, resultado…</label><input type="search" id="sg-fq" value="${esc(S.segQ)}" placeholder="Ej. 115681242 o La Campiña">
     <div class="row"><div class="grow"><label style="margin-top:6px">Desde</label><input type="date" id="sg-fd" value="${S.segDesde}"></div><div class="grow"><label style="margin-top:6px">Hasta</label><input type="date" id="sg-fh" value="${S.segHasta}"></div></div>
-    <p class="muted" style="margin:6px 0 0">${S.segDesde || S.segHasta ? `Se descargan ${p} pendientes y ${e} ejecutadas en ese rango (por fecha de carga y de auditoría).` : `Sin fechas se descarga todo: ${p} pendientes y ${e} ejecutadas.`} ${S.segDesde || S.segHasta ? '<a href="#" id="sg-fx">Quitar filtro</a>' : ""}</p></div>`;
+    <p class="muted" style="margin:6px 0 0">${activo ? `Con estos filtros: ${p} pendientes y ${e} ejecutadas (fechas por carga y por auditoría).` : `Sin filtros: ${p} pendientes y ${e} ejecutadas.`} ${activo ? '<a href="#" id="sg-fx">Quitar filtros</a>' : ""}</p></div>`;
 }
 async function borrarOrdenes(ordenes, aviso) {
   if (!ordenes.length || !confirm(aviso)) return;
@@ -626,20 +643,57 @@ async function borrarOrdenes(ordenes, aviso) {
 }
 const AVISO_FOTOS = " Las fotos de esas órdenes se mandan a la papelera de Drive.";
 
-// Hojas Pendientes y Ejecutadas con las columnas extra (municipio, barrio, etc.) que traigan las órdenes
+// Hojas Pendientes, Ejecutadas y Análisis. Cada foto va en su propia columna (con enlace) y se agregan las columnas extra de las órdenes
 function segHojas(grupos) {
-  const pend = [].concat(...grupos.map(g => g.pend)).filter(o => enRango(o["Cargada el"])), ejec = [].concat(...grupos.map(g => g.ejec)).filter(a => enRango(a["Fecha"]));
+  const pend = [].concat(...grupos.map(g => g.pend)).filter(o => enRango(o["Cargada el"]) && coincide(o, false)), ejec = [].concat(...grupos.map(g => g.ejec)).filter(a => enRango(a["Fecha"]) && coincide(a, true));
   const extra = list => { const k = []; list.forEach(x => Object.keys(x._det).forEach(n => { if (k.indexOf(n) < 0) k.push(n); })); return k; };
   const P = pend.map(o => ({ o, _det: detalleOrden(o) })), E = ejec.map(a => ({ a, o: ordenPorId(a["Orden"]) || {}, _det: Object.assign({}, detalleOrden(ordenPorId(a["Orden"])), detalleOrden(a)) }));
-  const kp = extra(P), ke = extra(E);
+  const kp = extra(P), ke = extra(E), nFotos = Math.max(0, ...E.map(({ a }) => fotosAud(a).length));
+  const fotosHead = Array.from({ length: nFotos }, (_, i) => "Foto " + (i + 1));
   return [
-    { name: "Pendientes", head: ["Orden", "Supervisor", "Inspector", "Dirección", "Tipo de trabajo", "Indicación"].concat(kp),
+    { name: "Pendientes", filtro: true, head: ["Orden", "Supervisor", "Inspector", "Dirección", "Tipo de trabajo", "Indicación"].concat(kp),
       rows: P.map(({ o, _det }) => [o["Orden"], o["Supervisor"], o["Inspector"], o["Dirección"], o["Tipo de trabajo"], o["Observación"]].concat(kp.map(k => _det[k] || ""))) },
-    { name: "Ejecutadas", head: ["Orden", "Supervisor", "Fecha auditoría", "Dirección", "Tipo de trabajo", "Inspector"].concat(FORM_FIELDS.map(f => f.label), ["Latitud", "Longitud", "Fotos", "Firma"], ke),
-      rows: E.map(({ a, o, _det }) => { const d = datosAud(a);
+    { name: "Ejecutadas", filtro: true, head: ["Orden", "Supervisor", "Fecha auditoría", "Dirección", "Tipo de trabajo", "Inspector"].concat(FORM_FIELDS.map(f => f.label), ["Latitud", "Longitud", "Mapa", "Firma"], fotosHead, ke),
+      rows: E.map(({ a, o, _det }) => { const d = datosAud(a), f = fotosAud(a);
         return [a["Orden"], a["Supervisor"], a["Fecha"] ? new Date(a["Fecha"]).toLocaleString("es-CO") : "", a["Dirección"] || o["Dirección"], a["Tipo de trabajo"] || o["Tipo de trabajo"], a["Inspector"] || o["Inspector"]]
-          .concat(FORM_FIELDS.map(f => [].concat(d[f.id] == null ? "" : d[f.id]).join("; ")), [a["Latitud"], a["Longitud"], fotosAud(a).join(" "), a["Firma"]], ke.map(k => _det[k] || "")); }) }
+          .concat(FORM_FIELDS.map(x => [].concat(d[x.id] == null ? "" : d[x.id]).join("; ")), [a["Latitud"], a["Longitud"], a["Latitud"] ? "https://www.google.com/maps?q=" + a["Latitud"] + "," + a["Longitud"] : "", a["Firma"]], fotosHead.map((_, i) => f[i] || ""), ke.map(k => _det[k] || "")); }) },
+    segAnalisis(E, P.length)
   ];
+}
+
+// Hoja de análisis: resumen, por supervisor, hallazgos más frecuentes y cortes por inspector, municipio, barrio y causa de cierre
+function segAnalisis(E, pendientes) {
+  const res = a => String(datosAud(a).resultado || "Sin resultado"), esNC = a => /^no conforme/i.test(res(a)), esOk = a => /^conforme/i.test(res(a)), esNo = a => /no se pudo/i.test(res(a));
+  const det = e => e._det, pct = n => ({ pct: n }), div = (n, t) => (t ? n / t : 0);
+  const aoa = [], fmt = [];
+  const bloque = (titulo, head, rows) => {
+    aoa.push([titulo.toUpperCase()]); aoa.push(head);
+    rows.forEach(r => { aoa.push(r.map((c, j) => { if (c && typeof c === "object") { fmt.push([aoa.length, j]); return c.pct; } return c; })); });
+    aoa.push([]);
+  };
+  const corte = (titulo, clave, top) => {
+    const g = {};
+    E.forEach(e => { const k = String(clave(e) || "").trim() || "(sin dato)"; const x = (g[k] = g[k] || { t: 0, ok: 0, nc: 0 }); x.t++; if (esOk(e.a)) x.ok++; if (esNC(e.a)) x.nc++; });
+    const filas = Object.entries(g).sort((a, b) => b[1].nc - a[1].nc || b[1].t - a[1].t).slice(0, top || 999).map(([k, x]) => [k, x.t, x.ok, x.nc, pct(div(x.nc, x.t))]);
+    bloque(titulo, [titulo.replace(/^Por /, "").replace(/^./, c => c.toUpperCase()), "Auditadas", "Conformes", "No conformes", "% no conformidad"], filas);
+  };
+  const t = E.length, nc = E.filter(e => esNC(e.a)).length, ok = E.filter(e => esOk(e.a)).length;
+  bloque("Resumen", ["Indicador", "Valor"], [
+    ["Periodo", (S.segDesde || S.segHasta) ? (S.segDesde || "…") + " a " + (S.segHasta || "…") : "Todas las fechas"],
+    ["Órdenes auditadas", t], ["Pendientes por auditar", pendientes], ["Conformes", ok], ["No conformes", nc], ["No se pudo auditar", E.filter(e => esNo(e.a)).length],
+    ["% conformidad", pct(div(ok, t))], ["% no conformidad", pct(div(nc, t))],
+    ["Con fotos", E.filter(e => fotosAud(e.a).length).length], ["Con firma del usuario", E.filter(e => e.a["Firma"]).length], ["Con ubicación GPS", E.filter(e => e.a["Latitud"]).length]]);
+  const sup = {};
+  E.forEach(e => { const k = e.a["Supervisor"] || "(sin supervisor)", x = (sup[k] = sup[k] || { t: 0, ok: 0, nc: 0, no: 0 }); x.t++; if (esOk(e.a)) x.ok++; if (esNC(e.a)) x.nc++; if (esNo(e.a)) x.no++; });
+  bloque("Por supervisor", ["Supervisor", "Auditadas", "Conformes", "No conformes", "No se pudo auditar", "% no conformidad"], Object.entries(sup).sort((a, b) => b[1].t - a[1].t).map(([k, x]) => [k, x.t, x.ok, x.nc, x.no, pct(div(x.nc, x.t))]));
+  const campoH = FORM_FIELDS.find(f => f.type === "check"), h = {};
+  if (campoH) E.forEach(e => { [].concat(datosAud(e.a)[campoH.id] || []).forEach(v => { const x = (h[v] = h[v] || { n: 0, nc: 0 }); x.n++; if (esNC(e.a)) x.nc++; }); });
+  if (campoH) bloque("Hallazgos", ["Hallazgo", "Veces", "% de las auditorías", "En no conformes"], Object.entries(h).sort((a, b) => b[1].n - a[1].n).map(([k, x]) => [k, x.n, pct(div(x.n, t)), x.nc]));
+  corte("Por inspector", e => e.a["Inspector"] || e.o["Inspector"]);
+  corte("Por municipio", e => det(e)["Municipio"]);
+  corte("Por barrio", e => det(e)["Barrio"], 40);
+  corte("Por causa de cierre", e => det(e)["Causa de cierre"]);
+  return { name: "Análisis", aoa, fmt, cols: [38, 14, 14, 14, 18, 18] };
 }
 
 // Excel real (.xlsx) con SheetJS, cargado solo al descargar; si no carga, baja un CSV compatible con Excel
@@ -651,11 +705,21 @@ async function descargarExcel(nombre, hojas) {
   try {
     await loadXlsx();
     const wb = XLSX.utils.book_new();
-    hojas.forEach(h => { const ws = XLSX.utils.aoa_to_sheet([h.head].concat(h.rows.map(r => r.map(txt)))); ws["!cols"] = h.head.map(x => ({ wch: Math.max(12, Math.min(40, x.length + 4)) })); XLSX.utils.book_append_sheet(wb, ws, h.name.slice(0, 31)); });
+    hojas.forEach(h => {
+      const ws = XLSX.utils.aoa_to_sheet(h.aoa || [h.head].concat(h.rows.map(r => r.map(txt))));
+      if (h.aoa) { ws["!cols"] = h.cols.map(w => ({ wch: w })); (h.fmt || []).forEach(([r, c]) => { const a = ws[XLSX.utils.encode_cell({ r, c })]; if (a) a.z = "0.0%"; }); }
+      else {
+        ws["!cols"] = h.head.map(x => ({ wch: Math.max(12, Math.min(40, x.length + 4)) }));
+        if (h.filtro) ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(1, h.rows.length), c: h.head.length - 1 } }) };
+        // enlaces clicables: fotos, firma, mapa
+        Object.keys(ws).forEach(k => { if (k[0] !== "!" && ws[k].t === "s" && /^https?:\/\//.test(ws[k].v)) ws[k].l = { Target: ws[k].v }; });
+      }
+      XLSX.utils.book_append_sheet(wb, ws, h.name.slice(0, 31));
+    });
     XLSX.writeFile(wb, nombre + ".xlsx");
   } catch (e) {
     const cell = v => '"' + txt(v).replace(/"/g, '""') + '"';
-    hojas.forEach(h => bajar(nombre + (hojas.length > 1 ? "_" + h.name : "") + ".csv", new Blob(["﻿" + [h.head].concat(h.rows).map(r => r.map(cell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" })));
+    hojas.forEach(h => bajar(nombre + (hojas.length > 1 ? "_" + h.name : "") + ".csv", new Blob(["\ufeff" + (h.aoa || [h.head].concat(h.rows)).map(r => r.map(cell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" })));
   }
 }
 async function eliminarAuditadas() {
