@@ -390,7 +390,7 @@ async function activarPush(manual) {
     const token = await getToken(getMessaging(initializeApp(FIREBASE_CONFIG)), { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
     if (!token) throw new Error("sin token");
     await api({ action: "registrarPush", token });
-    store.set("aud_push", "1"); campana();
+    store.set("aud_push", "1"); store.set("aud_token", token); campana();
     if (manual) toast("Notificaciones activadas", "ok");
     return true;
   } catch (e) { if (manual) toast("No se pudieron activar: " + e.message, "err"); return false; }
@@ -403,9 +403,16 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("mess
   else if (S.role === "admin") refreshAdmin().then(() => { if (S.adminTab === "seg" || S.adminTab === "analisis") renderAdmin(); }).catch(() => {});
 });
 
+// Al salir, este teléfono deja de recibir avisos de la cuenta (se quita del servidor)
+async function desactivarPush() {
+  const tk = store.get("aud_token");
+  if (tk && S.key) { try { await Promise.race([api({ action: "desregistrarPush", token: tk }), new Promise((_, no) => setTimeout(no, 4000))]); } catch (e) { toast("Sin conexión: los avisos podrían seguir llegando a este teléfono", "warn"); } }
+  store.del("aud_token"); store.del("aud_push");
+}
+
 /* ---------- Sesión ---------- */
 function saveSession() { store.set("aud_sess", JSON.stringify({ role: S.role, key: S.key, supervisor: S.supervisor })); }
-function logout() { store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null, segDesde: "", segHasta: "", segQ: "" }; S.cr = crNuevo(); renderLogin(); }
+async function logout() { await desactivarPush(); store.del("aud_sess"); S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null, segDesde: "", segHasta: "", segQ: "" }; S.cr = crNuevo(); renderLogin(); }
 $("btn-logout").onclick = logout;
 $("btn-refresh").onclick = () => (S.role === "admin" ? loadAdmin() : loadOrdenes());
 

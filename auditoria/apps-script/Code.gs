@@ -33,6 +33,7 @@ function doPost(e) {
     }
     if (a === 'guardar') return out_(guardar_(req, who));
     if (a === 'registrarPush') return out_(registrarPush_(req, who));
+    if (a === 'desregistrarPush') return out_(desregistrarPush_(req));
     if (!admin) return out_({ ok: false, error: 'Solo administrador' });
     if (a === 'cargar') return out_(cargar_(req));
     if (a === 'eliminarAuditadas') return out_(eliminarAuditadas_());
@@ -392,4 +393,15 @@ function registrarPush_(req, who) {
   } finally { lock.releaseLock(); }
   var enviados = enviarPush_([token], 'Notificaciones activadas', who.role === 'admin' ? 'Te avisaremos cuando lleguen auditorías.' : 'Te avisaremos cuando tengas órdenes nuevas.');
   return { ok: true, prueba: enviados > 0 };
+}
+
+// Al cerrar sesión el teléfono deja de recibir avisos: se borra su token de la lista de dispositivos
+function desregistrarPush_(req) {
+  var token = String(req.token || '').trim();
+  if (!token) return { ok: false, error: 'Falta el token' };
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var set = {}; set[token] = 1;
+    return { ok: true, quitados: borrarFilas_(sheet_('DISPOSITIVOS', DISP_COLS), DISP_COLS, 'Token', set) };
+  } finally { lock.releaseLock(); }
 }
