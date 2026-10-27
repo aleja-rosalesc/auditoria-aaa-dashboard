@@ -373,8 +373,8 @@ window.addEventListener("online", flushQueue);
 
 /* ---------- Notificaciones push (Firebase) ---------- */
 // Se llenan con los datos de la app web de Firebase (Configuración del proyecto → Tus apps) y la clave VAPID (Cloud Messaging → Certificados push web)
-const FIREBASE_CONFIG = { apiKey: "PEGA_AQUI", authDomain: "", projectId: "", storageBucket: "", messagingSenderId: "", appId: "" };
-const VAPID_KEY = "PEGA_AQUI";
+const FIREBASE_CONFIG = { apiKey: "AIzaSyBUXky6lGdlNJh9wvCNY99_MZUN7DdRIBc", authDomain: "auditoria-aaa.firebaseapp.com", projectId: "auditoria-aaa", storageBucket: "auditoria-aaa.firebasestorage.app", messagingSenderId: "923032254701", appId: "1:923032254701:web:eb97e3bf9272c291f4b4e4" };
+const VAPID_KEY = "BIPimmcNETD_E7Nc1_JU-LA1Gj_jbFOqOJyNfPIBmK658aNxdtbrSru7oc2ylbCe1cHvvtSHQ2E7GWu3tzeReMI";
 const pushConfigurado = () => FIREBASE_CONFIG.apiKey.indexOf("PEGA_AQUI") !== 0 && VAPID_KEY.indexOf("PEGA_AQUI") !== 0;
 function campana() { const on = "Notification" in window && Notification.permission === "granted" && store.get("aud_push") === "1"; $("btn-bell").innerHTML = ico(on ? "bell" : "bellOff", 20); }
 // manual = el usuario tocó la campana (pide permiso); automático = renueva el token al entrar si ya había dado permiso
