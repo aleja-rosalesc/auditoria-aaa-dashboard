@@ -8,69 +8,207 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
 <meta name="theme-color" content="#0B3D5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Auditoría">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
   :root{
-    --navy:#0B3D5C; --teal-dark:#0E6E8C; --teal:#17A2B8; --success:#1F9D66; --success-bg:#E5F5EE;
+    --navy:#0B3D5C; --navy-2:#123A55; --teal-dark:#0E6E8C; --teal:#17A2B8; --success:#1F9D66; --success-bg:#E5F5EE;
     --warning:#F0A93A; --warning-bg:#FDF1DD; --danger:#E4572E; --danger-bg:#FCEAE3;
-    --text:#142B3C; --text-2:#5C7182; --border:#DCE4E8; --card:#fff; --bg:#EFF4F7; --radius:14px;
+    --text:#142B3C; --text-2:#5C7182; --border:#DCE4E8; --card:#fff; --bg:#EEF3F7; --radius:18px;
+    --sh1:0 1px 2px rgba(11,61,92,.06), 0 6px 18px rgba(11,61,92,.07);
+    --sh2:0 2px 6px rgba(11,61,92,.10), 0 16px 34px rgba(11,61,92,.16);
+    --ease:cubic-bezier(.2,.8,.2,1);
   }
-  *{ box-sizing:border-box; }
-  body{ margin:0; font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; color:var(--text); background:var(--bg); padding-bottom:env(safe-area-inset-bottom); }
-  header{ background:var(--navy); color:#fff; padding:12px 16px; padding-top:calc(12px + env(safe-area-inset-top)); display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:5; }
-  header h1{ font-size:16px; margin:0; flex:1; }
-  header small{ display:block; font-weight:400; opacity:.75; font-size:11.5px; }
-  header button{ background:rgba(255,255,255,.15); color:#fff; border:0; border-radius:8px; padding:7px 10px; font-size:13px; }
-  .logo-badge{ background:#fff; border-radius:9px; padding:5px 9px; display:inline-flex; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html{ overscroll-behavior:none; }
+  body{ margin:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',Roboto,Helvetica,Arial,sans-serif; color:var(--text); background:var(--bg); -webkit-font-smoothing:antialiased; touch-action:manipulation; -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; min-height:100vh; }
+  input,textarea,select{ -webkit-user-select:text; user-select:text; }
+  svg.ico{ flex:none; vertical-align:middle; }
+
+  /* Cabecera */
+  header{ background:linear-gradient(135deg,var(--navy) 0%,var(--teal-dark) 100%); color:#fff; padding:10px 14px; padding-top:calc(10px + env(safe-area-inset-top)); display:flex; align-items:center; gap:10px; position:sticky; top:0; z-index:20; box-shadow:0 8px 24px rgba(11,61,92,.28); }
+  header h1{ font-size:16px; margin:0; flex:1; font-weight:800; letter-spacing:.2px; min-width:0; }
+  header small{ display:block; font-weight:500; opacity:.8; font-size:11.5px; margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .ibtn{ width:40px; height:40px; border-radius:13px; border:0; background:rgba(255,255,255,.16); color:#fff; display:grid; place-items:center; padding:0; backdrop-filter:blur(6px); }
+  .ibtn:active{ background:rgba(255,255,255,.3); }
+  .logo-badge{ background:#fff; border-radius:11px; padding:6px 10px; display:inline-flex; box-shadow:0 4px 12px rgba(0,0,0,.18); }
   .logo-badge img{ height:20px; display:block; }
-  .login-logo{ text-align:center; padding:6px 0 10px; } .login-logo img{ height:44px; }
-  .sup-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; } .sup-btn{ display:block; width:100%; text-align:left; margin:0; cursor:pointer; font:inherit; color:inherit; } .sup-btn:active{ border-color:var(--teal-dark); }
-  main{ max-width:720px; margin:0 auto; padding:14px 14px 80px; }
-  .card{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:10px; }
-  label{ display:block; font-size:13px; font-weight:600; margin:14px 0 6px; }
-  input,select,textarea{ width:100%; font:inherit; font-size:16px; padding:11px 12px; border:1px solid var(--border); border-radius:10px; background:#fff; color:var(--text); }
-  textarea{ min-height:90px; resize:vertical; }
-  button.primary{ width:100%; background:var(--teal-dark); color:#fff; border:0; border-radius:12px; padding:14px; font-size:16px; font-weight:600; margin-top:16px; }
-  button.secondary{ background:#fff; color:var(--teal-dark); border:1px solid var(--teal-dark); border-radius:10px; padding:10px 14px; font-size:14px; font-weight:600; }
-  button:disabled{ opacity:.5; }
+
+  main{ max-width:760px; margin:0 auto; padding:16px 14px calc(40px + env(safe-area-inset-bottom)); }
+  body.has-tabbar main{ padding-bottom:calc(104px + env(safe-area-inset-bottom)); }
+
+  /* Barra inferior (móvil) / superior (escritorio) */
+  .tabbar{ position:fixed; left:0; right:0; bottom:0; z-index:30; display:flex; gap:2px; background:rgba(255,255,255,.9); backdrop-filter:saturate(1.8) blur(18px); -webkit-backdrop-filter:saturate(1.8) blur(18px); border-top:1px solid rgba(220,228,232,.9); padding:6px 6px calc(6px + env(safe-area-inset-bottom)); box-shadow:0 -10px 28px rgba(11,61,92,.10); }
+  .tab{ flex:1; min-width:0; border:0; background:none; display:flex; flex-direction:column; align-items:center; gap:3px; padding:7px 2px 5px; font-size:10.5px; font-weight:700; color:var(--text-2); border-radius:14px; position:relative; }
+  .tab span{ max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .tab .ico{ transition:transform .3s var(--ease); }
+  .tab.on{ color:var(--teal-dark); }
+  .tab.on .ico{ transform:translateY(-2px) scale(1.12); }
+  .tab.on::after{ content:""; position:absolute; top:-7px; width:28px; height:3px; border-radius:0 0 4px 4px; background:linear-gradient(90deg,var(--teal),var(--teal-dark)); }
+  @media (min-width:760px){
+    .tabbar{ position:sticky; top:68px; bottom:auto; max-width:760px; margin:12px auto 0; border:1px solid rgba(220,228,232,.9); border-radius:18px; box-shadow:var(--sh1); padding:5px; }
+    .tab{ flex-direction:row; justify-content:center; gap:8px; font-size:13px; padding:10px 8px; }
+    .tab.on{ background:#E4F1F6; } .tab.on::after{ display:none; } .tab.on .ico{ transform:none; }
+    body.has-tabbar main{ padding-bottom:40px; }
+  }
+
+  /* Tarjetas, formularios y botones */
+  .card{ background:var(--card); border:1px solid rgba(220,228,232,.8); border-radius:var(--radius); padding:16px; margin-bottom:12px; box-shadow:var(--sh1); }
+  .ct{ display:flex; align-items:center; gap:9px; margin-bottom:6px; color:var(--navy); }
+  .ct .ico{ color:var(--teal-dark); } .ct b{ font-size:15px; flex:1; } .opc{ font-size:11.5px; font-weight:700; color:var(--text-2); background:#EEF3F7; border-radius:20px; padding:3px 10px; }
+  label{ display:block; font-size:13px; font-weight:700; margin:16px 0 7px; color:var(--text); }
+  .card > label:first-child, .sec > label:first-child, .card > .ct + label{ margin-top:6px; }
+  input,select,textarea{ width:100%; font:inherit; font-size:16px; padding:12px 14px; border:1.5px solid var(--border); border-radius:13px; background:#F8FBFC; color:var(--text); transition:border-color .2s,box-shadow .2s,background .2s; -webkit-appearance:none; appearance:none; }
+  select{ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%235C7182' stroke-width='2.5' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; padding-right:38px; }
+  input:focus,select:focus,textarea:focus{ outline:none; border-color:var(--teal); background:#fff; box-shadow:0 0 0 4px rgba(23,162,184,.16); }
+  input[type=checkbox],input[type=radio]{ width:20px; height:20px; padding:0; accent-color:var(--teal-dark); box-shadow:none; }
+  textarea{ min-height:96px; resize:vertical; }
+  button{ font:inherit; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:transform .15s var(--ease),box-shadow .2s,background .2s,opacity .2s,border-color .2s; }
+  button:active:not(:disabled){ transform:scale(.97); }
+  button.primary{ width:100%; background:linear-gradient(135deg,var(--teal-dark),var(--navy)); color:#fff; border:0; border-radius:15px; padding:15px; font-size:16px; font-weight:800; margin-top:16px; box-shadow:0 10px 24px rgba(14,110,140,.38); letter-spacing:.2px; }
+  button.primary:hover:not(:disabled){ box-shadow:0 14px 30px rgba(14,110,140,.46); }
+  button.secondary{ background:#fff; color:var(--teal-dark); border:1.5px solid rgba(14,110,140,.32); border-radius:13px; padding:10px 14px; font-size:14px; font-weight:700; box-shadow:0 1px 2px rgba(11,61,92,.06); }
+  button.secondary:hover:not(:disabled){ background:#F2F8FB; border-color:var(--teal-dark); }
+  button:disabled{ opacity:.45; cursor:not-allowed; box-shadow:none; }
   .row{ display:flex; gap:8px; align-items:center; }
-  .grow{ flex:1; }
-  .chips{ display:flex; gap:6px; margin-bottom:10px; overflow-x:auto; }
-  .chip{ border:1px solid var(--border); background:#fff; border-radius:20px; padding:7px 13px; font-size:13px; white-space:nowrap; }
-  .chip.on{ background:var(--navy); color:#fff; border-color:var(--navy); }
-  .ord{ display:flex; align-items:center; gap:10px; cursor:pointer; }
-  .ord b{ font-size:15px; }
-  .ord p{ margin:2px 0 0; font-size:12.5px; color:var(--text-2); }
-  .tag{ font-size:11.5px; font-weight:700; padding:4px 9px; border-radius:20px; white-space:nowrap; }
-  .tag.p{ background:var(--warning-bg); color:#9A6508; } .tag.a{ background:var(--success-bg); color:var(--success); } .tag.q{ background:var(--danger-bg); color:var(--danger); }
-  .opts{ display:flex; flex-direction:column; gap:8px; }
-  .opt{ display:flex; align-items:center; gap:10px; border:1px solid var(--border); border-radius:10px; padding:11px 12px; font-size:15px; font-weight:500; margin:0; }
-  .opt input{ width:20px; height:20px; padding:0; }
-  .opt.sel{ border-color:var(--teal-dark); background:#E4F1F6; }
-  .sig{ width:100%; height:170px; border:1px dashed var(--teal-dark); border-radius:10px; background:#fff; touch-action:none; display:block; }
-  .photos{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; }
-  .photos div{ position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; background:#ddd; }
-  .photos img{ width:100%; height:100%; object-fit:cover; }
-  .photos button{ position:absolute; top:4px; right:4px; width:26px; height:26px; border-radius:50%; border:0; background:rgba(0,0,0,.65); color:#fff; font-size:15px; }
-  .muted{ color:var(--text-2); font-size:13px; }
-  .err{ background:var(--danger-bg); color:var(--danger); padding:10px 12px; border-radius:10px; font-size:13.5px; margin-top:12px; }
-  .banner{ background:var(--warning-bg); color:#9A6508; padding:9px 14px; font-size:13px; text-align:center; }
+  .grow{ flex:1; min-width:0; }
   .hidden{ display:none !important; }
-  table{ width:100%; border-collapse:collapse; font-size:13px; } th,td{ text-align:left; padding:7px 6px; border-bottom:1px solid var(--border); vertical-align:top; }
-  th{ color:var(--text-2); font-weight:600; font-size:12px; }
-  .bar{ height:7px; background:var(--border); border-radius:6px; overflow:hidden; margin-top:6px; } .bar i{ display:block; height:100%; background:var(--success); }
-  a{ color:var(--teal-dark); }
+  .muted{ color:var(--text-2); font-size:13px; line-height:1.45; }
+  a{ color:var(--teal-dark); font-weight:600; text-decoration:none; } a:hover{ text-decoration:underline; }
+
+  /* Segmentos / chips */
+  .chips{ display:flex; gap:4px; background:#E1EAF0; padding:4px; border-radius:15px; margin-bottom:12px; overflow-x:auto; scrollbar-width:none; }
+  .chips::-webkit-scrollbar{ display:none; }
+  .chip{ flex:1; border:0; background:transparent; border-radius:11px; padding:10px 12px; font-size:13px; font-weight:700; color:var(--text-2); white-space:nowrap; }
+  .chip.on{ background:#fff; color:var(--navy); box-shadow:0 2px 8px rgba(11,61,92,.16); }
+
+  /* Estados */
+  .tag{ font-size:11.5px; font-weight:800; padding:5px 10px; border-radius:20px; white-space:nowrap; letter-spacing:.2px; }
+  .tag.p{ background:var(--warning-bg); color:#9A6508; } .tag.a{ background:var(--success-bg); color:#14744c; } .tag.q{ background:var(--danger-bg); color:#B93E19; }
+  .alert,.err{ display:flex; gap:10px; align-items:flex-start; border-radius:14px; padding:12px 14px; font-size:13.5px; line-height:1.4; margin-top:12px; animation:slideDown .35s var(--ease) backwards; }
+  .err{ background:var(--danger-bg); color:#B93E19; } .alert.ok{ background:var(--success-bg); color:#14744c; margin:0 0 12px; font-weight:600; }
+  .banner{ display:flex; gap:10px; align-items:center; justify-content:center; background:var(--warning-bg); color:#8A5A06; padding:10px 14px; font-size:13px; font-weight:600; position:sticky; top:calc(60px + env(safe-area-inset-top)); z-index:15; box-shadow:0 4px 12px rgba(0,0,0,.06); }
+
+  /* Lista de órdenes y tarjetas con estado */
+  .ord{ display:flex; align-items:center; gap:12px; cursor:pointer; position:relative; overflow:hidden; padding-left:18px; transition:transform .2s var(--ease),box-shadow .25s; }
+  .ord::before{ content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--warning); }
+  .ord.a::before{ background:var(--success); } .ord.q::before{ background:var(--danger); }
+  .ord:hover{ box-shadow:var(--sh2); transform:translateY(-1px); } .ord:active{ transform:scale(.985); }
+  .ord b{ font-size:15.5px; } .ord p{ margin:3px 0 0; font-size:12.5px; color:var(--text-2); display:flex; align-items:center; gap:5px; }
+  .ord > .ico:last-child{ color:#A9B8C3; }
+  .oi{ width:40px; height:40px; border-radius:13px; display:grid; place-items:center; background:var(--warning-bg); color:#9A6508; flex:none; }
+  .ord.a .oi{ background:var(--success-bg); color:var(--success); } .ord.q .oi{ background:var(--danger-bg); color:var(--danger); }
+  .oi.big{ width:48px; height:48px; border-radius:15px; background:linear-gradient(135deg,#E4F1F6,#D3E9F1); color:var(--teal-dark); }
+  .hello{ background:linear-gradient(135deg,var(--navy),var(--teal-dark)); color:#fff; border-radius:var(--radius); padding:18px; margin-bottom:12px; box-shadow:0 14px 30px rgba(11,61,92,.32); position:relative; overflow:hidden; }
+  .hello::after{ content:""; position:absolute; right:-30px; top:-40px; width:150px; height:150px; border-radius:50%; background:rgba(255,255,255,.09); }
+  .hello span{ font-size:12.5px; opacity:.8; } .hello b.n{ display:block; font-size:19px; margin:2px 0 12px; } .hello .st{ display:flex; gap:22px; } .hello .st div{ font-size:12px; opacity:.85; } .hello .st b{ display:block; font-size:26px; opacity:1; }
+  .hello .bar{ background:rgba(255,255,255,.22); margin-top:14px; } .hello .bar i{ background:#fff; }
+  .searchbox{ position:relative; margin-bottom:12px; } .searchbox .ico{ position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-2); } .searchbox input{ padding-left:42px; border-radius:15px; box-shadow:var(--sh1); background:#fff; }
+  .vacio{ text-align:center; padding:38px 16px; color:var(--text-2); } .vacio b{ display:block; color:var(--text); margin:10px 0 4px; font-size:15px; } .vacio p{ margin:0; font-size:13px; } .vacio .ico{ opacity:.55; }
+
+  /* Formulario de auditoría */
+  .ordhead small{ display:block; font-size:11.5px; color:var(--text-2); font-weight:600; text-transform:uppercase; letter-spacing:.6px; } .ordhead b{ font-size:21px; letter-spacing:.3px; }
+  .kv{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px 14px; margin-top:14px; padding-top:14px; border-top:1px dashed var(--border); }
+  .kv span{ display:block; font-size:11px; color:var(--text-2); font-weight:700; text-transform:uppercase; letter-spacing:.5px; } .kv b{ font-size:13.5px; font-weight:600; word-break:break-word; }
+  .opts{ display:flex; flex-direction:column; gap:8px; }
+  .opt{ display:flex; align-items:center; gap:11px; border:1.5px solid var(--border); border-radius:14px; padding:13px 14px; font-size:15px; font-weight:600; margin:0; background:#F8FBFC; transition:border-color .2s,background .2s,box-shadow .2s,transform .15s; cursor:pointer; }
+  .opt:active{ transform:scale(.985); }
+  .opt input{ position:absolute; opacity:0; pointer-events:none; width:1px; height:1px; }
+  .opt .ck{ width:24px; height:24px; border-radius:50%; border:2px solid #C5D2DB; display:grid; place-items:center; color:transparent; flex:none; transition:all .2s var(--ease); background:#fff; }
+  .opt.sel{ border-color:var(--teal-dark); background:#E8F4F8; box-shadow:0 4px 14px rgba(14,110,140,.14); }
+  .opt.sel .ck{ background:var(--teal-dark); border-color:var(--teal-dark); color:#fff; transform:scale(1.08); }
+  .opt.r-ok.sel{ border-color:var(--success); background:var(--success-bg); } .opt.r-ok.sel .ck{ background:var(--success); border-color:var(--success); }
+  .opt.r-no.sel{ border-color:var(--danger); background:var(--danger-bg); } .opt.r-no.sel .ck{ background:var(--danger); border-color:var(--danger); }
+  .opt.r-na.sel{ border-color:var(--warning); background:var(--warning-bg); } .opt.r-na.sel .ck{ background:var(--warning); border-color:var(--warning); }
+  .opts.wrap{ flex-direction:row; flex-wrap:wrap; } .opts.wrap .opt{ padding:10px 14px; border-radius:30px; font-size:14px; }
+  .sig{ width:100%; height:170px; border:2px dashed rgba(14,110,140,.45); border-radius:15px; background:#fff linear-gradient(transparent 78%,#E4F1F6 78%,#E4F1F6 79%,transparent 79%); touch-action:none; display:block; }
+  .photos{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+  .photos div{ position:relative; aspect-ratio:1; border-radius:14px; overflow:hidden; background:#ddd; box-shadow:var(--sh1); animation:pop .3s var(--ease) backwards; }
+  .photos img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .photos button{ position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:50%; border:0; background:rgba(11,26,38,.7); color:#fff; padding:0; backdrop-filter:blur(4px); }
+  .gps-st{ font-size:13px; font-weight:600; color:var(--text-2); display:inline-flex; align-items:center; gap:6px; } .gps-st.ok{ color:var(--success); }
+  .savebar{ position:sticky; bottom:calc(10px + env(safe-area-inset-bottom)); z-index:5; padding-top:14px; background:linear-gradient(transparent,var(--bg) 40%); margin-top:6px; }
+  .savebar .primary{ margin-top:0; }
+
+  /* Login */
+  body.login header{ display:none; } body.login main{ max-width:none; padding:0; } body.login .banner{ display:none; }
+  .hero{ min-height:100vh; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; background:linear-gradient(160deg,var(--navy) 0%,var(--navy-2) 45%,var(--teal-dark) 100%); position:relative; overflow:hidden; }
+  .hero::before,.hero::after{ content:""; position:absolute; border-radius:50%; background:rgba(255,255,255,.07); animation:float 9s ease-in-out infinite; }
+  .hero::before{ width:340px; height:340px; left:-110px; top:-90px; } .hero::after{ width:260px; height:260px; right:-80px; bottom:-60px; animation-delay:-4s; }
+  .login-card{ position:relative; z-index:1; width:100%; max-width:400px; background:#fff; border-radius:26px; padding:30px 24px 24px; box-shadow:0 34px 70px rgba(0,0,0,.38); animation:rise .55s var(--ease) backwards; }
+  .login-card.shake{ animation:shake .45s; }
+  .login-logo{ text-align:center; padding:4px 0 6px; } .login-logo img{ height:46px; }
+  .login-card h2{ text-align:center; margin:12px 0 2px; font-size:21px; color:var(--navy); } .login-card .sub{ text-align:center; margin:0 0 20px; color:var(--text-2); font-size:13px; }
+  .seg{ display:flex; gap:4px; background:#E8EFF4; padding:4px; border-radius:15px; } .seg button{ flex:1; border:0; background:transparent; padding:11px 8px; border-radius:11px; font-size:13.5px; font-weight:700; color:var(--text-2); }
+  .seg button.on{ background:#fff; color:var(--navy); box-shadow:0 2px 8px rgba(11,61,92,.16); }
+  .field{ position:relative; } .field > .ico{ position:absolute; left:14px; top:50%; transform:translateY(-50%); color:var(--text-2); pointer-events:none; } .field input{ padding-left:44px; padding-right:48px; }
+  .field .eye{ position:absolute; right:6px; top:50%; transform:translateY(-50%); width:38px; height:38px; border:0; background:none; color:var(--text-2); padding:0; border-radius:10px; }
+  .login-card .foot{ text-align:center; margin:18px 0 0; font-size:11.5px; color:#9AAAB6; }
+
+  /* Seguimiento, análisis y tablas */
+  .sup-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:12px; }
+  .sup-btn{ display:block; width:100%; text-align:left; margin:0; cursor:pointer; font:inherit; color:inherit; transition:transform .2s var(--ease),box-shadow .25s,border-color .2s; }
+  .sup-btn:hover{ box-shadow:var(--sh2); transform:translateY(-2px); } .sup-btn:active{ transform:scale(.98); border-color:var(--teal-dark); }
+  .avatar{ width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg,var(--teal),var(--navy)); color:#fff; display:grid; place-items:center; font-weight:800; font-size:14.5px; flex:none; box-shadow:0 6px 14px rgba(14,110,140,.3); }
+  .sup-btn .pct{ font-size:15px; font-weight:800; color:var(--teal-dark); } .sup-btn b{ font-size:14.5px; }
+  .bar{ height:8px; background:#E4EBF0; border-radius:8px; overflow:hidden; margin-top:10px; } .bar i{ display:block; height:100%; background:linear-gradient(90deg,var(--success),#34C58A); border-radius:8px; transform-origin:left; }
+  #app.enter .bar i{ animation:fillbar .9s var(--ease) .2s backwards; }
+  .kpis{ display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:10px; margin-bottom:12px; }
+  .kpi{ background:#fff; border:1px solid rgba(220,228,232,.8); border-radius:var(--radius); padding:14px; box-shadow:var(--sh1); position:relative; overflow:hidden; }
+  .kpi i{ width:34px; height:34px; border-radius:11px; display:grid; place-items:center; margin-bottom:10px; background:#E4F1F6; color:var(--teal-dark); font-style:normal; }
+  .kpi.k2 i{ background:var(--success-bg); color:var(--success); } .kpi.k3 i{ background:var(--danger-bg); color:var(--danger); } .kpi.k4 i{ background:var(--warning-bg); color:#9A6508; } .kpi.k1 i{ background:#EEF0FB; color:#5B6BD6; }
+  .kpi span{ display:block; font-size:12px; color:var(--text-2); font-weight:700; } .kpi b{ font-size:28px; color:var(--navy); letter-spacing:-.5px; }
+  .grafs{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:12px; margin-bottom:12px; } .graf{ width:100%; height:auto; border-radius:var(--radius); display:block; box-shadow:var(--sh1); }
+  table{ width:100%; border-collapse:separate; border-spacing:0; font-size:13px; }
+  th,td{ text-align:left; padding:10px 8px; border-bottom:1px solid #EAF0F4; vertical-align:top; }
+  th{ color:var(--text-2); font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:.5px; background:#F4F8FA; position:sticky; top:0; }
+  th:first-child{ border-radius:10px 0 0 10px; } th:last-child{ border-radius:0 10px 10px 0; }
+  tr:last-child td{ border-bottom:0; } tbody tr:hover td{ background:#FAFCFD; }
+
+  /* Avisos y carga */
+  #toasts{ position:fixed; left:0; right:0; top:calc(70px + env(safe-area-inset-top)); z-index:60; display:flex; flex-direction:column; align-items:center; gap:8px; pointer-events:none; padding:0 14px; }
+  .toast{ display:flex; align-items:center; gap:10px; background:var(--navy); color:#fff; padding:12px 16px; border-radius:16px; font-size:14px; font-weight:600; box-shadow:0 14px 34px rgba(11,61,92,.38); max-width:420px; animation:toastIn .45s var(--ease) backwards; }
+  .toast.ok{ background:linear-gradient(135deg,#14744c,var(--success)); } .toast.err{ background:linear-gradient(135deg,#B93E19,var(--danger)); } .toast.warn{ background:linear-gradient(135deg,#9A6508,#D98E1B); }
+  .toast.out{ animation:toastOut .3s ease forwards; }
+  .loading{ text-align:center; padding:56px 16px; color:var(--text-2); font-size:13.5px; }
+  .spin{ width:34px; height:34px; border-radius:50%; border:3.5px solid #D5E3EA; border-top-color:var(--teal-dark); margin:0 auto 12px; animation:spin .8s linear infinite; }
+  .spin.sm{ width:18px; height:18px; border-width:2.5px; margin:0; border-color:rgba(255,255,255,.4); border-top-color:#fff; }
+
+  /* Animaciones de entrada */
+  @keyframes rise{ from{ opacity:0; transform:translateY(16px); } }
+  @keyframes pop{ from{ opacity:0; transform:scale(.8); } }
+  @keyframes slideDown{ from{ opacity:0; transform:translateY(-8px); } }
+  @keyframes fillbar{ from{ width:0; } }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @keyframes shake{ 20%,60%{ transform:translateX(-7px); } 40%,80%{ transform:translateX(7px); } }
+  @keyframes float{ 50%{ transform:translateY(26px) translateX(14px); } }
+  @keyframes toastIn{ from{ opacity:0; transform:translateY(-16px) scale(.94); } }
+  @keyframes toastOut{ to{ opacity:0; transform:translateY(-10px) scale(.96); } }
+  #app.enter > *:not(#adm), #app.enter #adm > *, #app.enter #list > *, #app.enter .sup-grid > *{ animation:rise .5s var(--ease) backwards; }
+  #app.enter > *:nth-child(2), #app.enter #adm > *:nth-child(2), #app.enter #list > *:nth-child(2), #app.enter .sup-grid > *:nth-child(2){ animation-delay:.05s; }
+  #app.enter > *:nth-child(3), #app.enter #adm > *:nth-child(3), #app.enter #list > *:nth-child(3), #app.enter .sup-grid > *:nth-child(3){ animation-delay:.1s; }
+  #app.enter > *:nth-child(4), #app.enter #adm > *:nth-child(4), #app.enter #list > *:nth-child(4), #app.enter .sup-grid > *:nth-child(4){ animation-delay:.15s; }
+  #app.enter > *:nth-child(5), #app.enter #adm > *:nth-child(5), #app.enter #list > *:nth-child(5), #app.enter .sup-grid > *:nth-child(5){ animation-delay:.2s; }
+  #app.enter > *:nth-child(n+6), #app.enter #adm > *:nth-child(n+6), #app.enter #list > *:nth-child(n+6), #app.enter .sup-grid > *:nth-child(n+6){ animation-delay:.25s; }
+  @media (prefers-reduced-motion:reduce){ *,*::before,*::after{ animation-duration:.01ms !important; animation-delay:0s !important; transition-duration:.01ms !important; } }
+  @media (max-width:430px){ .chip{ padding:9px 6px; font-size:12px; } .hello .st{ gap:16px; } }
+  .lnk{ display:inline-flex; align-items:center; gap:5px; } .opt{ position:relative; }
 </style>
 </head>
 <body>
 <header>
+  <button id="btn-back" class="ibtn hidden" aria-label="Volver"></button>
   <span class="logo-badge"><img src="logo.png" alt="LECTA"></span>
   <h1 id="title">Auditoría<small id="subtitle"></small></h1>
-  <button id="btn-back" class="hidden">← Volver</button>
-  <button id="btn-refresh" class="hidden">⟳</button>
-  <button id="btn-logout" class="hidden">Salir</button>
+  <button id="btn-refresh" class="ibtn hidden" aria-label="Actualizar"></button>
+  <button id="btn-logout" class="ibtn hidden" aria-label="Salir"></button>
 </header>
 <div id="banner" class="banner hidden"></div>
+<nav id="tabbar" class="tabbar hidden" aria-label="Secciones"></nav>
 <main id="app"></main>
+<div id="toasts" aria-live="polite"></div>
 
 <script>
 /* ===== CONFIGURACIÓN ===== */
@@ -99,6 +237,49 @@ const FOTO_CALIDAD = 0.72;
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const store = { get: k => { try { return localStorage.getItem(k); } catch (e) { return null; } }, set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} }, del: k => { try { localStorage.removeItem(k); } catch (e) {} } };
+
+/* ---------- Íconos, avisos y animaciones ---------- */
+const ICONS = {
+  check: '<polyline points="20 6 9 17 4 12"/>', x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
+  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  trash: '<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  camera: '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+  image: '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+  pin: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+  refresh: '<polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>',
+  back: '<line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>', chevron: '<polyline points="9 18 15 12 9 6"/>',
+  search: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  key: '<path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.78 7.78 5.5 5.5 0 0 1 7.78-7.78zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/>',
+  bar: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+  clipboard: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 14l2 2 4-4"/>',
+  paste: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/>',
+  send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+  shuffle: '<polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/>',
+  plus: '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>', pen: '<path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>',
+  filter: '<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>', eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>',
+  inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>', map: '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', arrow: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>'
+};
+const ico = (n, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ""}</svg>`;
+const vibra = ms => { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) {} };
+function toast(texto, tipo) {
+  const t = document.createElement("div"); t.className = "toast " + (tipo || "ok");
+  t.innerHTML = ico(tipo === "err" ? "alert" : tipo === "warn" ? "cloud" : "check", 20) + "<span>" + esc(texto) + "</span>";
+  $("toasts").appendChild(t);
+  setTimeout(() => { t.classList.add("out"); setTimeout(() => t.remove(), 320); }, 3200);
+}
+let enterT = null;
+function enter() { const a = $("app"); a.classList.remove("enter"); void a.offsetWidth; a.classList.add("enter"); clearTimeout(enterT); enterT = setTimeout(() => a.classList.remove("enter"), 1000); }
+const cargando = t => `<div class="loading"><div class="spin"></div><p>${esc(t || "Cargando…")}</p></div>`;
+const vacio = (icono, titulo, sub) => `<div class="vacio">${ico(icono, 36)}<b>${esc(titulo)}</b>${sub ? `<p>${esc(sub)}</p>` : ""}</div>`;
+const iniciales = n => String(n).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
+$("btn-back").innerHTML = ico("back", 20); $("btn-refresh").innerHTML = ico("refresh", 20); $("btn-logout").innerHTML = ico("logout", 20);
 
 let S = { role: null, key: null, supervisor: null, supervisores: [], ordenes: [], auditorias: [], filtro: "Pendiente", q: "", fotos: [], pos: null, adminTab: "critica", segSup: null, segTab: "pend", segOrden: null, segDesde: "", segHasta: "", segQ: "" };
 
@@ -134,7 +315,7 @@ async function updateBanner() {
   let n = 0; try { n = (await qAll()).length; } catch (e) {}
   const b = $("banner");
   b.classList.toggle("hidden", !n);
-  b.textContent = n ? n + " auditoría(s) guardada(s) en el teléfono, pendientes de enviar. Se envían solas al volver la señal." : "";
+  b.innerHTML = n ? ico("cloud", 18) + `<span>${n} auditoría(s) guardada(s) en el teléfono, pendientes de enviar. Se envían solas al volver la señal.</span>` : "";
 }
 window.addEventListener("online", flushQueue);
 
@@ -145,43 +326,49 @@ $("btn-logout").onclick = logout;
 $("btn-refresh").onclick = () => (S.role === "admin" ? loadAdmin() : loadOrdenes());
 
 function chrome(opts) {
+  document.body.classList.toggle("login", !!opts.login);
   $("subtitle").textContent = opts.sub || "";
   $("btn-back").classList.toggle("hidden", !opts.back);
   $("btn-back").onclick = opts.back || null;
   $("btn-refresh").classList.toggle("hidden", !opts.refresh);
   $("btn-logout").classList.toggle("hidden", !S.key);
+  $("tabbar").classList.add("hidden"); document.body.classList.remove("has-tabbar");
 }
 
 /* ---------- Login ---------- */
 function renderLogin(msg) {
-  chrome({ sub: "Inspecciones AAA" });
-  $("app").innerHTML = `<div class="card" style="margin-top:8px">
+  chrome({ login: true }); enter();
+  const rol = S.loginRol || "supervisor";
+  $("app").innerHTML = `<div class="hero"><div class="login-card ${msg ? "shake" : ""}">
     <div class="login-logo"><img src="logo.png" alt="LECTA"></div>
-    <label>Ingresar como</label>
-    <select id="lg-role"><option value="supervisor">Supervisor</option><option value="admin">Administrador</option></select>
+    <h2>Auditoría de campo</h2><p class="sub">Inspecciones AAA</p>
+    <div class="seg" id="lg-seg"><button type="button" data-r="supervisor" class="${rol === "supervisor" ? "on" : ""}">${ico("user", 16)} Supervisor</button><button type="button" data-r="admin" class="${rol === "admin" ? "on" : ""}">${ico("key", 16)} Administrador</button></div>
     <label>Tu clave de acceso</label>
-    <input id="lg-key" type="password" autocomplete="current-password" placeholder="Clave">
-    <button class="primary" id="lg-go">Entrar</button>
-    ${msg ? `<div class="err">${esc(msg)}</div>` : ""}</div>`;
+    <div class="field">${ico("key", 18)}<input id="lg-key" type="password" autocomplete="current-password" autocapitalize="off" placeholder="Clave"><button type="button" class="eye" id="lg-eye" aria-label="Mostrar clave">${ico("eye", 18)}</button></div>
+    ${msg ? `<div class="err">${ico("alert", 18)}<span>${esc(msg)}</span></div>` : ""}
+    <button class="primary" id="lg-go">Entrar ${ico("arrow", 18)}</button>
+    <p class="foot">LECTA · Inspecciones AAA</p></div></div>`;
+  document.querySelectorAll("#lg-seg button").forEach(b => b.onclick = () => { S.loginRol = b.dataset.r; document.querySelectorAll("#lg-seg button").forEach(x => x.classList.toggle("on", x === b)); vibra(8); });
+  $("lg-eye").onclick = () => { const i = $("lg-key"), ver = i.type === "password"; i.type = ver ? "text" : "password"; $("lg-eye").innerHTML = ico(ver ? "eyeoff" : "eye", 18); };
   $("lg-key").onkeydown = e => { if (e.key === "Enter") $("lg-go").click(); };
   $("lg-go").onclick = async () => {
-    const key = $("lg-key").value.trim(); if (!key) return;
-    $("lg-go").disabled = true;
+    const key = $("lg-key").value.trim(); if (!key) { $("lg-key").focus(); return; }
+    $("lg-go").disabled = true; $("lg-go").innerHTML = '<span class="spin sm"></span> Entrando…';
     try {
-      S.key = key; S.role = $("lg-role").value;
+      S.key = key; S.role = S.loginRol || "supervisor";
       const j = await api({ action: "login" });
       if (j.role !== S.role) throw new Error(S.role === "admin" ? "Esa clave no es de administrador" : "Esa clave es de administrador: elige Administrador");
       S.supervisor = j.supervisor;
-      saveSession();
+      saveSession(); vibra(12);
       if (S.role === "admin") loadAdmin(); else loadOrdenes();
-    } catch (e) { S.key = null; renderLogin(e.message); }
+    } catch (e) { S.key = null; vibra(40); renderLogin(e.message); }
   };
 }
 
 /* ---------- Supervisor: lista de órdenes ---------- */
 async function loadOrdenes() {
   chrome({ sub: S.supervisor, refresh: true });
-  if (!$("list")) $("app").innerHTML = `<p class="muted">Cargando…</p>`;
+  if (!$("list")) $("app").innerHTML = cargando("Cargando tus órdenes…");
   try {
     const j = await api({ action: "ordenes", supervisor: S.supervisor });
     S.ordenes = j.ordenes; S.auditorias = j.auditorias;
@@ -194,23 +381,31 @@ async function loadOrdenes() {
   const pend = await qAll().catch(() => []);
   const enCola = new Set(pend.map(p => String(p.orden)));
   S.ordenes.forEach(o => { if (enCola.has(String(o["Orden"]))) o.Estado = "Por enviar"; });
-  renderLista();
+  renderLista(true);
   updateBanner(); flushQueue();
 }
-function renderLista() {
+function renderLista(anim) {
+  chrome({ sub: S.supervisor, refresh: true });
+  if (anim) enter();
   const cnt = e => S.ordenes.filter(o => e === "Todas" || o.Estado === e).length;
   const filtros = ["Pendiente", "Por enviar", "Auditada", "Todas"];
   const q = S.q.toLowerCase();
   const items = S.ordenes.filter(o => (S.filtro === "Todas" || o.Estado === S.filtro) && (!q || (o["Orden"] + " " + o["Dirección"] + " " + o["Tipo de trabajo"]).toLowerCase().includes(q)));
+  const clase = e => (e === "Auditada" ? "a" : e === "Por enviar" ? "q" : "p"), icono = e => (e === "Auditada" ? "check" : e === "Por enviar" ? "cloud" : "clock");
+  const hechas = cnt("Auditada"), total = S.ordenes.length;
   $("app").innerHTML = `
+    <div class="hello"><span>Hola,</span><b class="n">${esc(S.supervisor)}</b>
+      <div class="st"><div><b>${cnt("Pendiente")}</b>pendientes</div><div><b>${hechas}</b>auditadas</div><div><b>${total}</b>asignadas</div></div>
+      <div class="bar"><i style="width:${total ? Math.round(100 * hechas / total) : 0}%"></i></div></div>
     <div class="chips">${filtros.map(f => `<button class="chip ${f === S.filtro ? "on" : ""}" data-f="${f}">${f} (${cnt(f)})</button>`).join("")}</div>
-    <input id="q" type="search" placeholder="Buscar orden o dirección" value="${esc(S.q)}" style="margin-bottom:10px">
-    <div id="list">${items.length ? items.map(o => `<div class="card ord" data-o="${esc(o["Orden"])}">
-      <div class="grow"><b>${esc(o["Orden"])}</b><p>${esc(o["Dirección"] || "Sin dirección")}${o["Tipo de trabajo"] ? " · " + esc(o["Tipo de trabajo"]) : ""}</p></div>
-      <span class="tag ${o.Estado === "Auditada" ? "a" : o.Estado === "Por enviar" ? "q" : "p"}">${esc(o.Estado)}</span></div>`).join("") : '<p class="muted">No hay órdenes en esta vista.</p>'}</div>`;
-  document.querySelectorAll(".chip").forEach(b => b.onclick = () => { S.filtro = b.dataset.f; renderLista(); });
+    <div class="searchbox">${ico("search", 18)}<input id="q" type="search" placeholder="Buscar orden o dirección" value="${esc(S.q)}"></div>
+    <div id="list">${items.length ? items.map(o => `<div class="card ord ${clase(o.Estado)}" data-o="${esc(o["Orden"])}">
+      <span class="oi">${ico(icono(o.Estado), 20)}</span>
+      <div class="grow"><b>${esc(o["Orden"])}</b><p>${ico("pin", 13)}<span>${esc(o["Dirección"] || "Sin dirección")}${o["Tipo de trabajo"] ? " · " + esc(o["Tipo de trabajo"]) : ""}</span></p></div>
+      <span class="tag ${clase(o.Estado)}">${esc(o.Estado)}</span>${ico("chevron", 18)}</div>`).join("") : vacio("inbox", "No hay órdenes en esta vista", "Prueba con otro filtro o cambia la búsqueda.")}</div>`;
+  document.querySelectorAll(".chip").forEach(b => b.onclick = () => { S.filtro = b.dataset.f; vibra(6); renderLista(); });
   $("q").oninput = e => { S.q = e.target.value; const pos = e.target.selectionStart; renderLista(); $("q").focus(); $("q").setSelectionRange(pos, pos); };
-  document.querySelectorAll(".ord").forEach(c => c.onclick = () => renderForm(c.dataset.o));
+  document.querySelectorAll(".ord").forEach(c => c.onclick = () => { vibra(8); renderForm(c.dataset.o); });
 }
 
 /* ---------- Supervisor: formulario de auditoría ---------- */
@@ -218,31 +413,35 @@ function renderForm(orden) {
   const o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
   const hecha = S.auditorias.find(a => String(a["Orden"]) === String(orden));
   S.fotos = []; S.pos = null;
-  chrome({ sub: "Orden " + orden, back: () => renderLista() });
+  chrome({ sub: "Orden " + orden, back: () => renderLista(true) }); enter();
   let extra = {}; try { extra = JSON.parse(o["Detalle"] || "{}"); } catch (e) {}
   const info = [["Dirección", o["Dirección"]], ["Tipo de trabajo", o["Tipo de trabajo"]], ["Inspector", o["Inspector"]], ["Observación", o["Observación"]]].concat(Object.entries(extra)).filter(x => x[1]);
   let prev = {}; if (hecha) try { prev = JSON.parse(hecha["Datos"] || "{}"); } catch (e) {}
+  const secciones = FORM_FIELDS.filter(f => !/^usuario_/.test(f.id)).map(f => `<div class="card sec">${fieldHtml(f)}</div>`).join("");
+  const usuario = FORM_FIELDS.filter(f => /^usuario_/.test(f.id));
 
   $("app").innerHTML = `
-    <div class="card"><b style="font-size:17px">${esc(orden)}</b>
-      ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${valHtml(v)}</p>`).join("")}</div>
-    ${hecha ? `<div class="card"><span class="tag a">Auditada</span> <span class="muted">${esc(prev.resultado || "")}. Si guardas de nuevo se registra otra auditoría.</span></div>` : ""}
-    <form id="f" class="card" onsubmit="return false">
-      ${FORM_FIELDS.map(fieldHtml).join("")}
-      <label>Firma del usuario que atiende (opcional)</label>
-      <canvas id="sig" class="sig"></canvas>
-      <div class="row"><span class="muted grow">Firma con el dedo o el lápiz</span><button type="button" class="secondary" id="sig-clear">Borrar firma</button></div>
-      <label>Fotos (${MIN_FOTOS ? "mínimo " + MIN_FOTOS + ", " : ""}máximo ${MAX_FOTOS})</label>
-      <div class="row"><button type="button" class="secondary grow" id="ph-cam">📷 Tomar foto</button><button type="button" class="secondary grow" id="ph-gal">🖼 Galería</button></div>
-      <input id="ph-in-cam" type="file" accept="image/*" capture="environment" class="hidden">
-      <input id="ph-in-gal" type="file" accept="image/*" multiple class="hidden">
-      <div class="photos" id="photos"></div>
-      <label>Ubicación</label>
-      <div class="row"><button type="button" class="secondary" id="gps">📍 Registrar ubicación</button><span class="muted" id="gps-st">Sin registrar</span></div>
+    <div class="card ordhead"><div class="row"><span class="oi big">${ico("clipboard", 24)}</span><div class="grow"><small>Orden</small><b>${esc(orden)}</b></div><span class="tag ${o.Estado === "Auditada" ? "a" : o.Estado === "Por enviar" ? "q" : "p"}">${esc(o.Estado)}</span></div>
+      ${info.length ? `<div class="kv">${info.map(([k, v]) => `<div><span>${esc(k)}</span><b>${valHtml(v)}</b></div>`).join("")}</div>` : ""}</div>
+    ${hecha ? `<div class="alert ok">${ico("check", 18)}<span>Ya auditada${prev.resultado ? " (" + esc(prev.resultado) + ")" : ""}. Si guardas de nuevo se registra otra auditoría.</span></div>` : ""}
+    <form id="f" onsubmit="return false">
+      ${secciones}
+      <div class="card sec"><div class="ct">${ico("user", 20)}<b>Usuario que atiende</b><span class="opc">Opcional</span></div>
+        ${usuario.map(fieldHtml).join("")}
+        <label>Firma</label>
+        <canvas id="sig" class="sig"></canvas>
+        <div class="row" style="margin-top:8px"><span class="muted grow">${ico("pen", 14)} Firma con el dedo o el lápiz</span><button type="button" class="secondary" id="sig-clear">${ico("x", 16)} Borrar</button></div></div>
+      <div class="card sec"><div class="ct">${ico("camera", 20)}<b>Evidencia fotográfica</b><span class="opc" id="ph-n">0/${MAX_FOTOS}</span></div>
+        <div class="row"><button type="button" class="secondary grow" id="ph-cam">${ico("camera", 18)} Tomar foto</button><button type="button" class="secondary grow" id="ph-gal">${ico("image", 18)} Galería</button></div>
+        <input id="ph-in-cam" type="file" accept="image/*" capture="environment" class="hidden">
+        <input id="ph-in-gal" type="file" accept="image/*" multiple class="hidden">
+        <div class="photos" id="photos"></div></div>
+      <div class="card sec"><div class="ct">${ico("pin", 20)}<b>Ubicación</b></div>
+        <div class="row"><button type="button" class="secondary" id="gps">${ico("pin", 16)} Registrar ubicación</button><span class="gps-st" id="gps-st">Sin registrar</span></div></div>
       <div id="f-err"></div>
-      <button class="primary" id="save">Guardar auditoría</button>
+      <div class="savebar"><button class="primary" id="save">${ico("check", 20)} Guardar auditoría</button></div>
     </form>`;
-  document.querySelectorAll(".opt input").forEach(i => i.onchange = () => document.querySelectorAll(".opt").forEach(l => l.classList.toggle("sel", l.querySelector("input").checked)));
+  document.querySelectorAll(".opt input").forEach(i => i.onchange = () => { vibra(8); document.querySelectorAll(".opt").forEach(l => l.classList.toggle("sel", l.querySelector("input").checked)); });
   $("ph-cam").onclick = () => $("ph-in-cam").click();
   $("ph-gal").onclick = () => $("ph-in-gal").click();
   $("ph-in-cam").onchange = $("ph-in-gal").onchange = async e => { const fs = [...e.target.files]; e.target.value = ""; for (const f of fs) { if (S.fotos.length >= MAX_FOTOS) break; try { S.fotos.push(await compress(f)); } catch (x) {} } renderFotos(); };
@@ -251,15 +450,18 @@ function renderForm(orden) {
   getGps();
   $("save").onclick = () => save(orden);
 }
+const tonoOpcion = t => (/no conforme/i.test(t) ? "no" : /conforme/i.test(t) ? "ok" : /no se pudo/i.test(t) ? "na" : "");
 function fieldHtml(f) {
+  const lbl = esc(f.label.replace(/^Usuario que atiende:\s*/i, "")) + (f.required ? " *" : "");
   if (f.type === "radio" || f.type === "check")
-    return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><div class="opts">${f.options.map(op => `<label class="opt"><input type="${f.type === "radio" ? "radio" : "checkbox"}" name="${f.id}" value="${esc(op)}"> ${esc(op)}</label>`).join("")}</div>`;
-  if (f.type === "textarea") return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><textarea name="${f.id}"></textarea>`;
-  return `<label>${esc(f.label)}${f.required ? " *" : ""}</label><input name="${f.id}" type="text" inputmode="${f.inputmode || "text"}" autocomplete="off">`;
+    return `<label>${lbl}</label><div class="opts ${f.type === "check" ? "wrap" : ""}">${f.options.map(op => `<label class="opt ${f.type === "radio" ? "r-" + tonoOpcion(op) : ""}"><input type="${f.type === "radio" ? "radio" : "checkbox"}" name="${f.id}" value="${esc(op)}"><span class="ck">${ico("check", 14)}</span><span>${esc(op)}</span></label>`).join("")}</div>`;
+  if (f.type === "textarea") return `<label>${lbl}</label><textarea name="${f.id}" placeholder="Escribe aquí…"></textarea>`;
+  return `<label>${lbl}</label><input name="${f.id}" type="text" inputmode="${f.inputmode || "text"}" autocomplete="off">`;
 }
 function renderFotos() {
-  $("photos").innerHTML = S.fotos.map((f, i) => `<div><img src="data:image/jpeg;base64,${f.data}"><button type="button" data-i="${i}">×</button></div>`).join("");
-  document.querySelectorAll("#photos button").forEach(b => b.onclick = () => { S.fotos.splice(+b.dataset.i, 1); renderFotos(); });
+  $("photos").innerHTML = S.fotos.map((f, i) => `<div><img src="data:image/jpeg;base64,${f.data}" alt="Foto ${i + 1}"><button type="button" data-i="${i}" aria-label="Quitar foto">${ico("x", 15)}</button></div>`).join("");
+  $("ph-n").textContent = S.fotos.length + "/" + MAX_FOTOS;
+  document.querySelectorAll("#photos button").forEach(b => b.onclick = () => { vibra(8); S.fotos.splice(+b.dataset.i, 1); renderFotos(); });
 }
 function compress(file) {
   return new Promise((res, rej) => {
@@ -291,8 +493,8 @@ function initSig() {
 }
 function getGps() {
   if (!navigator.geolocation) return;
-  $("gps-st").textContent = "Buscando…";
-  navigator.geolocation.getCurrentPosition(p => { S.pos = { lat: p.coords.latitude, lng: p.coords.longitude }; $("gps-st").textContent = "✓ ±" + Math.round(p.coords.accuracy) + " m"; }, () => { $("gps-st").textContent = "No disponible"; }, { enableHighAccuracy: true, timeout: 15000 });
+  const st = $("gps-st"); st.className = "gps-st"; st.innerHTML = '<span class="spin sm" style="border-color:#D5E3EA;border-top-color:var(--teal-dark)"></span> Buscando…';
+  navigator.geolocation.getCurrentPosition(p => { S.pos = { lat: p.coords.latitude, lng: p.coords.longitude }; st.className = "gps-st ok"; st.innerHTML = ico("check", 15) + " ±" + Math.round(p.coords.accuracy) + " m"; }, () => { st.className = "gps-st"; st.textContent = "No disponible"; }, { enableHighAccuracy: true, timeout: 15000 });
 }
 async function save(orden) {
   const fd = new FormData($("f")), datos = {}, errs = [];
@@ -302,46 +504,51 @@ async function save(orden) {
     if (f.required && (Array.isArray(v) ? !v.length : !v)) errs.push("Falta: " + f.label);
   });
   if (S.fotos.length < MIN_FOTOS) errs.push("Adjunta al menos " + MIN_FOTOS + " foto(s)");
-  if (errs.length) { $("f-err").innerHTML = `<div class="err">${errs.map(esc).join("<br>")}</div>`; return; }
+  if (errs.length) { $("f-err").innerHTML = `<div class="err">${ico("alert", 18)}<span>${errs.map(esc).join("<br>")}</span></div>`; $("f-err").scrollIntoView({ behavior: "smooth", block: "center" }); vibra(40); return; }
   const payload = { id: "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), orden: String(orden), supervisor: S.supervisor, datos, lat: S.pos && S.pos.lat, lng: S.pos && S.pos.lng, fotos: S.fotos, firma: S.firma ? $("sig").toDataURL("image/png").split(",")[1] : "" };
-  $("save").disabled = true; $("save").textContent = "Guardando…";
-  try { await qPut(payload); } catch (e) { $("f-err").innerHTML = `<div class="err">No se pudo guardar en el teléfono: ${esc(e.message)}</div>`; $("save").disabled = false; $("save").textContent = "Guardar auditoría"; return; }
+  $("save").disabled = true; $("save").innerHTML = '<span class="spin sm"></span> Guardando…';
+  try { await qPut(payload); } catch (e) { $("f-err").innerHTML = `<div class="err">${ico("alert", 18)}<span>No se pudo guardar en el teléfono: ${esc(e.message)}</span></div>`; $("save").disabled = false; $("save").innerHTML = ico("check", 20) + " Guardar auditoría"; return; }
   // La auditoría ya está a salvo en el teléfono; intenta enviarla
   const o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
   try { await api(Object.assign({ action: "guardar" }, payload)); await qDel(payload.id); o.Estado = "Auditada"; }
   catch (e) { o.Estado = "Por enviar"; }
-  S.filtro = "Pendiente"; renderLista(); updateBanner();
-  if (o.Estado === "Auditada") loadOrdenes();
+  S.filtro = "Pendiente"; renderLista(true); updateBanner();
+  if (o.Estado === "Auditada") { toast("Auditoría guardada y enviada", "ok"); vibra(18); loadOrdenes(); } else { toast("Sin señal: se enviará automáticamente", "warn"); vibra([20, 40, 20]); }
 }
 
 /* ---------- Administrador ---------- */
 async function loadAdmin() {
   chrome({ sub: "Administrador", refresh: true });
-  if (!$("adm")) $("app").innerHTML = `<p class="muted">Cargando…</p>`;
+  if (!$("adm")) $("app").innerHTML = cargando("Cargando panel…");
   try { const j = await api({ action: "ordenes" }); S.ordenes = j.ordenes; S.auditorias = j.auditorias; S.supervisores = j.supervisores; }
   catch (e) { $("app").innerHTML = `<div class="err">${esc(e.message)}</div>`; return; }
   renderAdmin();
 }
-const ADMIN_TABS = [["critica", "Desde Crítica"], ["carga", "Pegar Excel"], ["seg", "Seguimiento"], ["sup", "Supervisores"]];
+const ADMIN_TABS = [["critica", "Crítica", "filter"], ["carga", "Excel", "paste"], ["seg", "Seguimiento", "clipboard"], ["analisis", "Análisis", "bar"], ["sup", "Supervisores", "users"]];
 function renderAdmin(msg) {
-  const body = S.adminTab === "critica" ? adminCritica() : S.adminTab === "carga" ? adminCarga() : S.adminTab === "sup" ? adminSup() : adminSeg();
-  $("app").innerHTML = `<div id="adm"><div class="chips">${ADMIN_TABS.map(([t, n]) => `<button class="chip ${S.adminTab === t ? "on" : ""}" data-t="${t}">${n}</button>`).join("")}</div>
-    ${msg || ""}${body}</div>`;
-  document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { S.adminTab = b.dataset.t; renderAdmin(); });
+  chrome({ sub: "Administrador", refresh: true });
+  const body = S.adminTab === "critica" ? adminCritica() : S.adminTab === "carga" ? adminCarga() : S.adminTab === "sup" ? adminSup() : S.adminTab === "analisis" ? adminAnalisis() : adminSeg();
+  const clave = S.adminTab + "|" + S.segSup;
+  if (S._clave !== clave) { S._clave = clave; enter(); }
+  $("app").innerHTML = `<div id="adm">${msg || ""}${body}</div>`;
+  const tb = $("tabbar"); tb.classList.remove("hidden"); document.body.classList.add("has-tabbar");
+  tb.innerHTML = ADMIN_TABS.map(([t, n, ic]) => `<button class="tab ${S.adminTab === t ? "on" : ""}" data-t="${t}">${ico(ic, 22)}<span>${n}</span></button>`).join("");
+  document.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { vibra(8); S.adminTab = b.dataset.t; renderAdmin(); window.scrollTo({ top: 0 }); });
   if (S.adminTab === "critica") bindCritica();
   if (S.adminTab === "carga") { $("ld-go").onclick = cargar; }
   if (S.adminTab === "seg") bindSeg();
+  if (S.adminTab === "analisis") { bindSeg(); $("an-xls").onclick = () => descargarExcel("analisis_" + hoy(), [segHojas(Object.values(segDatos()))[2]]); }
   if (S.adminTab === "sup") bindSup();
 }
-const okMsg = t => `<div class="card" style="background:var(--success-bg)">✓ ${t}</div>`;
-const errMsg = t => `<div class="err" style="margin-bottom:10px">${esc(t)}</div>`;
+const okMsg = t => `<div class="alert ok">${ico("check", 18)}<span>${t}</span></div>`;
+const errMsg = t => `<div class="err" style="margin:0 0 12px">${ico("alert", 18)}<span>${esc(t)}</span></div>`;
 
 /* --- Pegar órdenes desde Excel --- */
 function adminCarga() {
-  return `<div class="card"><b>Cargar órdenes</b><p class="muted">Copia las filas desde Excel (con la fila de encabezados) y pégalas aquí. Encabezados reconocidos: <b>Orden</b>, <b>Supervisor</b> (obligatorios), Dirección, Tipo de trabajo, Inspector, Observación. Cualquier otra columna se muestra como detalle al supervisor.</p>
+  return `<div class="card"><div class="ct">${ico("paste", 20)}<b>Cargar órdenes desde Excel</b></div><p class="muted">Copia las filas desde Excel (con la fila de encabezados) y pégalas aquí. Encabezados reconocidos: <b>Orden</b>, <b>Supervisor</b> (obligatorios), Dirección, Tipo de trabajo, Inspector, Observación. Cualquier otra columna se muestra como detalle al supervisor.</p>
     <textarea id="ld-txt" style="min-height:140px;font-size:13px" placeholder="Orden&#9;Supervisor&#9;Dirección&#10;1053925&#9;Juan Pérez&#9;Cra 1 # 2-3"></textarea>
     <label class="opt"><input type="checkbox" id="ld-rep"> Reemplazar las órdenes actuales (borra la lista anterior)</label>
-    <button class="primary" id="ld-go">Cargar órdenes</button></div>`;
+    <button class="primary" id="ld-go">${ico("download", 18)} Cargar órdenes</button></div>`;
 }
 const normH = h => h.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 function tsvLines(txt) {
@@ -398,12 +605,12 @@ function coord(v) { const s = String(v == null ? "" : v), d = s.replace(/\D/g, "
 
 function adminCritica() {
   const c = S.cr, ok = c.open && c.open.n;
-  return `<div class="card"><b>Órdenes de Crítica</b><p class="muted" style="margin-top:4px">Elige la fecha de cierre y el inspector, mira las órdenes y selecciona cuáles mandar a auditar.${ok ? ` Se cruzan con la hoja <b>${OPEN_SHEET}</b> (${c.open.n} órdenes, del ${fmtFecha(c.open.min)} al ${fmtFecha(c.open.max)}) para traer dirección, barrio y municipio.` : ""}</p>
+  return `<div class="card"><div class="ct">${ico("filter", 20)}<b>Órdenes de Crítica</b></div><p class="muted" style="margin-top:4px">Elige la fecha de cierre y el inspector, mira las órdenes y selecciona cuáles mandar a auditar.${ok ? ` Se cruzan con la hoja <b>${OPEN_SHEET}</b> (${c.open.n} órdenes, del ${fmtFecha(c.open.min)} al ${fmtFecha(c.open.max)}) para traer dirección, barrio y municipio.` : ""}</p>
     <div class="row"><div class="grow"><label>Desde</label><input type="date" id="cr-d" value="${c.desde}"></div><div class="grow"><label>Hasta</label><input type="date" id="cr-h" value="${c.hasta}"></div></div>
     <label>Inspector (unidad de trabajo)</label>
     <select id="cr-i" ${c.inspList ? "" : "disabled"}><option value="">${c.inspList ? "Todos los inspectores" : "Cargando…"}</option>${(c.inspList || []).map(i => `<option value="${esc(i.n)}" ${i.n === c.insp ? "selected" : ""}>${esc(i.n)} (${i.c})</option>`).join("")}</select>
     ${ok ? `<label class="opt ${c.soloOpen ? "sel" : ""}" style="margin-top:12px"><input type="checkbox" id="cr-so" ${c.soloOpen ? "checked" : ""}> Solo órdenes que están en ${OPEN_SHEET} (las que se pueden auditar)</label>` : ""}
-    <button class="primary" id="cr-go" ${c.desde && c.hasta ? "" : "disabled"}>Ver órdenes</button>${c.msg}</div>
+    <button class="primary" id="cr-go" ${c.desde && c.hasta ? "" : "disabled"}>${ico("search", 18)} Ver órdenes</button>${c.msg}</div>
     <div id="cr-res">${c.rows ? crResultado() : ""}</div>`;
 }
 function crResultado() {
@@ -414,16 +621,16 @@ function crResultado() {
   const ocultas = c.rows.length - c.rows.filter(r => r.enOpen).length;
   return `<div class="card"><div class="row"><b class="grow">${vis.length} órdenes${c.rows.length >= CRITICA_MAX_FILAS ? " (tope: acota el filtro)" : ""}</b><span class="muted" id="cr-cnt">${c.sel.size} seleccionadas</span></div>
     ${filtraOpen && ocultas ? `<p class="muted" style="margin:4px 0 0">${ocultas} órdenes de ese filtro no están en ${OPEN_SHEET} y no se muestran.</p>` : ""}
-    <div class="row" style="margin:10px 0"><input id="cr-q" type="search" placeholder="Buscar orden, dirección, barrio…" value="${esc(c.q)}" class="grow"><button class="secondary" id="cr-all">Seleccionar visibles</button><button class="secondary" id="cr-none">Ninguna</button></div>
+    <div class="row" style="margin:10px 0"><input id="cr-q" type="search" placeholder="Buscar orden, dirección, barrio…" value="${esc(c.q)}" class="grow"><button class="secondary" id="cr-all">${ico("check", 16)} Visibles</button><button class="secondary" id="cr-none">Ninguna</button></div>
     <div style="overflow-x:auto"><table><tr><th></th><th>Orden</th><th>Fecha</th><th>Inspector</th><th>Dirección</th><th>Barrio</th><th>Municipio</th><th>Causa de cierre</th><th>Efect.</th><th>Sup. Crítica</th></tr>
     ${vis.map(r => `<tr><td><input type="checkbox" class="cr-ck" data-o="${esc(r.orden)}" ${ya.has(r.orden) ? "disabled" : ""} ${c.sel.has(r.orden) ? "checked" : ""} style="width:20px;height:20px"></td><td>${esc(r.orden)}${ya.has(r.orden) ? '<br><span class="tag a">Ya cargada</span>' : ""}</td><td>${fmtFecha(r.fecha)}</td><td>${esc(r.insp)}</td><td>${esc(r.dir)}</td><td>${esc(r.barrio)}</td><td>${esc(r.municipio)}</td><td>${esc(r.causa)}</td><td>${esc(r.efectividad)}</td><td>${esc(r.sup)}</td></tr>`).join("") || '<tr><td colspan="10" class="muted">Sin órdenes con ese filtro.</td></tr>'}</table></div>
     ${vis.some(r => ya.has(r.orden)) ? `<p class="muted" style="margin:8px 0 0">Las marcadas "Ya cargada" ya están en la lista de auditoría.</p>` : ""}</div>
-    <div class="card"><b>Enviar a auditoría</b>
+    <div class="card"><div class="ct">${ico("send", 20)}<b>Enviar a auditoría</b></div>
       <label>Asignar a</label><select id="cr-as"><option value="__cr" ${c.asignar === "__cr" ? "selected" : ""}>El supervisor que figura en Crítica</option>${sups.map(n => `<option value="${esc(n)}" ${c.asignar === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
       <label>Indicación para el supervisor (opcional)</label><textarea id="cr-nota" placeholder="Qué debe revisar o verificar en estas órdenes">${esc(c.nota)}</textarea>
       <label>Información que verá el supervisor (la dirección siempre se envía)</label>
       <div class="opts">${CR_DETALLE.map(([k, n]) => `<label class="opt ${c.detalle.has(k) ? "sel" : ""}"><input type="checkbox" class="cr-det" data-k="${k}" ${c.detalle.has(k) ? "checked" : ""}> ${n}</label>`).join("")}</div>
-      <button class="primary" id="cr-send">Enviar ${c.sel.size} órdenes a auditoría</button></div>`;
+      <button class="primary" id="cr-send">${ico("send", 18)} Enviar ${c.sel.size} órdenes a auditoría</button></div>`;
 }
 async function crCargarInspectores() {
   const c = S.cr; c.inspList = null; c.insp = ""; c.rows = null;
@@ -477,7 +684,7 @@ function bindCritica() {
   if ($("cr-so")) $("cr-so").onchange = e => { c.soloOpen = e.target.checked; c.sel = new Set(); renderAdmin(); };
   $("cr-go").onclick = crVer;
   if (!c.rows) return;
-  const cnt = () => { $("cr-cnt").textContent = c.sel.size + " seleccionadas"; $("cr-send").textContent = "Enviar " + c.sel.size + " órdenes a auditoría"; };
+  const cnt = () => { $("cr-cnt").textContent = c.sel.size + " seleccionadas"; $("cr-send").innerHTML = ico("send", 18) + " Enviar " + c.sel.size + " órdenes a auditoría"; };
   document.querySelectorAll(".cr-ck").forEach(k => k.onchange = () => { k.checked ? c.sel.add(k.dataset.o) : c.sel.delete(k.dataset.o); cnt(); });
   $("cr-q").oninput = e => { c.q = e.target.value; c.nota = $("cr-nota").value; const p = e.target.selectionStart; $("cr-res").innerHTML = crResultado(); bindCritica(); $("cr-q").focus(); $("cr-q").setSelectionRange(p, p); };
   $("cr-all").onclick = () => { document.querySelectorAll(".cr-ck:not(:disabled)").forEach(k => { c.sel.add(k.dataset.o); k.checked = true; }); cnt(); };
@@ -505,13 +712,14 @@ async function crEnviar() {
   try {
     const j = await api({ action: "cargar", rows, reemplazar: false });
     await refreshAdmin(); c.sel = new Set(); c.nota = "";
+    toast(j.cargadas + " órdenes enviadas a auditoría", "ok"); vibra(18);
     c.msg = okMsg(`${j.cargadas} órdenes enviadas a auditoría${j.omitidas ? ", " + j.omitidas + " ya estaban cargadas" : ""}. Si el supervisor es nuevo, asígnale su clave en la pestaña Supervisores.`);
   } catch (e) { c.msg = errMsg(e.message); }
   renderAdmin();
 }
 
 /* --- Seguimiento: un botón por supervisor, pendientes / ejecutadas, resultados y Excel --- */
-const valHtml = v => /^https?:\/\//.test(String(v)) ? `<a href="${esc(v)}" target="_blank" rel="noopener">Abrir mapa</a>` : esc(v);
+const valHtml = v => /^https?:\/\//.test(String(v)) ? `<a class="lnk" href="${esc(v)}" target="_blank" rel="noopener">${ico("map", 14)} Abrir mapa</a>` : esc(v);
 function datosAud(a) { try { return JSON.parse(a["Datos"] || "{}"); } catch (e) { return {}; } }
 function fotosAud(a) { return String(a["Fotos"] || "").split("\n").filter(Boolean); }
 function detalleOrden(o) { try { return JSON.parse((o && o["Detalle"]) || "{}"); } catch (e) { return {}; } }
@@ -532,28 +740,28 @@ function adminSeg() {
   S.segSup = null;
   let P = 0, E = 0; names.forEach(n => { P += by[n].pend.length; E += by[n].ejec.length; });
   const hechas = S.ordenes.filter(o => o.Estado === "Auditada").length;
-  return `<div class="card"><b>${E} de ${P + E} auditadas</b>${segBar(E, P + E)}
-      ${segFiltroHtml(Object.values(by))}<div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="secondary grow" id="dl-all">⬇ Descargar todo (Excel)</button><button class="secondary grow" id="del-aud" ${hechas ? "" : "disabled"} style="color:var(--danger);border-color:var(--danger)">🗑 Eliminar diligenciadas (${hechas})</button></div>
-      <button class="secondary" id="vaciar" style="width:100%;margin-top:8px;color:var(--danger);border-color:var(--danger)">⚠ Borrar todo lo cargado (órdenes, auditorías y fotos)</button>
+  return `<div class="card"><div class="ct">${ico("clipboard", 20)}<b>${E} de ${P + E} auditadas</b><span class="opc">${P + E ? Math.round(100 * E / (P + E)) : 0}%</span></div>${segBar(E, P + E)}
+      ${segFiltroHtml(Object.values(by))}<div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="secondary grow" id="dl-all">${ico("download", 16)} Descargar todo (Excel)</button><button class="secondary grow" id="del-aud" ${hechas ? "" : "disabled"} style="color:var(--danger);border-color:var(--danger)">${ico("trash", 16)} Eliminar diligenciadas (${hechas})</button></div>
+      <button class="secondary" id="vaciar" style="width:100%;margin-top:8px;color:var(--danger);border-color:var(--danger)">${ico("alert", 16)} Borrar todo lo cargado (órdenes, auditorías y fotos)</button>
       <p class="muted" style="margin:8px 0 0">Toca un supervisor para ver sus órdenes pendientes y ejecutadas. Eliminar quita de la lista las órdenes ya diligenciadas; el historial de auditorías y las fotos se conservan. Descarga el Excel antes.</p></div>
     <div class="sup-grid">${names.map(n => { const d = by[n], t = d.pend.length + d.ejec.length;
-      return `<button class="card sup-btn" data-sup="${esc(n)}"><div class="row"><b class="grow">${esc(n)}</b><span class="muted">${d.ejec.length}/${t}</span></div>${segBar(d.ejec.length, t)}<div class="muted" style="margin-top:6px">${d.pend.length} pendientes · ${d.ejec.length} ejecutadas</div></button>`; }).join("") || '<p class="muted">Aún no hay órdenes cargadas.</p>'}</div>`;
+      return `<button class="card sup-btn" data-sup="${esc(n)}"><div class="row"><span class="avatar">${esc(iniciales(n))}</span><div class="grow"><b>${esc(n)}</b><div class="muted">${d.pend.length} pendientes · ${d.ejec.length} ejecutadas</div></div><span class="pct">${t ? Math.round(100 * d.ejec.length / t) : 0}%</span></div>${segBar(d.ejec.length, t)}</button>`; }).join("") || '<p class="muted">Aún no hay órdenes cargadas.</p>'}</div>`;
 }
 
 function segDetalle(nombre, d) {
   const ejec = S.segTab === "ejec", lista = (ejec ? d.ejec : d.pend).filter(x => enRango(ejec ? x["Fecha"] : x["Cargada el"]) && coincide(x, ejec));
   const sel = S.segOrden && lista.find(x => String(x["Orden"]) === S.segOrden);
   const destinos = supRegistrados().filter(n => n !== nombre);
-  const reasignarLista = `<div class="card" style="padding:10px"><b style="font-size:13px">Reasignar esta lista a otro supervisor</b>${destinos.length ? `<div class="row" style="margin-top:6px"><select id="sg-rl-to" class="grow">${destinos.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-rl-go" ${lista.length ? "" : "disabled"}>Reasignar (${lista.length})</button></div>` : '<p class="muted" style="margin:6px 0 0">No hay otro supervisor registrado. Créalo en la pestaña Supervisores.</p>'}</div>`;
-  return `<div class="row" style="margin-bottom:10px"><button class="secondary" id="sg-back">← Supervisores</button><b class="grow" style="text-align:right">${esc(nombre)}</b></div>
+  const reasignarLista = `<div class="card" style="padding:10px"><div class="ct">${ico("shuffle", 18)}<b style="font-size:13.5px">Reasignar esta lista a otro supervisor</b></div>${destinos.length ? `<div class="row" style="margin-top:6px"><select id="sg-rl-to" class="grow">${destinos.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-rl-go" ${lista.length ? "" : "disabled"}>Reasignar (${lista.length})</button></div>` : '<p class="muted" style="margin:6px 0 0">No hay otro supervisor registrado. Créalo en la pestaña Supervisores.</p>'}</div>`;
+  return `<div class="row" style="margin-bottom:10px"><button class="secondary" id="sg-back">${ico("back", 16)} Supervisores</button><b class="grow" style="text-align:right">${esc(nombre)}</b></div>
     <div class="chips"><button class="chip ${ejec ? "" : "on"}" data-st="pend">Pendientes (${d.pend.length})</button><button class="chip ${ejec ? "on" : ""}" data-st="ejec">Ejecutadas (${d.ejec.length})</button></div>
     <div class="card" style="padding:10px">${segFiltroHtml([d])}</div>
-    <button class="secondary" id="sg-xls" style="width:100%;margin-bottom:10px" ${lista.length ? "" : "disabled"}>⬇ Descargar ${ejec ? "ejecutadas" : "pendientes"} (Excel)</button>
-    <button class="secondary" id="sg-dellist" style="width:100%;margin-bottom:10px;color:var(--danger);border-color:var(--danger)" ${lista.length ? "" : "disabled"}>🗑 Eliminar toda esta lista (${lista.length})</button>
+    <button class="secondary" id="sg-xls" style="width:100%;margin-bottom:10px" ${lista.length ? "" : "disabled"}>${ico("download", 16)} Descargar ${ejec ? "ejecutadas" : "pendientes"} (Excel)</button>
+    <button class="secondary" id="sg-dellist" style="width:100%;margin-bottom:10px;color:var(--danger);border-color:var(--danger)" ${lista.length ? "" : "disabled"}>${ico("trash", 16)} Eliminar toda esta lista (${lista.length})</button>
     ${reasignarLista}
     ${sel ? segOrdenHtml(sel, ejec) : ""}
     ${lista.map(x => { const o = String(x["Orden"]), r = ejec ? datosAud(x) : null, dir = x["Dirección"] || (ejec ? (ordenPorId(o) || {})["Dirección"] : "");
-      return `<div class="card ord" data-o="${esc(o)}" style="${o === S.segOrden ? "border-color:var(--teal-dark)" : ""}"><div class="grow"><b>${esc(o)}</b><p>${esc(dir || "Sin dirección")}${ejec && x["Fecha"] ? " · " + new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p></div>${ejec ? `<span class="tag ${/^no conforme/i.test(r.resultado || "") ? "q" : "a"}">${esc(r.resultado || "Auditada")}</span>` : '<span class="tag p">Pendiente</span>'}</div>`; }).join("") || '<p class="muted">No hay órdenes en esta lista.</p>'}`;
+      return `<div class="card ord ${ejec ? (/^no conforme/i.test(r.resultado || "") ? "q" : "a") : "p"}" data-o="${esc(o)}" style="${o === S.segOrden ? "border-color:var(--teal-dark)" : ""}"><div class="grow"><b>${esc(o)}</b><p>${esc(dir || "Sin dirección")}${ejec && x["Fecha"] ? " · " + new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p></div>${ejec ? `<span class="tag ${/^no conforme/i.test(r.resultado || "") ? "q" : "a"}">${esc(r.resultado || "Auditada")}</span>` : '<span class="tag p">Pendiente</span>'}</div>`; }).join("") || '<p class="muted">No hay órdenes en esta lista.</p>'}`;
 }
 const ordenPorId = id => S.ordenes.find(o => String(o["Orden"]) === String(id));
 
@@ -572,8 +780,8 @@ function segOrdenHtml(x, ejec) {
       <p style="margin:6px 0"><b>Fotos:</b> ${fotos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">Foto ${i + 1}</a>`).join(" · ") || "sin fotos"}</p>`;
   }
   const dest = supRegistrados().filter(n => n !== S.segSup);
-  const reasignarOrden = dest.length ? `<div class="row" style="margin-top:10px"><select id="sg-ro-to" class="grow">${dest.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-ro-go">Reasignar orden</button></div>` : "";
-  return `<div class="card" style="border-color:var(--teal-dark)"><div class="row"><b class="grow" style="font-size:16px">Orden ${esc(x["Orden"])}</b><button class="secondary" id="sg-del" style="color:var(--danger);border-color:var(--danger)">Eliminar</button><button class="secondary" id="sg-cerrar">Cerrar</button></div>
+  const reasignarOrden = dest.length ? `<div class="row" style="margin-top:10px"><select id="sg-ro-to" class="grow">${dest.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-ro-go">${ico("shuffle", 16)} Reasignar</button></div>` : "";
+  return `<div class="card" style="border-color:var(--teal-dark)"><div class="row"><b class="grow" style="font-size:16px">Orden ${esc(x["Orden"])}</b><button class="secondary" id="sg-del" style="color:var(--danger);border-color:var(--danger)">${ico("trash", 16)} Eliminar</button><button class="secondary" id="sg-cerrar">Cerrar</button></div>
     ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${valHtml(v)}</p>`).join("")}${res}${reasignarOrden}</div>`;
 }
 
@@ -632,7 +840,7 @@ function segFiltroHtml(grupos) {
   const p = [].concat(...grupos.map(g => g.pend)).filter(o => enRango(o["Cargada el"]) && coincide(o, false)).length, e = [].concat(...grupos.map(g => g.ejec)).filter(a => enRango(a["Fecha"]) && coincide(a, true)).length;
   const activo = S.segDesde || S.segHasta || S.segQ.trim();
   return `<div style="margin-top:12px"><b style="font-size:13px">Filtros (lista y descarga)</b>
-    <label style="margin-top:6px">Buscar por orden, dirección, barrio, inspector, resultado…</label><input type="search" id="sg-fq" value="${esc(S.segQ)}" placeholder="Ej. 115681242 o La Campiña">
+    <label style="margin-top:6px">Buscar orden, dirección, barrio…</label><input type="search" id="sg-fq" value="${esc(S.segQ)}" placeholder="Ej. 115681242 o La Campiña">
     <div class="row"><div class="grow"><label style="margin-top:6px">Desde</label><input type="date" id="sg-fd" value="${S.segDesde}"></div><div class="grow"><label style="margin-top:6px">Hasta</label><input type="date" id="sg-fh" value="${S.segHasta}"></div></div>
     <p class="muted" style="margin:6px 0 0">${activo ? `Con estos filtros: ${p} pendientes y ${e} ejecutadas (fechas por carga y por auditoría).` : `Sin filtros: ${p} pendientes y ${e} ejecutadas.`} ${activo ? '<a href="#" id="sg-fx">Quitar filtros</a>' : ""}</p></div>`;
 }
@@ -661,65 +869,129 @@ function segHojas(grupos) {
   ];
 }
 
-// Hoja de análisis: resumen, por supervisor, hallazgos más frecuentes y cortes por inspector, municipio, barrio y causa de cierre
+// Hoja de análisis: indicadores, tablas (resumen, supervisor, hallazgos, inspector, municipio, barrio, causa de cierre) y gráficos
 function segAnalisis(E, pendientes) {
   const res = a => String(datosAud(a).resultado || "Sin resultado"), esNC = a => /^no conforme/i.test(res(a)), esOk = a => /^conforme/i.test(res(a)), esNo = a => /no se pudo/i.test(res(a));
-  const det = e => e._det, pct = n => ({ pct: n }), div = (n, t) => (t ? n / t : 0);
-  const aoa = [], fmt = [];
-  const bloque = (titulo, head, rows) => {
-    aoa.push([titulo.toUpperCase()]); aoa.push(head);
-    rows.forEach(r => { aoa.push(r.map((c, j) => { if (c && typeof c === "object") { fmt.push([aoa.length, j]); return c.pct; } return c; })); });
-    aoa.push([]);
-  };
+  const pct = n => ({ pct: n }), div = (n, t) => (t ? n / t : 0), bloques = [];
   const corte = (titulo, clave, top) => {
     const g = {};
     E.forEach(e => { const k = String(clave(e) || "").trim() || "(sin dato)"; const x = (g[k] = g[k] || { t: 0, ok: 0, nc: 0 }); x.t++; if (esOk(e.a)) x.ok++; if (esNC(e.a)) x.nc++; });
     const filas = Object.entries(g).sort((a, b) => b[1].nc - a[1].nc || b[1].t - a[1].t).slice(0, top || 999).map(([k, x]) => [k, x.t, x.ok, x.nc, pct(div(x.nc, x.t))]);
-    bloque(titulo, [titulo.replace(/^Por /, "").replace(/^./, c => c.toUpperCase()), "Auditadas", "Conformes", "No conformes", "% no conformidad"], filas);
+    bloques.push({ titulo, head: [titulo.replace(/^Por /, "").replace(/^./, c => c.toUpperCase()), "Auditadas", "Conformes", "No conformes", "% no conformidad"], rows: filas, datos: filas });
   };
-  const t = E.length, nc = E.filter(e => esNC(e.a)).length, ok = E.filter(e => esOk(e.a)).length;
-  bloque("Resumen", ["Indicador", "Valor"], [
-    ["Periodo", (S.segDesde || S.segHasta) ? (S.segDesde || "…") + " a " + (S.segHasta || "…") : "Todas las fechas"],
-    ["Órdenes auditadas", t], ["Pendientes por auditar", pendientes], ["Conformes", ok], ["No conformes", nc], ["No se pudo auditar", E.filter(e => esNo(e.a)).length],
+  const t = E.length, nc = E.filter(e => esNC(e.a)).length, ok = E.filter(e => esOk(e.a)).length, no = E.filter(e => esNo(e.a)).length;
+  const periodo = (S.segDesde || S.segHasta) ? (S.segDesde || "…") + " a " + (S.segHasta || "…") : "Todas las fechas";
+  bloques.push({ titulo: "Resumen", head: ["Indicador", "Valor"], rows: [
+    ["Periodo", periodo], ["Órdenes auditadas", t], ["Pendientes por auditar", pendientes], ["Conformes", ok], ["No conformes", nc], ["No se pudo auditar", no],
     ["% conformidad", pct(div(ok, t))], ["% no conformidad", pct(div(nc, t))],
-    ["Con fotos", E.filter(e => fotosAud(e.a).length).length], ["Con firma del usuario", E.filter(e => e.a["Firma"]).length], ["Con ubicación GPS", E.filter(e => e.a["Latitud"]).length]]);
+    ["Con fotos", E.filter(e => fotosAud(e.a).length).length], ["Con firma del usuario", E.filter(e => e.a["Firma"]).length], ["Con ubicación GPS", E.filter(e => e.a["Latitud"]).length]] });
   const sup = {};
   E.forEach(e => { const k = e.a["Supervisor"] || "(sin supervisor)", x = (sup[k] = sup[k] || { t: 0, ok: 0, nc: 0, no: 0 }); x.t++; if (esOk(e.a)) x.ok++; if (esNC(e.a)) x.nc++; if (esNo(e.a)) x.no++; });
-  bloque("Por supervisor", ["Supervisor", "Auditadas", "Conformes", "No conformes", "No se pudo auditar", "% no conformidad"], Object.entries(sup).sort((a, b) => b[1].t - a[1].t).map(([k, x]) => [k, x.t, x.ok, x.nc, x.no, pct(div(x.nc, x.t))]));
+  const supFilas = Object.entries(sup).sort((a, b) => b[1].t - a[1].t).map(([k, x]) => [k, x.t, x.ok, x.nc, x.no, pct(div(x.nc, x.t))]);
+  bloques.push({ titulo: "Por supervisor", head: ["Supervisor", "Auditadas", "Conformes", "No conformes", "No se pudo auditar", "% no conformidad"], rows: supFilas });
   const campoH = FORM_FIELDS.find(f => f.type === "check"), h = {};
   if (campoH) E.forEach(e => { [].concat(datosAud(e.a)[campoH.id] || []).forEach(v => { const x = (h[v] = h[v] || { n: 0, nc: 0 }); x.n++; if (esNC(e.a)) x.nc++; }); });
-  if (campoH) bloque("Hallazgos", ["Hallazgo", "Veces", "% de las auditorías", "En no conformes"], Object.entries(h).sort((a, b) => b[1].n - a[1].n).map(([k, x]) => [k, x.n, pct(div(x.n, t)), x.nc]));
+  const hFilas = Object.entries(h).sort((a, b) => b[1].n - a[1].n);
+  if (campoH) bloques.push({ titulo: "Hallazgos", head: ["Hallazgo", "Veces", "% de las auditorías", "En no conformes"], rows: hFilas.map(([k, x]) => [k, x.n, pct(div(x.n, t)), x.nc]) });
   corte("Por inspector", e => e.a["Inspector"] || e.o["Inspector"]);
-  corte("Por municipio", e => det(e)["Municipio"]);
-  corte("Por barrio", e => det(e)["Barrio"], 40);
-  corte("Por causa de cierre", e => det(e)["Causa de cierre"]);
-  return { name: "Análisis", aoa, fmt, cols: [38, 14, 14, 14, 18, 18] };
+  corte("Por municipio", e => e._det["Municipio"]);
+  corte("Por barrio", e => e._det["Barrio"], 40);
+  corte("Por causa de cierre", e => e._det["Causa de cierre"]);
+  const barrio = bloques.find(b => b.titulo === "Por barrio");
+  return {
+    name: "Análisis", bloques, periodo,
+    kpis: [["Órdenes auditadas", t], ["Pendientes", pendientes], ["Conformes", ok], ["No conformes", nc], ["No se pudo auditar", no], ["% no conformidad", pct(div(nc, t))]],
+    graficos: [
+      { tipo: "dona", titulo: "Resultado de las auditorías", items: [{ label: "Conformes", value: ok, color: "#1F9D66" }, { label: "No conformes", value: nc, color: "#E4572E" }, { label: "No se pudo auditar", value: no, color: "#F0A93A" }] },
+      { tipo: "barras", titulo: "Hallazgos más frecuentes", items: hFilas.slice(0, 8).map(([k, x]) => ({ label: k, value: x.n, color: "#0E6E8C" })) },
+      { tipo: "barras", titulo: "No conformes por supervisor", items: supFilas.filter(r => r[3] > 0).sort((a, b) => b[3] - a[3]).slice(0, 8).map(r => ({ label: r[0], value: r[3], color: "#E4572E" })) },
+      { tipo: "barras", titulo: "Barrios con más no conformes", items: barrio.datos.filter(r => r[3] > 0).slice(0, 8).map(r => ({ label: r[0], value: r[3], color: "#0B3D5C" })) }
+    ]
+  };
 }
 
-// Excel real (.xlsx) con SheetJS, cargado solo al descargar; si no carga, baja un CSV compatible con Excel
-let xlsxP = null;
-const loadXlsx = () => window.XLSX ? Promise.resolve() : (xlsxP = xlsxP || new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"; s.onload = res; s.onerror = () => rej(new Error("no cargó")); document.head.appendChild(s); }));
+// Gráfico dibujado en un canvas y devuelto como imagen PNG (Excel no genera gráficos desde el navegador, así que van como imagen)
+function graficoPng(g) {
+  const W = 460, H = 270, k = 2, c = document.createElement("canvas"), items = g.items.filter(i => i.value > 0);
+  c.width = W * k; c.height = H * k;
+  const x = c.getContext("2d"); x.scale(k, k);
+  x.fillStyle = "#fff"; x.fillRect(0, 0, W, H); x.strokeStyle = "#DCE4E8"; x.strokeRect(0.5, 0.5, W - 1, H - 1);
+  x.fillStyle = "#0B3D5C"; x.font = "bold 15px Arial"; x.fillText(g.titulo, 14, 26);
+  if (!items.length) { x.fillStyle = "#5C7182"; x.font = "13px Arial"; x.fillText("Sin datos para mostrar", 14, 64); return c.toDataURL("image/png"); }
+  const recorta = (s, n) => (String(s).length > n ? String(s).slice(0, n - 1) + "…" : String(s));
+  if (g.tipo === "dona") {
+    const total = items.reduce((a, i) => a + i.value, 0), cx = 115, cy = 155, R = 82, r = 50;
+    let a0 = -Math.PI / 2;
+    items.forEach(i => { const a1 = a0 + (i.value / total) * 2 * Math.PI; x.beginPath(); x.arc(cx, cy, R, a0, a1); x.arc(cx, cy, r, a1, a0, true); x.closePath(); x.fillStyle = i.color; x.fill(); a0 = a1; });
+    x.fillStyle = "#142B3C"; x.textAlign = "center"; x.font = "bold 20px Arial"; x.fillText(String(total), cx, cy + 5); x.font = "11px Arial"; x.fillText("auditadas", cx, cy + 21); x.textAlign = "left";
+    items.forEach((i, n) => { const y = 95 + n * 42; x.fillStyle = i.color; x.fillRect(235, y - 12, 14, 14); x.fillStyle = "#142B3C"; x.font = "13px Arial"; x.fillText(i.label, 258, y); x.font = "bold 13px Arial"; x.fillText(i.value + " (" + Math.round((100 * i.value) / total) + "%)", 258, y + 17); });
+  } else {
+    const n = items.length, top = 44, rowH = Math.min(28, (H - top - 12) / n), left = 160, maxV = Math.max(...items.map(i => i.value)), barMax = W - left - 56;
+    items.forEach((i, j) => { const y = top + j * rowH; x.fillStyle = "#142B3C"; x.font = "12px Arial"; x.fillText(recorta(i.label, 24), 14, y + rowH * 0.62); x.fillStyle = i.color; const w = Math.max(3, (i.value / maxV) * barMax); x.fillRect(left, y + 3, w, rowH - 9); x.fillStyle = "#142B3C"; x.font = "bold 12px Arial"; x.fillText(String(i.value), left + w + 6, y + rowH * 0.62); });
+  }
+  return c.toDataURL("image/png");
+}
+
+// Excel real (.xlsx) con ExcelJS (tablas con filtro, estilos y gráficos), cargado solo al descargar; si no carga, baja un CSV compatible con Excel
+let exP = null;
+const loadExcelJS = () => window.ExcelJS ? Promise.resolve() : (exP = exP || new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"; s.onload = res; s.onerror = () => rej(new Error("no cargó")); document.head.appendChild(s); }));
 function bajar(nombre, blob) { const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); }
+const NAVY = "FF0B3D5C", TEAL = "FF0E6E8C", CLARO = "FFE4F1F6";
+const textoLink = h => (/^Foto/.test(h) ? h : /Firma/.test(h) ? "Ver firma" : "Abrir mapa");
+const esLink = v => typeof v === "string" && /^https?:\/\//.test(v);
+const unicos = head => { const vistos = {}; return head.map(h => { const n = (vistos[h] = (vistos[h] || 0) + 1); return n > 1 ? h + " (" + n + ")" : h; }); };
+
+// Hoja de datos como tabla de Excel: encabezado fijo, filtros, filas alternadas y enlaces clicables
+function hojaTabla(wb, h, n) {
+  const ws = wb.addWorksheet(h.name, { views: [{ state: "frozen", ySplit: 1 }] }), cols = unicos(h.head);
+  const filas = h.rows.length ? h.rows : [h.head.map(() => "")];
+  ws.addTable({ name: "T" + n + "_" + h.name.replace(/\W/g, ""), ref: "A1", headerRow: true, totalsRow: false, style: { theme: "TableStyleMedium2", showRowStripes: true },
+    columns: cols.map(c => ({ name: c, filterButton: true })), rows: filas.map(r => r.map(v => (v == null ? "" : v))) });
+  cols.forEach((c, j) => { const largo = Math.max(c.length + 3, ...filas.slice(0, 60).map(r => (esLink(r[j]) ? 12 : String(r[j] == null ? "" : r[j]).length))); ws.getColumn(j + 1).width = Math.max(12, Math.min(45, largo + 2)); });
+  filas.forEach((r, i) => r.forEach((v, j) => { if (esLink(v)) { const c = ws.getCell(i + 2, j + 1); c.value = { text: textoLink(h.head[j]), hyperlink: v }; c.font = { color: { argb: TEAL }, underline: true }; } }));
+}
+
+// Hoja de análisis: título, indicadores, tablas a la izquierda y gráficos a la derecha
+function hojaAnalisis(wb, h) {
+  const ws = wb.addWorksheet("Análisis", { views: [{ showGridLines: false }] });
+  [38, 14, 14, 16, 18, 18, 3].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+  ws.mergeCells("A1:F1"); ws.getCell("A1").value = "Análisis de auditorías"; ws.getCell("A1").font = { size: 20, bold: true, color: { argb: NAVY } }; ws.getRow(1).height = 30;
+  ws.mergeCells("A2:F2"); ws.getCell("A2").value = "Periodo: " + h.periodo + " · Generado el " + new Date().toLocaleDateString("es-CO"); ws.getCell("A2").font = { size: 11, color: { argb: "FF5C7182" } };
+  h.kpis.forEach(([etiqueta, valor], j) => {
+    const l = ws.getCell(4, j + 1), v = ws.getCell(5, j + 1);
+    l.value = etiqueta; l.font = { bold: true, size: 10, color: { argb: "FFFFFFFF" } }; l.fill = { type: "pattern", pattern: "solid", fgColor: { argb: NAVY } }; l.alignment = { horizontal: "center", vertical: "middle" };
+    v.value = valor && typeof valor === "object" ? valor.pct : valor; if (valor && typeof valor === "object") v.numFmt = "0.0%";
+    v.font = { bold: true, size: 22, color: { argb: TEAL } }; v.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CLARO } }; v.alignment = { horizontal: "center", vertical: "middle" };
+  });
+  ws.getRow(4).height = 22; ws.getRow(5).height = 40;
+  let fila = 8;
+  h.bloques.forEach((b, k) => {
+    const t = ws.getCell(fila, 1); t.value = b.titulo; t.font = { bold: true, size: 13, color: { argb: NAVY } };
+    const rows = b.rows.length ? b.rows : [["(sin datos)"].concat(b.head.slice(1).map(() => ""))];
+    ws.addTable({ name: "A_" + (k + 1), ref: "A" + (fila + 1), headerRow: true, totalsRow: false, style: { theme: "TableStyleMedium2", showRowStripes: true },
+      columns: b.head.map(c => ({ name: c, filterButton: false })), rows: rows.map(r => r.map(v => (v && typeof v === "object" ? v.pct : v))) });
+    rows.forEach((r, i) => r.forEach((v, j) => { const c = ws.getCell(fila + 2 + i, j + 1); if (v && typeof v === "object") c.numFmt = "0.0%"; if (j > 0) c.alignment = { horizontal: "center" }; }));
+    b.head.forEach((_, j) => { if (j > 0) ws.getCell(fila + 1, j + 1).alignment = { horizontal: "center", wrapText: true }; });
+    fila += rows.length + 4;
+  });
+  h.graficos.forEach((g, i) => { const id = wb.addImage({ base64: graficoPng(g), extension: "png" }); ws.addImage(id, { tl: { col: 7, row: 3 + i * 15 }, ext: { width: 460, height: 270 } }); });
+}
+
 async function descargarExcel(nombre, hojas) {
-  const txt = v => (v == null ? "" : String(v));
   try {
-    await loadXlsx();
-    const wb = XLSX.utils.book_new();
-    hojas.forEach(h => {
-      const ws = XLSX.utils.aoa_to_sheet(h.aoa || [h.head].concat(h.rows.map(r => r.map(txt))));
-      if (h.aoa) { ws["!cols"] = h.cols.map(w => ({ wch: w })); (h.fmt || []).forEach(([r, c]) => { const a = ws[XLSX.utils.encode_cell({ r, c })]; if (a) a.z = "0.0%"; }); }
-      else {
-        ws["!cols"] = h.head.map(x => ({ wch: Math.max(12, Math.min(40, x.length + 4)) }));
-        if (h.filtro) ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: Math.max(1, h.rows.length), c: h.head.length - 1 } }) };
-        // enlaces clicables: fotos, firma, mapa
-        Object.keys(ws).forEach(k => { if (k[0] !== "!" && ws[k].t === "s" && /^https?:\/\//.test(ws[k].v)) ws[k].l = { Target: ws[k].v }; });
-      }
-      XLSX.utils.book_append_sheet(wb, ws, h.name.slice(0, 31));
-    });
-    XLSX.writeFile(wb, nombre + ".xlsx");
+    await loadExcelJS();
+    const wb = new ExcelJS.Workbook(); wb.creator = "Auditoría AAA";
+    let n = 0;
+    hojas.forEach(h => (h.bloques ? hojaAnalisis(wb, h) : hojaTabla(wb, h, ++n)));
+    const buf = await wb.xlsx.writeBuffer();
+    bajar(nombre + ".xlsx", new Blob([buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
   } catch (e) {
-    const cell = v => '"' + txt(v).replace(/"/g, '""') + '"';
-    hojas.forEach(h => bajar(nombre + (hojas.length > 1 ? "_" + h.name : "") + ".csv", new Blob(["\ufeff" + (h.aoa || [h.head].concat(h.rows)).map(r => r.map(cell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" })));
+    const val = v => (v && typeof v === "object" ? (100 * v.pct).toFixed(1) + "%" : v == null ? "" : v);
+    const cell = v => '"' + String(val(v)).replace(/"/g, '""') + '"';
+    hojas.forEach(h => {
+      const filas = h.bloques ? [].concat(...h.bloques.map(b => [[b.titulo.toUpperCase()], b.head].concat(b.rows, [[]]))) : [h.head].concat(h.rows);
+      bajar(nombre + (hojas.length > 1 ? "_" + h.name : "") + ".csv", new Blob(["﻿" + filas.map(r => r.map(cell).join(";")).join("\r\n")], { type: "text/csv;charset=utf-8" }));
+    });
   }
 }
 async function eliminarAuditadas() {
@@ -730,14 +1002,24 @@ async function eliminarAuditadas() {
   catch (e) { renderAdmin(errMsg(e.message)); }
 }
 
+/* --- Análisis: información de valor (indicadores, gráficos y tablas) con los mismos filtros de Seguimiento --- */
+function adminAnalisis() {
+  const grupos = Object.values(segDatos()), A = segHojas(grupos)[2];
+  const val = v => (v && typeof v === "object" ? (100 * v.pct).toFixed(1) + "%" : esc(v == null ? "" : v));
+  return `<div class="card">${segFiltroHtml(grupos)}<button class="secondary" id="an-xls" style="width:100%;margin-top:10px">${ico("download", 16)} Descargar análisis (Excel con tablas y gráficos)</button></div>
+    <div class="kpis">${A.kpis.map(([n, v], i) => `<div class="kpi k${i}"><i>${ico(["clipboard", "clock", "check", "x", "alert", "bar"][i] || "bar", 18)}</i><span>${esc(n)}</span><b>${val(v)}</b></div>`).join("")}</div>
+    <div class="grafs">${A.graficos.map(g => `<img class="graf" alt="${esc(g.titulo)}" src="${graficoPng(g)}">`).join("")}</div>
+    ${A.bloques.filter(b => b.rows.length).map(b => `<div class="card"><b>${esc(b.titulo)}</b><div style="overflow-x:auto;margin-top:6px"><table><tr>${b.head.map(h => `<th>${esc(h)}</th>`).join("")}</tr>${b.rows.map(r => `<tr>${r.map(c => `<td>${val(c)}</td>`).join("")}</tr>`).join("")}</table></div></div>`).join("")}`;
+}
+
 /* --- Supervisores y claves --- */
 const genClave = () => { const c = "abcdefghjkmnpqrstuvwxyz23456789"; let s = ""; for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
 function adminSup() {
   return `<div class="card"><p class="muted" style="margin-top:0">Cada supervisor entra con su propia clave y solo ve sus órdenes. Este es el único lugar donde se crean supervisores: las órdenes solo se pueden cargar o reasignar a supervisores registrados aquí. Los marcados "No registrado" tienen órdenes viejas con un nombre que no existe; ponles clave para registrarlos o reasigna sus órdenes desde Seguimiento.</p>
     ${S.supervisores.map((s, i) => `<div class="card" style="background:var(--bg)"><div class="row"><b class="grow">${esc(s.Supervisor)}</b>${s.Clave ? "" : '<span class="tag q">No registrado</span>'}</div>
-      <div class="row" style="margin-top:8px"><input data-k="${i}" value="${esc(s.Clave)}" placeholder="Clave (mín. 4)" class="grow"><button class="secondary" data-g="${i}" title="Generar">🎲</button><button class="secondary" data-s="${i}">Guardar</button></div>
+      <div class="row" style="margin-top:8px"><input data-k="${i}" value="${esc(s.Clave)}" placeholder="Clave (mín. 4)" class="grow"><button class="secondary" data-g="${i}" title="Generar clave">${ico("shuffle", 18)}</button><button class="secondary" data-s="${i}">Guardar</button></div>
       ${s.Clave ? `<button class="secondary" data-d="${i}" style="margin-top:8px;color:var(--danger);border-color:var(--danger)">Quitar acceso</button>` : ""}</div>`).join("") || '<p class="muted">Aún no hay supervisores. Carga órdenes o agrega uno abajo.</p>'}</div>
-    <div class="card"><b>Agregar supervisor</b><label>Nombre</label><input id="ns-n"><label>Clave</label><div class="row"><input id="ns-k" class="grow"><button class="secondary" id="ns-g">🎲</button></div><button class="primary" id="ns-go">Agregar</button></div>`;
+    <div class="card"><div class="ct">${ico("plus", 20)}<b>Agregar supervisor</b></div><label>Nombre</label><input id="ns-n"><label>Clave</label><div class="row"><input id="ns-k" class="grow"><button class="secondary" id="ns-g" title="Generar clave">${ico("shuffle", 18)}</button></div><button class="primary" id="ns-go">${ico("plus", 18)} Agregar supervisor</button></div>`;
 }
 function bindSup() {
   const guardar = async (nombre, clave) => { try { await api({ action: "guardarSupervisor", nombre, clave }); await refreshAdmin(); renderAdmin(okMsg("Clave guardada para " + esc(nombre) + ".")); } catch (e) { renderAdmin(errMsg(e.message)); } };
