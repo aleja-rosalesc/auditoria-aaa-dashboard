@@ -14,6 +14,7 @@
 var ORDEN_COLS = ['Orden', 'Supervisor', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Observación', 'Estado', 'Cargada el', 'Detalle'];
 var AUD_COLS = ['ID', 'Orden', 'Supervisor', 'Fecha', 'Datos', 'Latitud', 'Longitud', 'Fotos', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Detalle', 'Firma', 'Editada el', 'EdicionID'];
 var SUP_COLS = ['Supervisor', 'Clave'];
+var DISP_COLS = ['Token', 'Rol', 'Supervisor', 'Actualizado'];
 
 function doGet() { return out_({ ok: true, msg: 'API Auditoría AAA activa' }); }
 
@@ -31,6 +32,7 @@ function doPost(e) {
       return out_(r);
     }
     if (a === 'guardar') return out_(guardar_(req, who));
+    if (a === 'registrarPush') return out_(registrarPush_(req, who));
     if (!admin) return out_({ ok: false, error: 'Solo administrador' });
     if (a === 'cargar') return out_(cargar_(req));
     if (a === 'eliminarAuditadas') return out_(eliminarAuditadas_());
@@ -145,6 +147,7 @@ function cargar_(req) {
       sh.getRange(sh.getLastRow() + 1, 1, nuevas.length, 1).setNumberFormat('@'); // Orden como texto (evita notación científica)
       rng.setValues(nuevas);
     }
+    avisarSupervisores_(nuevas.map(function (n) { return n[1]; }), 'Nuevas órdenes para auditar', function (c) { return 'Tienes ' + c + (c === 1 ? ' orden nueva' : ' órdenes nuevas'); });
     return { ok: true, cargadas: nuevas.length, omitidas: omitidas };
   } finally { lock.releaseLock(); }
 }
@@ -198,10 +201,12 @@ function guardar_(req, who) {
       if (firmaUrl) aud.getRange(fila, col('Firma')).setValue(firmaUrl);
       aud.getRange(fila, col('Editada el')).setValue(new Date());
       aud.getRange(fila, col('EdicionID')).setValue(req.id);
+      avisarAdmin_('Auditoría editada', sup + ' · Orden ' + req.orden + ' · ' + ((req.datos && req.datos.resultado) || 'Auditoría'));
       return { ok: true, editada: true, fotos: urls.length };
     }
     escribirAud_(aud, [req.id, String(req.orden), sup, new Date(), JSON.stringify(req.datos || {}), req.lat || '', req.lng || '', urls.join('\n'), o ? o['Dirección'] : '', o ? o['Tipo de trabajo'] : '', o ? o['Inspector'] : '', o ? o['Detalle'] : '', firmaUrl, '', '']);
     marcarAuditada_(req.orden);
+    avisarAdmin_('Nueva auditoría', sup + ' · Orden ' + req.orden + ' · ' + ((req.datos && req.datos.resultado) || 'Auditoría'));
     return { ok: true, fotos: urls.length };
   } finally { lock.releaseLock(); }
 }
@@ -301,6 +306,90 @@ function reasignar_(req) {
   try {
     var a = cambiarSup_(sheet_('ORDENES', ORDEN_COLS), ORDEN_COLS, set, destino);
     var b = cambiarSup_(sheet_('AUDITORIAS', AUD_COLS), AUD_COLS, set, destino);
+    if (a) avisarSupervisores_(Array.apply(null, Array(a)).map(function () { return destino; }), 'Órdenes reasignadas', function (c) { return 'Te reasignaron ' + c + (c === 1 ? ' orden' : ' órdenes'); });
     return { ok: true, ordenes: a, auditorias: b, supervisor: destino };
   } finally { lock.releaseLock(); }
+}
+
+/* ================= Notificaciones push (Firebase Cloud Messaging) =================
+ * Configuración (una sola vez):
+ *  1. Firebase → Configuración del proyecto → Cuentas de servicio → "Generar nueva clave privada" (descarga un .json).
+ *  2. Apps Script → Configuración del proyecto → Propiedades de la secuencia de comandos → agrega
+ *       FCM_SERVICE_ACCOUNT = el contenido completo de ese .json   (es secreto: no lo compartas ni lo subas a GitHub)
+ *  3. Ejecuta una vez la función autorizarPush desde el editor y acepta los permisos.
+ *  4. Implementar → Administrar implementaciones → lápiz → Versión nueva → Implementar.
+ */
+function autorizarPush() {
+  var sa = JSON.parse(PropertiesService.getScriptProperties().getProperty('FCM_SERVICE_ACCOUNT') || 'null');
+  if (!sa) throw new Error('Falta la propiedad FCM_SERVICE_ACCOUNT');
+  CacheService.getScriptCache().remove('fcm_at');
+  fcmToken_();
+  Logger.log('Listo: Firebase responde para el proyecto ' + sa.project_id);
+}
+
+// Token de acceso de la cuenta de servicio (JWT firmado con RS256), guardado en caché ~55 min
+function fcmToken_() {
+  var cache = CacheService.getScriptCache(), guardado = cache.get('fcm_at');
+  if (guardado) return guardado;
+  var sa = JSON.parse(PropertiesService.getScriptProperties().getProperty('FCM_SERVICE_ACCOUNT') || 'null');
+  if (!sa) return null;
+  var ahora = Math.floor(Date.now() / 1000);
+  var b64 = function (o) { return Utilities.base64EncodeWebSafe(typeof o === 'string' ? o : JSON.stringify(o)).replace(/=+$/, ''); };
+  var cabecera = b64({ alg: 'RS256', typ: 'JWT' });
+  var reclamo = b64({ iss: sa.client_email, scope: 'https://www.googleapis.com/auth/firebase.messaging', aud: 'https://oauth2.googleapis.com/token', iat: ahora, exp: ahora + 3600 });
+  var firma = Utilities.base64EncodeWebSafe(Utilities.computeRsaSha256Signature(cabecera + '.' + reclamo, sa.private_key)).replace(/=+$/, '');
+  var r = UrlFetchApp.fetch('https://oauth2.googleapis.com/token', { method: 'post', muteHttpExceptions: true, payload: { grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: cabecera + '.' + reclamo + '.' + firma } });
+  var j = JSON.parse(r.getContentText());
+  if (!j.access_token) throw new Error('Firebase no entregó el token: ' + r.getContentText());
+  cache.put('fcm_at', j.access_token, 3300);
+  return j.access_token;
+}
+
+// Envía el mismo aviso a una lista de tokens; borra los que Firebase reporta como inexistentes. Nunca lanza error.
+function enviarPush_(tokens, titulo, cuerpo) {
+  try {
+    if (!tokens || !tokens.length) return 0;
+    var at = fcmToken_(); if (!at) return 0;
+    var sa = JSON.parse(PropertiesService.getScriptProperties().getProperty('FCM_SERVICE_ACCOUNT'));
+    var url = 'https://fcm.googleapis.com/v1/projects/' + sa.project_id + '/messages:send';
+    var reqs = tokens.map(function (tk) {
+      return { url: url, method: 'post', contentType: 'application/json', muteHttpExceptions: true, headers: { Authorization: 'Bearer ' + at },
+        payload: JSON.stringify({ message: { token: tk, data: { titulo: String(titulo), cuerpo: String(cuerpo), tag: 'aud' }, webpush: { headers: { Urgency: 'high', TTL: '86400' } } } }) };
+    });
+    var resp = UrlFetchApp.fetchAll(reqs), muertos = {}, ok = 0;
+    resp.forEach(function (r, i) {
+      if (r.getResponseCode() === 200) ok++;
+      else if (r.getResponseCode() === 404 || /UNREGISTERED|INVALID_ARGUMENT/.test(r.getContentText())) muertos[tokens[i]] = 1;
+    });
+    if (Object.keys(muertos).length) borrarFilas_(sheet_('DISPOSITIVOS', DISP_COLS), DISP_COLS, 'Token', muertos);
+    return ok;
+  } catch (e) { return 0; }
+}
+
+function tokensDe_(rol, supervisor) {
+  var n = norm_(supervisor);
+  return rows_(sheet_('DISPOSITIVOS', DISP_COLS), DISP_COLS).filter(function (r) {
+    return r['Rol'] === rol && (rol === 'admin' || norm_(r['Supervisor']) === n);
+  }).map(function (r) { return String(r['Token']); });
+}
+function avisarAdmin_(titulo, cuerpo) { enviarPush_(tokensDe_('admin'), titulo, cuerpo); }
+// nombres: un nombre por cada orden; mensaje(c) arma el texto con la cantidad de órdenes de ese supervisor
+function avisarSupervisores_(nombres, titulo, mensaje) {
+  var cuenta = {}; nombres.forEach(function (n) { cuenta[n] = (cuenta[n] || 0) + 1; });
+  Object.keys(cuenta).forEach(function (n) { enviarPush_(tokensDe_('supervisor', n), titulo, mensaje(cuenta[n])); });
+}
+
+// El teléfono entrega su token de Firebase; se asocia al rol y supervisor de la clave con la que entró
+function registrarPush_(req, who) {
+  var token = String(req.token || '').trim();
+  if (!token) return { ok: false, error: 'Falta el token' };
+  var lock = LockService.getScriptLock(); lock.waitLock(30000);
+  try {
+    var sh = sheet_('DISPOSITIVOS', DISP_COLS), existente = rows_(sh, DISP_COLS).filter(function (r) { return String(r['Token']) === token; });
+    var fila = [token, who.role, who.supervisor || '', new Date()];
+    if (existente.length) sh.getRange(existente[0]._row, 1, 1, 4).setValues([fila]);
+    else sh.appendRow(fila);
+  } finally { lock.releaseLock(); }
+  var enviados = enviarPush_([token], 'Notificaciones activadas', who.role === 'admin' ? 'Te avisaremos cuando lleguen auditorías.' : 'Te avisaremos cuando tengas órdenes nuevas.');
+  return { ok: true, prueba: enviados > 0 };
 }
