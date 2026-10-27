@@ -214,6 +214,8 @@
   button.danger{ background:linear-gradient(135deg,#C9431B,var(--danger)); color:#fff; border:0; font-weight:800; box-shadow:0 10px 24px rgba(228,87,46,.35); }
   .invalid{ border-color:var(--danger) !important; animation:shake .4s; }
   @media (min-width:600px){ .modal{ align-items:center; } .sheet{ border-radius:24px; padding-bottom:20px; } }
+  .tag.n{ background:#E4F1F6; color:var(--teal-dark); } .kv .full{ grid-column:1/-1; } .kv .cps{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+  .reslink{ display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; padding-top:14px; border-top:1px dashed var(--border); font-size:13.5px; }
   .lnk{ display:inline-flex; align-items:center; gap:5px; } .opt{ position:relative; }
 </style>
 </head>
@@ -456,21 +458,28 @@ function renderLista(anim) {
 }
 
 /* ---------- Supervisor: formulario de auditoría ---------- */
-function renderForm(orden) {
+const audDe = id => S.auditorias.filter(a => String(a["Orden"]) === String(id)).pop();
+async function renderForm(orden, editar) {
   const o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
-  const hecha = S.auditorias.find(a => String(a["Orden"]) === String(orden));
-  S.fotos = []; S.pos = null;
+  const hecha = audDe(orden);
+  const cola = (await qAll().catch(() => [])).find(p => String(p.orden) === String(orden));
+  // Lo ya diligenciado: lo que está en cola (aún sin enviar) o la auditoría guardada en el servidor
+  const previo = cola ? { datos: cola.datos || {}, cola: true, id: cola.id, nFotos: (cola.fotos || []).length, firma: !!cola.firma, lat: cola.lat, lng: cola.lng }
+    : hecha ? { datos: datosAud(hecha), cola: false, nFotos: fotosAud(hecha).length, fotos: fotosAud(hecha), firma: hecha["Firma"], lat: hecha["Latitud"], lng: hecha["Longitud"], fecha: hecha["Fecha"], editada: hecha["Editada el"] } : null;
+  S.fotos = []; S.pos = null; S.edit = null; S.firmaPrev = "";
   chrome({ sub: "Orden " + orden, back: () => renderLista(true) }); enter();
   let extra = {}; try { extra = JSON.parse(o["Detalle"] || "{}"); } catch (e) {}
   const info = [["Dirección", o["Dirección"]], ["Tipo de trabajo", o["Tipo de trabajo"]], ["Inspector", o["Inspector"]], ["Observación", o["Observación"]]].concat(Object.entries(extra)).filter(x => x[1]);
-  let prev = {}; if (hecha) try { prev = JSON.parse(hecha["Datos"] || "{}"); } catch (e) {}
+  const clase = o.Estado === "Auditada" ? "a" : o.Estado === "Por enviar" ? "q" : "p";
+  if (previo && !editar) return renderResumen(orden, o, info, previo, clase);
+  if (previo) { S.edit = { cola: previo.cola, id: previo.id, editar: cola ? !!cola.editar : true }; if (cola) { S.fotos = (cola.fotos || []).slice(); S.firmaPrev = cola.firma || ""; } if (previo.lat) S.pos = { lat: +previo.lat, lng: +previo.lng }; }
   const secciones = FORM_FIELDS.filter(f => !/^usuario_/.test(f.id)).map(f => `<div class="card sec">${fieldHtml(f)}</div>`).join("");
   const usuario = FORM_FIELDS.filter(f => /^usuario_/.test(f.id));
 
   $("app").innerHTML = `
-    <div class="card ordhead"><div class="row"><span class="oi big">${ico("clipboard", 24)}</span><div class="grow"><small>Orden</small><b>${esc(orden)}</b></div><span class="tag ${o.Estado === "Auditada" ? "a" : o.Estado === "Por enviar" ? "q" : "p"}">${esc(o.Estado)}</span></div>
+    <div class="card ordhead"><div class="row"><span class="oi big">${ico("clipboard", 24)}</span><div class="grow"><small>Orden</small><b>${esc(orden)}</b></div><span class="tag ${clase}">${esc(o.Estado)}</span></div>
       ${info.length ? `<div class="kv">${info.map(([k, v]) => `<div><span>${esc(k)}</span><b>${valHtml(v)}</b></div>`).join("")}</div>` : ""}</div>
-    ${hecha ? `<div class="alert ok">${ico("check", 18)}<span>Ya auditada${prev.resultado ? " · " + esc(prev.resultado) : ""}</span></div>` : ""}
+    ${previo ? `<div class="alert ok">${ico("pen", 18)}<span>Editando auditoría</span></div>` : ""}
     <form id="f" onsubmit="return false">
       ${secciones}
       <div class="card sec"><div class="ct">${ico("user", 20)}<b>Usuario que atiende</b><span class="opc">Opcional</span></div>
@@ -484,9 +493,9 @@ function renderForm(orden) {
         <input id="ph-in-gal" type="file" accept="image/*" multiple class="hidden">
         <div class="photos" id="photos"></div></div>
       <div class="card sec"><div class="ct">${ico("pin", 20)}<b>Ubicación</b></div>
-        <div class="row"><button type="button" class="secondary" id="gps">${ico("pin", 16)} Registrar ubicación</button><span class="gps-st" id="gps-st">Sin registrar</span></div></div>
+        <div class="row"><button type="button" class="secondary" id="gps">${ico("pin", 16)} ${previo ? "Actualizar ubicación" : "Registrar ubicación"}</button><span class="gps-st" id="gps-st">Sin registrar</span></div></div>
       <div id="f-err"></div>
-      <div class="savebar"><button class="primary" id="save">${ico("check", 20)} Guardar auditoría</button></div>
+      <div class="savebar"><button class="primary" id="save">${ico("check", 20)} ${previo ? "Guardar cambios" : "Guardar auditoría"}</button></div>
     </form>`;
   document.querySelectorAll(".opt input").forEach(i => i.onchange = () => { vibra(8); document.querySelectorAll(".opt").forEach(l => l.classList.toggle("sel", l.querySelector("input").checked)); });
   $("ph-cam").onclick = () => $("ph-in-cam").click();
@@ -494,8 +503,45 @@ function renderForm(orden) {
   $("ph-in-cam").onchange = $("ph-in-gal").onchange = async e => { const fs = [...e.target.files]; e.target.value = ""; for (const f of fs) { if (S.fotos.length >= MAX_FOTOS) break; try { S.fotos.push(await compress(f)); } catch (x) {} } renderFotos(); };
   $("gps").onclick = getGps;
   initSig();
-  getGps();
   $("save").onclick = () => save(orden);
+  if (previo) {
+    rellenar(previo.datos); renderFotos();
+    if (previo.nFotos && !previo.cola) $("ph-n").textContent = previo.nFotos + " guardadas · 0/" + MAX_FOTOS;
+    if (S.pos) { $("gps-st").className = "gps-st ok"; $("gps-st").innerHTML = ico("check", 15) + " Guardada"; }
+  } else getGps();
+}
+// Vuelve a poner en el formulario lo que ya se había diligenciado
+function rellenar(datos) {
+  FORM_FIELDS.forEach(f => {
+    const v = datos[f.id]; if (v == null) return;
+    if (f.type === "radio" || f.type === "check") { const sel = [].concat(v); document.querySelectorAll(`input[name="${f.id}"]`).forEach(i => { i.checked = sel.indexOf(i.value) >= 0; }); }
+    else { const el = document.querySelector(`[name="${f.id}"]`); if (el) el.value = v; }
+  });
+  document.querySelectorAll(".opt").forEach(l => l.classList.toggle("sel", l.querySelector("input").checked));
+}
+// Auditoría ya diligenciada: se muestra lo digitado y desde los tres puntos se puede editar
+function renderResumen(orden, o, info, p, clase) {
+  const tono = tonoOpcion(String(p.datos.resultado || ""));
+  const campos = FORM_FIELDS.map(f => {
+    const v = p.datos[f.id];
+    if (f.id === "resultado" || v == null || v === "" || (Array.isArray(v) && !v.length)) return "";
+    const largo = Array.isArray(v) || String(v).length > 40;
+    const etiqueta = f.label.replace(/^Usuario que atiende:\s*/i, "Usuario: ");
+    return `<div class="${largo ? "full" : ""}"><span>${esc(etiqueta)}</span>${Array.isArray(v) ? `<div class="cps">${v.map(x => `<span class="tag n">${esc(x)}</span>`).join("")}</div>` : `<b>${esc(v)}</b>`}</div>`;
+  }).join("");
+  const fecha = p.editada ? "Editada " + new Date(p.editada).toLocaleDateString("es-CO") : p.fecha ? new Date(p.fecha).toLocaleDateString("es-CO") : "";
+  $("app").innerHTML = `
+    <div class="card ordhead"><div class="row"><span class="oi big">${ico("clipboard", 24)}</span><div class="grow"><small>Orden</small><b>${esc(orden)}</b></div><span class="tag ${clase}">${esc(o.Estado)}</span>${menu("dots", [{ act: "editar", icon: "pen", label: "Editar auditoría" }])}</div>
+      ${info.length ? `<div class="kv">${info.map(([k, v]) => `<div><span>${esc(k)}</span><b>${valHtml(v)}</b></div>`).join("")}</div>` : ""}</div>
+    <div class="card"><div class="ct">${ico("check", 20)}<b>Auditoría registrada</b>${fecha ? `<span class="opc">${esc(fecha)}</span>` : ""}</div>
+      ${p.datos.resultado ? `<span class="tag ${tono === "ok" ? "a" : tono === "no" ? "q" : "p"}" style="display:inline-block;margin:6px 0 4px;font-size:13px">${esc(p.datos.resultado)}</span>` : ""}
+      <div class="kv">${campos}</div>
+      <div class="reslink">
+        <span class="muted">${ico("camera", 14)} ${p.nFotos} ${p.nFotos === 1 ? "foto" : "fotos"}</span>
+        ${p.firma ? `<span class="muted">${ico("pen", 14)} Con firma</span>` : ""}
+        ${p.lat ? `<a class="lnk" href="https://www.google.com/maps?q=${esc(p.lat)},${esc(p.lng)}" target="_blank" rel="noopener">${ico("pin", 14)} Ubicación</a>` : ""}
+        ${(p.fotos || []).map((u, i) => `<a class="lnk" href="${esc(u)}" target="_blank" rel="noopener">${ico("image", 14)} Foto ${i + 1}</a>`).join("")}</div></div>`;
+  document.querySelector("[data-act=editar]").onclick = () => { vibra(8); renderForm(orden, true); };
 }
 const tonoOpcion = t => (/no conforme/i.test(t) ? "no" : /conforme/i.test(t) ? "ok" : /no se pudo/i.test(t) ? "na" : "");
 function fieldHtml(f) {
@@ -552,15 +598,17 @@ async function save(orden) {
   });
   if (S.fotos.length < MIN_FOTOS) errs.push("Adjunta al menos " + MIN_FOTOS + " foto(s)");
   if (errs.length) { $("f-err").innerHTML = `<div class="err">${ico("alert", 18)}<span>${errs.map(esc).join("<br>")}</span></div>`; $("f-err").scrollIntoView({ behavior: "smooth", block: "center" }); vibra(40); return; }
-  const payload = { id: "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7), orden: String(orden), supervisor: S.supervisor, datos, lat: S.pos && S.pos.lat, lng: S.pos && S.pos.lng, fotos: S.fotos, firma: S.firma ? $("sig").toDataURL("image/png").split(",")[1] : "" };
+  const ed = S.edit, nuevoId = "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  // editar una auditoría ya enviada la actualiza en el servidor; si aún está en cola, se reemplaza esa cola
+  const payload = { id: ed && ed.cola ? ed.id : nuevoId, editar: !!(ed && ed.editar), orden: String(orden), supervisor: S.supervisor, datos, lat: S.pos && S.pos.lat, lng: S.pos && S.pos.lng, fotos: S.fotos, firma: S.firma ? $("sig").toDataURL("image/png").split(",")[1] : (S.firmaPrev || "") };
   $("save").disabled = true; $("save").innerHTML = '<span class="spin sm"></span> Guardando…';
-  try { await qPut(payload); } catch (e) { $("f-err").innerHTML = `<div class="err">${ico("alert", 18)}<span>No se pudo guardar en el teléfono: ${esc(e.message)}</span></div>`; $("save").disabled = false; $("save").innerHTML = ico("check", 20) + " Guardar auditoría"; return; }
+  try { await qPut(payload); } catch (e) { $("f-err").innerHTML = `<div class="err">${ico("alert", 18)}<span>No se pudo guardar en el teléfono: ${esc(e.message)}</span></div>`; $("save").disabled = false; $("save").innerHTML = ico("check", 20) + (S.edit ? " Guardar cambios" : " Guardar auditoría"); return; }
   // La auditoría ya está a salvo en el teléfono; intenta enviarla
   const o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
   try { await api(Object.assign({ action: "guardar" }, payload)); await qDel(payload.id); o.Estado = "Auditada"; }
   catch (e) { o.Estado = "Por enviar"; }
   S.filtro = "Pendiente"; renderLista(true); updateBanner();
-  if (o.Estado === "Auditada") { toast("Auditoría guardada y enviada", "ok"); vibra(18); loadOrdenes(); } else { toast("Sin señal: se enviará automáticamente", "warn"); vibra([20, 40, 20]); }
+  if (o.Estado === "Auditada") { toast(ed ? "Auditoría actualizada" : "Auditoría guardada y enviada", "ok"); vibra(18); loadOrdenes(); } else { toast("Sin señal: se enviará automáticamente", "warn"); vibra([20, 40, 20]); }
 }
 
 /* ---------- Administrador ---------- */
@@ -815,7 +863,7 @@ function segOrdenHtml(x, ejec) {
   if (ejec) {
     const d = datosAud(x), fotos = fotosAud(x);
     res = `<hr style="border:0;border-top:1px solid var(--border);margin:10px 0"><b>Resultados de la auditoría</b>
-      <p class="muted" style="margin:4px 0">${esc(x["Supervisor"])} · ${x["Fecha"] ? new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p>
+      <p class="muted" style="margin:4px 0">${esc(x["Supervisor"])} · ${x["Fecha"] ? new Date(x["Fecha"]).toLocaleString("es-CO") : ""}${x["Editada el"] ? " · Editada " + new Date(x["Editada el"]).toLocaleString("es-CO") : ""}</p>
       ${FORM_FIELDS.map(f => { const v = [].concat(d[f.id] == null ? "" : d[f.id]).join(", "); return v ? `<p style="margin:6px 0"><b>${esc(f.label)}:</b> ${esc(v)}</p>` : ""; }).join("")}
       ${x["Latitud"] ? `<p style="margin:6px 0"><b>Ubicación:</b> <a class="lnk" href="https://www.google.com/maps?q=${esc(x["Latitud"])},${esc(x["Longitud"])}" target="_blank" rel="noopener">${ico("map", 14)} Ver en el mapa</a></p>` : ""}
       ${x["Firma"] ? `<p style="margin:6px 0"><b>Firma del usuario:</b> <a href="${esc(x["Firma"])}" target="_blank" rel="noopener">Ver firma</a></p>` : ""}

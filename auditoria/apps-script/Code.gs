@@ -12,7 +12,7 @@
  * Las pestañas ORDENES y AUDITORIAS se crean solas. Las fotos quedan en tu Drive (carpeta "Auditoria AAA Fotos"), privadas.
  */
 var ORDEN_COLS = ['Orden', 'Supervisor', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Observación', 'Estado', 'Cargada el', 'Detalle'];
-var AUD_COLS = ['ID', 'Orden', 'Supervisor', 'Fecha', 'Datos', 'Latitud', 'Longitud', 'Fotos', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Detalle', 'Firma'];
+var AUD_COLS = ['ID', 'Orden', 'Supervisor', 'Fecha', 'Datos', 'Latitud', 'Longitud', 'Fotos', 'Dirección', 'Tipo de trabajo', 'Inspector', 'Detalle', 'Firma', 'Editada el', 'EdicionID'];
 var SUP_COLS = ['Supervisor', 'Clave'];
 
 function doGet() { return out_({ ok: true, msg: 'API Auditoría AAA activa' }); }
@@ -163,16 +163,21 @@ function datosOrden_(orden) {
   return m.length ? m[0] : null;
 }
 
-// req: {id, orden, datos:{...}, lat, lng, fotos:[{name,data(base64 jpeg)}], firma(base64 png, opcional)}. El supervisor sale de la clave, no del cliente.
+// req: {id, orden, datos:{...}, lat, lng, fotos:[{name,data(base64 jpeg)}], firma(base64 png, opcional), editar(true para corregir la auditoría existente)}. El supervisor sale de la clave, no del cliente.
 function guardar_(req, who) {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     var o = datosOrden_(req.orden);
     var sup = who.role === 'supervisor' ? who.supervisor : (o ? String(o['Supervisor']).trim() : '');
     if (who.role === 'supervisor' && (!o || String(o['Supervisor']).trim() !== sup)) return { ok: false, error: 'La orden no está asignada a este supervisor' };
-    var aud = sheet_('AUDITORIAS', AUD_COLS);
-    var ya = rows_(aud, AUD_COLS).filter(function (r) { return r['ID'] === req.id; });
-    if (ya.length) return { ok: true, duplicado: true };   // reintento de un envío ya recibido
+    var aud = sheet_('AUDITORIAS', AUD_COLS), previa = null, filas = rows_(aud, AUD_COLS);
+    if (req.editar) {
+      var propias = filas.filter(function (r) { return String(r['Orden']) === String(req.orden); });
+      if (!propias.length) return { ok: false, error: 'No hay una auditoría para editar' };
+      previa = propias[propias.length - 1];
+      if (who.role === 'supervisor' && String(previa['Supervisor']).trim() !== sup) return { ok: false, error: 'La auditoría no es de este supervisor' };
+      if (String(previa['EdicionID']) === String(req.id)) return { ok: true, duplicado: true };   // reintento de una edición ya recibida
+    } else if (filas.some(function (r) { return r['ID'] === req.id; })) return { ok: true, duplicado: true };   // reintento de un envío ya recibido
     var urls = [], firmaUrl = '';
     if ((req.fotos && req.fotos.length) || req.firma) {
       var root = folder_(), it = root.getFoldersByName(String(req.orden));
@@ -185,7 +190,17 @@ function guardar_(req, who) {
         urls.push(sub.createFile(blob).getUrl());
       });
     }
-    escribirAud_(aud, [req.id, String(req.orden), sup, new Date(), JSON.stringify(req.datos || {}), req.lat || '', req.lng || '', urls.join('\n'), o ? o['Dirección'] : '', o ? o['Tipo de trabajo'] : '', o ? o['Inspector'] : '', o ? o['Detalle'] : '', firmaUrl]);
+    if (previa) {
+      var col = function (n) { return AUD_COLS.indexOf(n) + 1; }, fila = previa._row;
+      aud.getRange(fila, col('Datos')).setValue(JSON.stringify(req.datos || {}));
+      if (req.lat) { aud.getRange(fila, col('Latitud')).setValue(req.lat); aud.getRange(fila, col('Longitud')).setValue(req.lng); }
+      if (urls.length) aud.getRange(fila, col('Fotos')).setValue((previa['Fotos'] ? previa['Fotos'] + '\n' : '') + urls.join('\n'));
+      if (firmaUrl) aud.getRange(fila, col('Firma')).setValue(firmaUrl);
+      aud.getRange(fila, col('Editada el')).setValue(new Date());
+      aud.getRange(fila, col('EdicionID')).setValue(req.id);
+      return { ok: true, editada: true, fotos: urls.length };
+    }
+    escribirAud_(aud, [req.id, String(req.orden), sup, new Date(), JSON.stringify(req.datos || {}), req.lat || '', req.lng || '', urls.join('\n'), o ? o['Dirección'] : '', o ? o['Tipo de trabajo'] : '', o ? o['Inspector'] : '', o ? o['Detalle'] : '', firmaUrl, '', '']);
     marcarAuditada_(req.orden);
     return { ok: true, fotos: urls.length };
   } finally { lock.releaseLock(); }
