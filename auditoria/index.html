@@ -194,6 +194,26 @@
   #app.enter > *:nth-child(n+6), #app.enter #adm > *:nth-child(n+6), #app.enter #list > *:nth-child(n+6), #app.enter .sup-grid > *:nth-child(n+6){ animation-delay:.25s; }
   @media (prefers-reduced-motion:reduce){ *,*::before,*::after{ animation-duration:.01ms !important; animation-delay:0s !important; transition-duration:.01ms !important; } }
   @media (max-width:430px){ .chip{ padding:9px 6px; font-size:12px; } .hello .st{ gap:16px; } }
+  .mnu{ position:relative; flex:none; }
+  .mbtn{ width:42px; height:42px; padding:0; border-radius:13px; border:1.5px solid rgba(14,110,140,.25); background:#fff; color:var(--text-2); box-shadow:0 1px 2px rgba(11,61,92,.06); }
+  .mbtn:hover,.mbtn.open{ background:#F2F8FB; color:var(--teal-dark); border-color:var(--teal-dark); }
+  .mbtn.bin:hover,.mbtn.bin.open{ background:#FFF5F2; color:var(--danger); border-color:rgba(228,87,46,.5); }
+  .bin .lid{ transform-origin:6px 6px; transition:transform .28s var(--ease); }
+  .bin:hover .lid,.bin.open .lid{ transform:rotate(-24deg) translate(-1px,-2px); }
+  .mlist{ position:absolute; right:0; top:48px; z-index:40; min-width:230px; background:#fff; border:1px solid rgba(220,228,232,.9); border-radius:16px; box-shadow:var(--sh2); padding:6px; transform-origin:top right; animation:menuIn .22s var(--ease); }
+  .mlist button{ width:100%; justify-content:flex-start; background:none; border:0; padding:12px 12px; border-radius:11px; font-size:14px; font-weight:600; color:var(--text); text-align:left; }
+  .mlist button:hover{ background:#F2F8FB; } .mlist button.bad{ color:var(--danger); } .mlist button.bad:hover{ background:#FFF5F2; }
+  @keyframes menuIn{ from{ opacity:0; transform:scale(.9) translateY(-6px); } }
+  .modal{ position:fixed; inset:0; z-index:80; background:rgba(11,26,38,.5); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); display:flex; align-items:flex-end; justify-content:center; opacity:0; transition:opacity .2s; }
+  .modal.show{ opacity:1; }
+  .sheet{ background:#fff; width:100%; max-width:440px; border-radius:26px 26px 0 0; padding:10px 20px calc(20px + env(safe-area-inset-bottom)); box-shadow:0 -20px 60px rgba(0,0,0,.3); transform:translateY(46px); transition:transform .32s var(--ease); }
+  .modal.show .sheet{ transform:none; }
+  .grip{ width:42px; height:5px; border-radius:5px; background:#D5DEE5; margin:4px auto 14px; }
+  .sheet h3{ margin:0 0 14px; font-size:18px; color:var(--navy); }
+  .mact{ display:flex; gap:10px; margin-top:20px; } .mact button{ flex:1; margin:0; width:auto; padding:14px; font-size:15px; border-radius:14px; }
+  button.danger{ background:linear-gradient(135deg,#C9431B,var(--danger)); color:#fff; border:0; font-weight:800; box-shadow:0 10px 24px rgba(228,87,46,.35); }
+  .invalid{ border-color:var(--danger) !important; animation:shake .4s; }
+  @media (min-width:600px){ .modal{ align-items:center; } .sheet{ border-radius:24px; padding-bottom:20px; } }
   .lnk{ display:inline-flex; align-items:center; gap:5px; } .opt{ position:relative; }
 </style>
 </head>
@@ -209,6 +229,7 @@
 <nav id="tabbar" class="tabbar hidden" aria-label="Secciones"></nav>
 <main id="app"></main>
 <div id="toasts" aria-live="polite"></div>
+<div id="modal" class="modal hidden"></div>
 
 <script>
 /* ===== CONFIGURACIÓN ===== */
@@ -264,6 +285,8 @@ const ICONS = {
   eyeoff: '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>',
   inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
   cloud: '<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>', map: '<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/>',
+  dots: '<circle cx="12" cy="5" r="1.7" fill="currentColor"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/><circle cx="12" cy="19" r="1.7" fill="currentColor"/>',
+  bin: '<g class="lid"><line x1="3" y1="6" x2="21" y2="6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></g><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/>',
   clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', arrow: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>'
 };
 const ico = (n, s = 18) => `<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ""}</svg>`;
@@ -278,6 +301,30 @@ let enterT = null;
 function enter() { const a = $("app"); a.classList.remove("enter"); void a.offsetWidth; a.classList.add("enter"); clearTimeout(enterT); enterT = setTimeout(() => a.classList.remove("enter"), 1000); }
 const cargando = t => `<div class="loading"><div class="spin"></div><p>${esc(t || "Cargando…")}</p></div>`;
 const vacio = (icono, titulo, sub) => `<div class="vacio">${ico(icono, 36)}<b>${esc(titulo)}</b>${sub ? `<p>${esc(sub)}</p>` : ""}</div>`;
+// Ventana emergente: devuelve lo que regrese leer() al aceptar, o null si se cancela
+function modal({ titulo, html, ok, peligro, leer }) {
+  return new Promise(res => {
+    const m = $("modal");
+    m.innerHTML = `<div class="sheet"><div class="grip"></div><h3>${esc(titulo)}</h3><div>${html || ""}</div><div class="mact"><button type="button" class="secondary" id="m-no">Cancelar</button><button type="button" class="${peligro ? "danger" : "primary"}" id="m-ok">${esc(ok || "Aceptar")}</button></div></div>`;
+    m.classList.remove("hidden"); requestAnimationFrame(() => m.classList.add("show"));
+    const cerrar = v => { document.removeEventListener("keydown", tecla); m.classList.remove("show"); setTimeout(() => { m.classList.add("hidden"); m.innerHTML = ""; }, 240); res(v); };
+    const tecla = e => { if (e.key === "Escape") cerrar(null); };
+    document.addEventListener("keydown", tecla);
+    $("m-no").onclick = () => cerrar(null);
+    m.onclick = e => { if (e.target === m) cerrar(null); };
+    $("m-ok").onclick = () => { const v = leer ? leer() : true; if (v === null || v === undefined || v === false) { vibra(30); return; } cerrar(v); };
+    const f = m.querySelector("select,input"); if (f) setTimeout(() => f.focus(), 280);
+  });
+}
+const confirmar = (titulo, texto, ok) => modal({ titulo, html: texto ? `<p class="muted" style="margin:0">${esc(texto)}</p>` : "", ok: ok || "Eliminar", peligro: true });
+// Menú desplegable (tres puntos o caneca): items = [{ act, icon, label, bad }]
+const menu = (icono, items) => `<div class="mnu"><button type="button" class="mbtn ${icono === "bin" ? "bin" : ""}" data-mn aria-label="Opciones">${ico(icono, 20)}</button><div class="mlist hidden">${items.map(i => `<button type="button" data-act="${i.act}" class="${i.bad ? "bad" : ""}">${ico(i.icon, 17)}<span>${i.label}</span></button>`).join("")}</div></div>`;
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-mn]");
+  document.querySelectorAll(".mlist").forEach(l => { if (!b || l !== b.nextElementSibling) l.classList.add("hidden"); });
+  document.querySelectorAll(".mbtn.open").forEach(x => { if (x !== b) x.classList.remove("open"); });
+  if (b) { const l = b.nextElementSibling; l.classList.toggle("hidden"); b.classList.toggle("open", !l.classList.contains("hidden")); }
+});
 const iniciales = n => String(n).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join("").toUpperCase();
 $("btn-back").innerHTML = ico("back", 20); $("btn-refresh").innerHTML = ico("refresh", 20); $("btn-logout").innerHTML = ico("logout", 20);
 
@@ -402,7 +449,7 @@ function renderLista(anim) {
     <div id="list">${items.length ? items.map(o => `<div class="card ord ${clase(o.Estado)}" data-o="${esc(o["Orden"])}">
       <span class="oi">${ico(icono(o.Estado), 20)}</span>
       <div class="grow"><b>${esc(o["Orden"])}</b><p>${ico("pin", 13)}<span>${esc(o["Dirección"] || "Sin dirección")}${o["Tipo de trabajo"] ? " · " + esc(o["Tipo de trabajo"]) : ""}</span></p></div>
-      <span class="tag ${clase(o.Estado)}">${esc(o.Estado)}</span>${ico("chevron", 18)}</div>`).join("") : vacio("inbox", "No hay órdenes en esta vista", "Prueba con otro filtro o cambia la búsqueda.")}</div>`;
+      <span class="tag ${clase(o.Estado)}">${esc(o.Estado)}</span>${ico("chevron", 18)}</div>`).join("") : vacio("inbox", "No hay órdenes en esta vista")}</div>`;
   document.querySelectorAll(".chip").forEach(b => b.onclick = () => { S.filtro = b.dataset.f; vibra(6); renderLista(); });
   $("q").oninput = e => { S.q = e.target.value; const pos = e.target.selectionStart; renderLista(); $("q").focus(); $("q").setSelectionRange(pos, pos); };
   document.querySelectorAll(".ord").forEach(c => c.onclick = () => { vibra(8); renderForm(c.dataset.o); });
@@ -423,14 +470,14 @@ function renderForm(orden) {
   $("app").innerHTML = `
     <div class="card ordhead"><div class="row"><span class="oi big">${ico("clipboard", 24)}</span><div class="grow"><small>Orden</small><b>${esc(orden)}</b></div><span class="tag ${o.Estado === "Auditada" ? "a" : o.Estado === "Por enviar" ? "q" : "p"}">${esc(o.Estado)}</span></div>
       ${info.length ? `<div class="kv">${info.map(([k, v]) => `<div><span>${esc(k)}</span><b>${valHtml(v)}</b></div>`).join("")}</div>` : ""}</div>
-    ${hecha ? `<div class="alert ok">${ico("check", 18)}<span>Ya auditada${prev.resultado ? " (" + esc(prev.resultado) + ")" : ""}. Si guardas de nuevo se registra otra auditoría.</span></div>` : ""}
+    ${hecha ? `<div class="alert ok">${ico("check", 18)}<span>Ya auditada${prev.resultado ? " · " + esc(prev.resultado) : ""}</span></div>` : ""}
     <form id="f" onsubmit="return false">
       ${secciones}
       <div class="card sec"><div class="ct">${ico("user", 20)}<b>Usuario que atiende</b><span class="opc">Opcional</span></div>
         ${usuario.map(fieldHtml).join("")}
         <label>Firma</label>
         <canvas id="sig" class="sig"></canvas>
-        <div class="row" style="margin-top:8px"><span class="muted grow">${ico("pen", 14)} Firma con el dedo o el lápiz</span><button type="button" class="secondary" id="sig-clear">${ico("x", 16)} Borrar</button></div></div>
+        <div class="row" style="margin-top:8px;justify-content:flex-end"><button type="button" class="secondary" id="sig-clear">${ico("x", 16)} Borrar firma</button></div></div>
       <div class="card sec"><div class="ct">${ico("camera", 20)}<b>Evidencia fotográfica</b><span class="opc" id="ph-n">0/${MAX_FOTOS}</span></div>
         <div class="row"><button type="button" class="secondary grow" id="ph-cam">${ico("camera", 18)} Tomar foto</button><button type="button" class="secondary grow" id="ph-gal">${ico("image", 18)} Galería</button></div>
         <input id="ph-in-cam" type="file" accept="image/*" capture="environment" class="hidden">
@@ -545,9 +592,8 @@ const errMsg = t => `<div class="err" style="margin:0 0 12px">${ico("alert", 18)
 
 /* --- Pegar órdenes desde Excel --- */
 function adminCarga() {
-  return `<div class="card"><div class="ct">${ico("paste", 20)}<b>Cargar órdenes desde Excel</b></div><p class="muted">Copia las filas desde Excel (con la fila de encabezados) y pégalas aquí. Encabezados reconocidos: <b>Orden</b>, <b>Supervisor</b> (obligatorios), Dirección, Tipo de trabajo, Inspector, Observación. Cualquier otra columna se muestra como detalle al supervisor.</p>
-    <textarea id="ld-txt" style="min-height:140px;font-size:13px" placeholder="Orden&#9;Supervisor&#9;Dirección&#10;1053925&#9;Juan Pérez&#9;Cra 1 # 2-3"></textarea>
-    <label class="opt"><input type="checkbox" id="ld-rep"> Reemplazar las órdenes actuales (borra la lista anterior)</label>
+  return `<div class="card"><div class="ct">${ico("paste", 20)}<b>Cargar órdenes desde Excel</b></div>
+    <textarea id="ld-txt" style="min-height:160px;font-size:13px" placeholder="Orden&#9;Supervisor&#9;Dirección&#10;1053925&#9;Juan Pérez&#9;Cra 1 # 2-3"></textarea>
     <button class="primary" id="ld-go">${ico("download", 18)} Cargar órdenes</button></div>`;
 }
 const normH = h => h.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
@@ -566,11 +612,11 @@ async function refreshAdmin() { const j = await api({ action: "ordenes" }); S.or
 async function cargar() {
   try {
     const rows = parseTsv($("ld-txt").value);
-    if ($("ld-rep").checked && !confirm("Se borrarán las órdenes actuales y se cargarán " + rows.length + ". ¿Continuar?")) return;
     $("ld-go").disabled = true; $("ld-go").textContent = "Cargando…";
-    const j = await api({ action: "cargar", rows, reemplazar: $("ld-rep").checked });
+    const j = await api({ action: "cargar", rows, reemplazar: false });
     await refreshAdmin();
-    renderAdmin(okMsg(`${j.cargadas} órdenes cargadas${j.omitidas ? ", " + j.omitidas + " omitidas (repetidas o sin número)" : ""}.`));
+    toast(j.cargadas + " órdenes cargadas", "ok"); vibra(18);
+    renderAdmin(okMsg(`${j.cargadas} órdenes cargadas${j.omitidas ? " · " + j.omitidas + " omitidas" : ""}`));
   } catch (e) { renderAdmin(errMsg(e.message)); }
 }
 /* --- Desde Crítica: filtrar por fecha e inspector, elegir órdenes y enviarlas a auditoría --- */
@@ -582,7 +628,7 @@ const CR_DETALLE = [["cuenta", "Cuenta"], ["ciclo", "Ciclo"], ["causa", "Causa d
 const normN = n => String(n || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
 // Solo cuentan los supervisores creados en la pestaña Supervisores (los que tienen clave)
 const supRegistrados = () => (S.supervisores || []).filter(s => s.Clave).map(s => s.Supervisor);
-const crNuevo = () => ({ desde: "", hasta: "", insp: "", inspList: null, rows: null, sel: new Set(), q: "", msg: "", detalle: new Set(CR_DETALLE.map(d => d[0])), asignar: "__cr", nota: "", open: null, soloOpen: true });
+const crNuevo = () => ({ desde: "", hasta: "", insp: "__none", inspList: null, rows: null, sel: new Set(), q: "", msg: "", detalle: new Set(CR_DETALLE.map(d => d[0])), asignar: "", nota: "", open: null, soloOpen: true });
 S.cr = crNuevo();
 
 let gvN = 0;
@@ -599,18 +645,18 @@ function gviz(tq, hoja) {
 const cv = c => (c == null || c.v == null ? "" : c.v);
 function gvIso(c) { const m = /^Date\((\d+),(\d+),(\d+)/.exec(String(cv(c))); return m ? m[1] + "-" + String(+m[2] + 1).padStart(2, "0") + "-" + m[3].padStart(2, "0") : ""; }
 const fmtFecha = iso => iso ? iso.split("-").reverse().join("/") : "";
-const crWhere = () => "where J >= date '" + S.cr.desde + "' and J <= date '" + S.cr.hasta + "'" + (S.cr.insp ? ' and L = "' + S.cr.insp.replace(/"/g, "") + '"' : "");
+const crWhere = () => "where J >= date '" + S.cr.desde + "' and J <= date '" + S.cr.hasta + "'" + (S.cr.insp && S.cr.insp !== "__none" ? ' and L = "' + S.cr.insp.replace(/"/g, "") + '"' : "");
 // Open guarda las coordenadas con puntos de miles ("-7.479.699.903" = -74.79699903): se recoloca el decimal tras 2 dígitos enteros
 function coord(v) { const s = String(v == null ? "" : v), d = s.replace(/\D/g, ""); if (d.length < 3) return null; return (s.trim().startsWith("-") ? -1 : 1) * (+d / Math.pow(10, d.length - 2)); }
 
 function adminCritica() {
   const c = S.cr, ok = c.open && c.open.n;
-  return `<div class="card"><div class="ct">${ico("filter", 20)}<b>Órdenes de Crítica</b></div><p class="muted" style="margin-top:4px">Elige la fecha de cierre y el inspector, mira las órdenes y selecciona cuáles mandar a auditar.${ok ? ` Se cruzan con la hoja <b>${OPEN_SHEET}</b> (${c.open.n} órdenes, del ${fmtFecha(c.open.min)} al ${fmtFecha(c.open.max)}) para traer dirección, barrio y municipio.` : ""}</p>
+  return `<div class="card"><div class="ct">${ico("filter", 20)}<b>Órdenes de Crítica</b></div>
     <div class="row"><div class="grow"><label>Desde</label><input type="date" id="cr-d" value="${c.desde}"></div><div class="grow"><label>Hasta</label><input type="date" id="cr-h" value="${c.hasta}"></div></div>
-    <label>Inspector (unidad de trabajo)</label>
-    <select id="cr-i" ${c.inspList ? "" : "disabled"}><option value="">${c.inspList ? "Todos los inspectores" : "Cargando…"}</option>${(c.inspList || []).map(i => `<option value="${esc(i.n)}" ${i.n === c.insp ? "selected" : ""}>${esc(i.n)} (${i.c})</option>`).join("")}</select>
-    ${ok ? `<label class="opt ${c.soloOpen ? "sel" : ""}" style="margin-top:12px"><input type="checkbox" id="cr-so" ${c.soloOpen ? "checked" : ""}> Solo órdenes que están en ${OPEN_SHEET} (las que se pueden auditar)</label>` : ""}
-    <button class="primary" id="cr-go" ${c.desde && c.hasta ? "" : "disabled"}>${ico("search", 18)} Ver órdenes</button>${c.msg}</div>
+    <label>Inspector</label>
+    <select id="cr-i" ${c.inspList ? "" : "disabled"}><option value="__none" disabled ${c.insp === "__none" ? "selected" : ""}>${c.inspList ? "Seleccionar" : "Cargando…"}</option>${c.inspList ? `<option value="" ${c.insp === "" ? "selected" : ""}>Todos los inspectores</option>` : ""}${(c.inspList || []).map(i => `<option value="${esc(i.n)}" ${i.n === c.insp ? "selected" : ""}>${esc(i.n)} (${i.c})</option>`).join("")}</select>
+    ${ok ? `<label class="opt ${c.soloOpen ? "sel" : ""}" style="margin-top:12px"><input type="checkbox" id="cr-so" ${c.soloOpen ? "checked" : ""}> Solo en ${OPEN_SHEET}</label>` : ""}
+    <button class="primary" id="cr-go" ${c.desde && c.hasta && c.insp !== "__none" ? "" : "disabled"}>${ico("search", 18)} Ver órdenes</button>${c.msg}</div>
     <div id="cr-res">${c.rows ? crResultado() : ""}</div>`;
 }
 function crResultado() {
@@ -620,20 +666,19 @@ function crResultado() {
   const sups = supRegistrados();
   const ocultas = c.rows.length - c.rows.filter(r => r.enOpen).length;
   return `<div class="card"><div class="row"><b class="grow">${vis.length} órdenes${c.rows.length >= CRITICA_MAX_FILAS ? " (tope: acota el filtro)" : ""}</b><span class="muted" id="cr-cnt">${c.sel.size} seleccionadas</span></div>
-    ${filtraOpen && ocultas ? `<p class="muted" style="margin:4px 0 0">${ocultas} órdenes de ese filtro no están en ${OPEN_SHEET} y no se muestran.</p>` : ""}
-    <div class="row" style="margin:10px 0"><input id="cr-q" type="search" placeholder="Buscar orden, dirección, barrio…" value="${esc(c.q)}" class="grow"><button class="secondary" id="cr-all">${ico("check", 16)} Visibles</button><button class="secondary" id="cr-none">Ninguna</button></div>
+    <div class="row" style="margin:10px 0"><input id="cr-q" type="search" placeholder="Buscar orden, dirección, barrio…" value="${esc(c.q)}" class="grow"><button class="secondary" id="cr-all" title="Seleccionar visibles">${ico("check", 16)} Todas</button><button class="secondary" id="cr-none">Ninguna</button></div>
     <div style="overflow-x:auto"><table><tr><th></th><th>Orden</th><th>Fecha</th><th>Inspector</th><th>Dirección</th><th>Barrio</th><th>Municipio</th><th>Causa de cierre</th><th>Efect.</th><th>Sup. Crítica</th></tr>
     ${vis.map(r => `<tr><td><input type="checkbox" class="cr-ck" data-o="${esc(r.orden)}" ${ya.has(r.orden) ? "disabled" : ""} ${c.sel.has(r.orden) ? "checked" : ""} style="width:20px;height:20px"></td><td>${esc(r.orden)}${ya.has(r.orden) ? '<br><span class="tag a">Ya cargada</span>' : ""}</td><td>${fmtFecha(r.fecha)}</td><td>${esc(r.insp)}</td><td>${esc(r.dir)}</td><td>${esc(r.barrio)}</td><td>${esc(r.municipio)}</td><td>${esc(r.causa)}</td><td>${esc(r.efectividad)}</td><td>${esc(r.sup)}</td></tr>`).join("") || '<tr><td colspan="10" class="muted">Sin órdenes con ese filtro.</td></tr>'}</table></div>
-    ${vis.some(r => ya.has(r.orden)) ? `<p class="muted" style="margin:8px 0 0">Las marcadas "Ya cargada" ya están en la lista de auditoría.</p>` : ""}</div>
+    </div>
     <div class="card"><div class="ct">${ico("send", 20)}<b>Enviar a auditoría</b></div>
-      <label>Asignar a</label><select id="cr-as"><option value="__cr" ${c.asignar === "__cr" ? "selected" : ""}>El supervisor que figura en Crítica</option>${sups.map(n => `<option value="${esc(n)}" ${c.asignar === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
-      <label>Indicación para el supervisor (opcional)</label><textarea id="cr-nota" placeholder="Qué debe revisar o verificar en estas órdenes">${esc(c.nota)}</textarea>
-      <label>Información que verá el supervisor (la dirección siempre se envía)</label>
+      <label>Asignar a</label><select id="cr-as"><option value="" disabled ${!c.asignar ? "selected" : ""}>Seleccionar</option><option value="__cr" ${c.asignar === "__cr" ? "selected" : ""}>El supervisor que figura en Crítica</option>${sups.map(n => `<option value="${esc(n)}" ${c.asignar === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
+      <label>Indicación</label><textarea id="cr-nota" placeholder="Opcional">${esc(c.nota)}</textarea>
+      <label>Información a enviar</label>
       <div class="opts">${CR_DETALLE.map(([k, n]) => `<label class="opt ${c.detalle.has(k) ? "sel" : ""}"><input type="checkbox" class="cr-det" data-k="${k}" ${c.detalle.has(k) ? "checked" : ""}> ${n}</label>`).join("")}</div>
       <button class="primary" id="cr-send">${ico("send", 18)} Enviar ${c.sel.size} órdenes a auditoría</button></div>`;
 }
 async function crCargarInspectores() {
-  const c = S.cr; c.inspList = null; c.insp = ""; c.rows = null;
+  const c = S.cr; c.inspList = null; c.insp = "__none"; c.rows = null;
   if (!c.desde || !c.hasta) return;
   const desde = c.desde, hasta = c.hasta;
   try {
@@ -696,11 +741,12 @@ function bindCritica() {
 }
 async function crEnviar() {
   const c = S.cr, elegidas = c.rows.filter(r => c.sel.has(r.orden));
-  if (!elegidas.length) return alert("Selecciona al menos una orden");
+  if (!elegidas.length) return toast("Selecciona al menos una orden", "warn");
+  if (!c.asignar) { vibra(30); $("cr-as").classList.add("invalid"); return toast("Selecciona a quién asignar", "warn"); }
   const sinSup = c.asignar === "__cr" ? elegidas.filter(r => !String(r.sup).trim()) : [];
-  if (sinSup.length) return alert(sinSup.length + " de las órdenes no tienen supervisor en Crítica. Elige un supervisor en \"Asignar a\".");
+  if (sinSup.length) return toast(sinSup.length + " órdenes sin supervisor en Crítica", "warn");
   const reg = new Set(supRegistrados().map(normN)), desconocidos = [...new Set(elegidas.map(r => c.asignar === "__cr" ? String(r.sup).trim() : c.asignar).filter(n => !reg.has(normN(n))))];
-  if (desconocidos.length) return alert("Estos supervisores no existen: " + desconocidos.join(", ") + ".\nCréalos primero en la pestaña Supervisores o elige otro en \"Asignar a\".");
+  if (desconocidos.length) return toast("Supervisor no registrado: " + desconocidos.join(", "), "err");
   const rows = elegidas.map(r => {
     const o = { Orden: r.orden, Supervisor: c.asignar === "__cr" ? String(r.sup).trim() : c.asignar, Inspector: r.insp };
     if (r.dir) o["Dirección"] = r.dir;
@@ -713,7 +759,7 @@ async function crEnviar() {
     const j = await api({ action: "cargar", rows, reemplazar: false });
     await refreshAdmin(); c.sel = new Set(); c.nota = "";
     toast(j.cargadas + " órdenes enviadas a auditoría", "ok"); vibra(18);
-    c.msg = okMsg(`${j.cargadas} órdenes enviadas a auditoría${j.omitidas ? ", " + j.omitidas + " ya estaban cargadas" : ""}. Si el supervisor es nuevo, asígnale su clave en la pestaña Supervisores.`);
+    c.msg = okMsg(`${j.cargadas} órdenes enviadas a auditoría${j.omitidas ? " · " + j.omitidas + " ya estaban cargadas" : ""}`);
   } catch (e) { c.msg = errMsg(e.message); }
   renderAdmin();
 }
@@ -740,28 +786,24 @@ function adminSeg() {
   S.segSup = null;
   let P = 0, E = 0; names.forEach(n => { P += by[n].pend.length; E += by[n].ejec.length; });
   const hechas = S.ordenes.filter(o => o.Estado === "Auditada").length;
+  const opciones = (hechas ? [{ act: "del-aud", icon: "trash", label: `Eliminar diligenciadas (${hechas})`, bad: true }] : []).concat([{ act: "vaciar", icon: "alert", label: "Borrar todo lo cargado", bad: true }]);
   return `<div class="card"><div class="ct">${ico("clipboard", 20)}<b>${E} de ${P + E} auditadas</b><span class="opc">${P + E ? Math.round(100 * E / (P + E)) : 0}%</span></div>${segBar(E, P + E)}
-      ${segFiltroHtml(Object.values(by))}<div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="secondary grow" id="dl-all">${ico("download", 16)} Descargar todo (Excel)</button><button class="secondary grow" id="del-aud" ${hechas ? "" : "disabled"} style="color:var(--danger);border-color:var(--danger)">${ico("trash", 16)} Eliminar diligenciadas (${hechas})</button></div>
-      <button class="secondary" id="vaciar" style="width:100%;margin-top:8px;color:var(--danger);border-color:var(--danger)">${ico("alert", 16)} Borrar todo lo cargado (órdenes, auditorías y fotos)</button>
-      <p class="muted" style="margin:8px 0 0">Toca un supervisor para ver sus órdenes pendientes y ejecutadas. Eliminar quita de la lista las órdenes ya diligenciadas; el historial de auditorías y las fotos se conservan. Descarga el Excel antes.</p></div>
+      ${segFiltroHtml(Object.values(by))}<div class="row" style="margin-top:12px"><button class="secondary grow" id="dl-all">${ico("download", 16)} Descargar todo (Excel)</button>${menu("bin", opciones)}</div></div>
     <div class="sup-grid">${names.map(n => { const d = by[n], t = d.pend.length + d.ejec.length;
-      return `<button class="card sup-btn" data-sup="${esc(n)}"><div class="row"><span class="avatar">${esc(iniciales(n))}</span><div class="grow"><b>${esc(n)}</b><div class="muted">${d.pend.length} pendientes · ${d.ejec.length} ejecutadas</div></div><span class="pct">${t ? Math.round(100 * d.ejec.length / t) : 0}%</span></div>${segBar(d.ejec.length, t)}</button>`; }).join("") || '<p class="muted">Aún no hay órdenes cargadas.</p>'}</div>`;
+      return `<button class="card sup-btn" data-sup="${esc(n)}"><div class="row"><span class="avatar">${esc(iniciales(n))}</span><div class="grow"><b>${esc(n)}</b><div class="muted">${d.pend.length} pendientes · ${d.ejec.length} ejecutadas</div></div><span class="pct">${t ? Math.round(100 * d.ejec.length / t) : 0}%</span></div>${segBar(d.ejec.length, t)}</button>`; }).join("") || vacio("inbox", "Sin órdenes cargadas")}</div>`;
 }
 
 function segDetalle(nombre, d) {
   const ejec = S.segTab === "ejec", lista = (ejec ? d.ejec : d.pend).filter(x => enRango(ejec ? x["Fecha"] : x["Cargada el"]) && coincide(x, ejec));
   const sel = S.segOrden && lista.find(x => String(x["Orden"]) === S.segOrden);
-  const destinos = supRegistrados().filter(n => n !== nombre);
-  const reasignarLista = `<div class="card" style="padding:10px"><div class="ct">${ico("shuffle", 18)}<b style="font-size:13.5px">Reasignar esta lista a otro supervisor</b></div>${destinos.length ? `<div class="row" style="margin-top:6px"><select id="sg-rl-to" class="grow">${destinos.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-rl-go" ${lista.length ? "" : "disabled"}>Reasignar (${lista.length})</button></div>` : '<p class="muted" style="margin:6px 0 0">No hay otro supervisor registrado. Créalo en la pestaña Supervisores.</p>'}</div>`;
-  return `<div class="row" style="margin-bottom:10px"><button class="secondary" id="sg-back">${ico("back", 16)} Supervisores</button><b class="grow" style="text-align:right">${esc(nombre)}</b></div>
+  const opciones = (ejec ? [] : [{ act: "rellist", icon: "shuffle", label: `Reasignar lista (${lista.length})` }]).concat([{ act: "dellist", icon: "trash", label: `Eliminar lista (${lista.length})`, bad: true }]);
+  return `<div class="row" style="margin-bottom:10px"><button class="secondary" id="sg-back">${ico("back", 16)} Supervisores</button><b class="grow" style="text-align:right">${esc(nombre)}</b>${lista.length ? menu("dots", opciones) : ""}</div>
     <div class="chips"><button class="chip ${ejec ? "" : "on"}" data-st="pend">Pendientes (${d.pend.length})</button><button class="chip ${ejec ? "on" : ""}" data-st="ejec">Ejecutadas (${d.ejec.length})</button></div>
     <div class="card" style="padding:10px">${segFiltroHtml([d])}</div>
     <button class="secondary" id="sg-xls" style="width:100%;margin-bottom:10px" ${lista.length ? "" : "disabled"}>${ico("download", 16)} Descargar ${ejec ? "ejecutadas" : "pendientes"} (Excel)</button>
-    <button class="secondary" id="sg-dellist" style="width:100%;margin-bottom:10px;color:var(--danger);border-color:var(--danger)" ${lista.length ? "" : "disabled"}>${ico("trash", 16)} Eliminar toda esta lista (${lista.length})</button>
-    ${reasignarLista}
     ${sel ? segOrdenHtml(sel, ejec) : ""}
     ${lista.map(x => { const o = String(x["Orden"]), r = ejec ? datosAud(x) : null, dir = x["Dirección"] || (ejec ? (ordenPorId(o) || {})["Dirección"] : "");
-      return `<div class="card ord ${ejec ? (/^no conforme/i.test(r.resultado || "") ? "q" : "a") : "p"}" data-o="${esc(o)}" style="${o === S.segOrden ? "border-color:var(--teal-dark)" : ""}"><div class="grow"><b>${esc(o)}</b><p>${esc(dir || "Sin dirección")}${ejec && x["Fecha"] ? " · " + new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p></div>${ejec ? `<span class="tag ${/^no conforme/i.test(r.resultado || "") ? "q" : "a"}">${esc(r.resultado || "Auditada")}</span>` : '<span class="tag p">Pendiente</span>'}</div>`; }).join("") || '<p class="muted">No hay órdenes en esta lista.</p>'}`;
+      return `<div class="card ord ${ejec ? (/^no conforme/i.test(r.resultado || "") ? "q" : "a") : "p"}" data-o="${esc(o)}" style="${o === S.segOrden ? "border-color:var(--teal-dark)" : ""}"><div class="grow"><b>${esc(o)}</b><p>${esc(dir || "Sin dirección")}${ejec && x["Fecha"] ? " · " + new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p></div>${ejec ? `<span class="tag ${/^no conforme/i.test(r.resultado || "") ? "q" : "a"}">${esc(r.resultado || "Auditada")}</span>` : '<span class="tag p">Pendiente</span>'}</div>`; }).join("") || vacio("inbox", "Sin órdenes")}`;
 }
 const ordenPorId = id => S.ordenes.find(o => String(o["Orden"]) === String(id));
 
@@ -775,35 +817,61 @@ function segOrdenHtml(x, ejec) {
     res = `<hr style="border:0;border-top:1px solid var(--border);margin:10px 0"><b>Resultados de la auditoría</b>
       <p class="muted" style="margin:4px 0">${esc(x["Supervisor"])} · ${x["Fecha"] ? new Date(x["Fecha"]).toLocaleString("es-CO") : ""}</p>
       ${FORM_FIELDS.map(f => { const v = [].concat(d[f.id] == null ? "" : d[f.id]).join(", "); return v ? `<p style="margin:6px 0"><b>${esc(f.label)}:</b> ${esc(v)}</p>` : ""; }).join("")}
-      ${x["Latitud"] ? `<p style="margin:6px 0"><b>Ubicación:</b> <a href="https://www.google.com/maps?q=${esc(x["Latitud"])},${esc(x["Longitud"])}" target="_blank" rel="noopener">Ver donde se auditó</a></p>` : ""}
+      ${x["Latitud"] ? `<p style="margin:6px 0"><b>Ubicación:</b> <a class="lnk" href="https://www.google.com/maps?q=${esc(x["Latitud"])},${esc(x["Longitud"])}" target="_blank" rel="noopener">${ico("map", 14)} Ver en el mapa</a></p>` : ""}
       ${x["Firma"] ? `<p style="margin:6px 0"><b>Firma del usuario:</b> <a href="${esc(x["Firma"])}" target="_blank" rel="noopener">Ver firma</a></p>` : ""}
       <p style="margin:6px 0"><b>Fotos:</b> ${fotos.map((u, i) => `<a href="${esc(u)}" target="_blank" rel="noopener">Foto ${i + 1}</a>`).join(" · ") || "sin fotos"}</p>`;
   }
-  const dest = supRegistrados().filter(n => n !== S.segSup);
-  const reasignarOrden = dest.length ? `<div class="row" style="margin-top:10px"><select id="sg-ro-to" class="grow">${dest.map(n => `<option>${esc(n)}</option>`).join("")}</select><button class="secondary" id="sg-ro-go">${ico("shuffle", 16)} Reasignar</button></div>` : "";
-  return `<div class="card" style="border-color:var(--teal-dark)"><div class="row"><b class="grow" style="font-size:16px">Orden ${esc(x["Orden"])}</b><button class="secondary" id="sg-del" style="color:var(--danger);border-color:var(--danger)">${ico("trash", 16)} Eliminar</button><button class="secondary" id="sg-cerrar">Cerrar</button></div>
-    ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${valHtml(v)}</p>`).join("")}${res}${reasignarOrden}</div>`;
+  const opciones = (ejec ? [] : [{ act: "reord", icon: "shuffle", label: "Reasignar orden" }]).concat([{ act: "delord", icon: "trash", label: "Eliminar orden", bad: true }]);
+  return `<div class="card" style="border-color:var(--teal-dark)"><div class="row"><b class="grow" style="font-size:16px">Orden ${esc(x["Orden"])}</b>${menu("dots", opciones)}<button class="secondary" id="sg-cerrar" aria-label="Cerrar" style="width:42px;height:42px;padding:0">${ico("x", 18)}</button></div>
+    ${info.map(([k, v]) => `<p class="muted" style="margin:4px 0"><b>${esc(k)}:</b> ${valHtml(v)}</p>`).join("")}${res}</div>`;
 }
 
+// Quita las órdenes y sus auditorías; las fotos van a la papelera de Drive
+async function borrarOrdenes(ordenes, titulo) {
+  if (!ordenes.length || !(await confirmar(titulo, "Se borran también sus auditorías y fotos."))) return;
+  try { const j = await api({ action: "eliminarOrdenes", ordenes }); await refreshAdmin(); S.segOrden = null; toast(j.ordenes + " órdenes eliminadas", "ok"); renderAdmin(okMsg(`${j.ordenes} órdenes y ${j.auditorias} auditorías eliminadas`)); }
+  catch (e) { renderAdmin(errMsg(e.message)); }
+}
+// Reasignar: ventana emergente para elegir el supervisor destino (solo órdenes pendientes)
+async function reasignar(ordenes) {
+  if (!ordenes.length) return;
+  const dest = supRegistrados().filter(n => n !== S.segSup);
+  const a = await modal({
+    titulo: "Reasignar " + ordenes.length + (ordenes.length === 1 ? " orden" : " órdenes"),
+    html: dest.length ? `<label style="margin-top:0">Supervisor</label><select id="m-sel"><option value="" selected disabled>Seleccionar</option>${dest.map(n => `<option>${esc(n)}</option>`).join("")}</select>` : vacio("users", "No hay otros supervisores"),
+    ok: "Reasignar",
+    leer: () => { const v = $("m-sel") && $("m-sel").value; if (!v) { if ($("m-sel")) $("m-sel").classList.add("invalid"); return null; } return v; }
+  });
+  if (!a) return;
+  try { const j = await api({ action: "reasignar", ordenes, supervisor: a }); await refreshAdmin(); S.segOrden = null; toast(j.ordenes + " órdenes reasignadas", "ok"); renderAdmin(okMsg(`${j.ordenes} órdenes reasignadas a ${esc(j.supervisor)}`)); }
+  catch (e) { renderAdmin(errMsg(e.message)); }
+}
+async function vaciarTodo() {
+  const ok = await modal({ titulo: "Borrar todo lo cargado", html: `<p class="muted" style="margin:0 0 12px">Órdenes, auditorías y fotos.</p><input id="m-txt" placeholder="Escribe BORRAR" autocomplete="off">`, ok: "Borrar todo", peligro: true,
+    leer: () => { if ($("m-txt").value.trim().toUpperCase() === "BORRAR") return true; $("m-txt").classList.add("invalid"); return null; } });
+  if (!ok) return;
+  try { const j = await api({ action: "vaciarTodo" }); await refreshAdmin(); S.segSup = null; toast("Todo quedó en cero", "ok"); renderAdmin(okMsg(j.filas + " filas eliminadas")); } catch (e) { renderAdmin(errMsg(e.message)); }
+}
+async function eliminarAuditadas() {
+  const n = S.ordenes.filter(o => o.Estado === "Auditada").length;
+  if (!n || !(await confirmar("¿Eliminar " + n + " órdenes diligenciadas?", "El historial de auditorías se conserva."))) return;
+  try { const j = await api({ action: "eliminarAuditadas" }); await refreshAdmin(); toast(j.eliminadas + " órdenes eliminadas", "ok"); renderAdmin(okMsg(j.eliminadas + " órdenes eliminadas")); }
+  catch (e) { renderAdmin(errMsg(e.message)); }
+}
 function bindSeg() {
   document.querySelectorAll("[data-sup]").forEach(b => b.onclick = () => { S.segSup = b.dataset.sup; S.segTab = "pend"; S.segOrden = null; renderAdmin(); });
   if ($("sg-fd")) { $("sg-fd").onchange = e => { S.segDesde = e.target.value; renderAdmin(); }; $("sg-fh").onchange = e => { S.segHasta = e.target.value; renderAdmin(); }; }
   if ($("sg-fq")) $("sg-fq").onchange = e => { S.segQ = e.target.value; renderAdmin(); };
   if ($("sg-fx")) $("sg-fx").onclick = e => { e.preventDefault(); S.segDesde = S.segHasta = S.segQ = ""; renderAdmin(); };
-  if ($("vaciar")) $("vaciar").onclick = async () => {
-    if (prompt("Se borrarán TODAS las órdenes y auditorías cargadas y las fotos (se conservan los supervisores y sus claves). Descarga el Excel antes. Escribe BORRAR para confirmar.") !== "BORRAR") return;
-    try { const j = await api({ action: "vaciarTodo" }); await refreshAdmin(); S.segSup = null; renderAdmin(okMsg(j.filas + " filas eliminadas. Todo quedó en cero.")); } catch (e) { renderAdmin(errMsg(e.message)); }
+  const ids = () => segLista().map(x => String(x["Orden"]));
+  const acciones = {
+    "del-aud": eliminarAuditadas, "vaciar": vaciarTodo,
+    "dellist": () => { const l = ids(); return borrarOrdenes(l, "¿Eliminar " + l.length + " órdenes?"); },
+    "delord": () => borrarOrdenes([S.segOrden], "¿Eliminar la orden " + S.segOrden + "?"),
+    "rellist": () => reasignar(ids()), "reord": () => reasignar([S.segOrden])
   };
-  if ($("sg-del")) $("sg-del").onclick = () => borrarOrdenes([S.segOrden], "¿Eliminar la orden " + S.segOrden + " y su auditoría?" + AVISO_FOTOS);
-  if ($("sg-dellist")) $("sg-dellist").onclick = () => { const l = segLista().map(x => String(x["Orden"])); borrarOrdenes(l, "¿Eliminar las " + l.length + " órdenes de esta lista y sus auditorías?" + AVISO_FOTOS); };
-  const reasignar = async (ordenes, a) => {
-    if (!ordenes.length || !confirm("¿Pasar " + ordenes.length + " orden(es) a " + a + "?")) return;
-    try { const j = await api({ action: "reasignar", ordenes, supervisor: a }); await refreshAdmin(); S.segOrden = null; renderAdmin(okMsg(j.ordenes + " órdenes reasignadas a " + esc(j.supervisor) + ".")); }
-    catch (e) { renderAdmin(errMsg(e.message)); }
-  };
-  if ($("sg-rl-go")) $("sg-rl-go").onclick = () => reasignar(segLista().map(x => String(x["Orden"])), $("sg-rl-to").value);
-  if ($("sg-ro-go")) $("sg-ro-go").onclick = () => reasignar([S.segOrden], $("sg-ro-to").value);
-  if ($("dl-all")) { $("dl-all").onclick = () => descargarExcel("auditoria_" + hoy(), segHojas(Object.values(segDatos()))); $("del-aud").onclick = eliminarAuditadas; }
+  document.querySelectorAll("[data-act]").forEach(b => { if (acciones[b.dataset.act]) b.onclick = acciones[b.dataset.act]; });
+  if ($("dl-all")) $("dl-all").onclick = () => descargarExcel("auditoria_" + hoy(), segHojas(Object.values(segDatos())));
   if ($("sg-back")) $("sg-back").onclick = () => { S.segSup = null; S.segOrden = null; renderAdmin(); };
   document.querySelectorAll("[data-st]").forEach(b => b.onclick = () => { S.segTab = b.dataset.st; S.segOrden = null; renderAdmin(); });
   document.querySelectorAll(".ord[data-o]").forEach(c => c.onclick = () => { S.segOrden = S.segOrden === c.dataset.o ? null : c.dataset.o; renderAdmin(); });
@@ -839,18 +907,11 @@ function segLista() {
 function segFiltroHtml(grupos) {
   const p = [].concat(...grupos.map(g => g.pend)).filter(o => enRango(o["Cargada el"]) && coincide(o, false)).length, e = [].concat(...grupos.map(g => g.ejec)).filter(a => enRango(a["Fecha"]) && coincide(a, true)).length;
   const activo = S.segDesde || S.segHasta || S.segQ.trim();
-  return `<div style="margin-top:12px"><b style="font-size:13px">Filtros (lista y descarga)</b>
-    <label style="margin-top:6px">Buscar orden, dirección, barrio…</label><input type="search" id="sg-fq" value="${esc(S.segQ)}" placeholder="Ej. 115681242 o La Campiña">
-    <div class="row"><div class="grow"><label style="margin-top:6px">Desde</label><input type="date" id="sg-fd" value="${S.segDesde}"></div><div class="grow"><label style="margin-top:6px">Hasta</label><input type="date" id="sg-fh" value="${S.segHasta}"></div></div>
-    <p class="muted" style="margin:6px 0 0">${activo ? `Con estos filtros: ${p} pendientes y ${e} ejecutadas (fechas por carga y por auditoría).` : `Sin filtros: ${p} pendientes y ${e} ejecutadas.`} ${activo ? '<a href="#" id="sg-fx">Quitar filtros</a>' : ""}</p></div>`;
+  return `<div style="margin-top:12px"><b style="font-size:13px">Filtros</b>
+    <div class="searchbox" style="margin:8px 0 0">${ico("search", 18)}<input type="search" id="sg-fq" value="${esc(S.segQ)}" placeholder="Buscar"></div>
+    <div class="row"><div class="grow"><label style="margin-top:8px">Desde</label><input type="date" id="sg-fd" value="${S.segDesde}"></div><div class="grow"><label style="margin-top:8px">Hasta</label><input type="date" id="sg-fh" value="${S.segHasta}"></div></div>
+    <p class="muted" style="margin:8px 0 0">${p} pendientes · ${e} ejecutadas ${activo ? '<a href="#" id="sg-fx">Quitar filtros</a>' : ""}</p></div>`;
 }
-async function borrarOrdenes(ordenes, aviso) {
-  if (!ordenes.length || !confirm(aviso)) return;
-  try { const j = await api({ action: "eliminarOrdenes", ordenes }); await refreshAdmin(); S.segOrden = null; renderAdmin(okMsg(`${j.ordenes} órdenes y ${j.auditorias} auditorías eliminadas.`)); }
-  catch (e) { renderAdmin(errMsg(e.message)); }
-}
-const AVISO_FOTOS = " Las fotos de esas órdenes se mandan a la papelera de Drive.";
-
 // Hojas Pendientes, Ejecutadas y Análisis. Cada foto va en su propia columna (con enlace) y se agregan las columnas extra de las órdenes
 function segHojas(grupos) {
   const pend = [].concat(...grupos.map(g => g.pend)).filter(o => enRango(o["Cargada el"]) && coincide(o, false)), ejec = [].concat(...grupos.map(g => g.ejec)).filter(a => enRango(a["Fecha"]) && coincide(a, true));
@@ -994,14 +1055,6 @@ async function descargarExcel(nombre, hojas) {
     });
   }
 }
-async function eliminarAuditadas() {
-  const n = S.ordenes.filter(o => o.Estado === "Auditada").length;
-  if (!n || !confirm("Se eliminarán " + n + " órdenes ya diligenciadas de la lista. El historial de auditorías se conserva. ¿Continuar?")) return;
-  $("del-aud").disabled = true;
-  try { const j = await api({ action: "eliminarAuditadas" }); await refreshAdmin(); renderAdmin(okMsg(j.eliminadas + " órdenes eliminadas.")); }
-  catch (e) { renderAdmin(errMsg(e.message)); }
-}
-
 /* --- Análisis: información de valor (indicadores, gráficos y tablas) con los mismos filtros de Seguimiento --- */
 function adminAnalisis() {
   const grupos = Object.values(segDatos()), A = segHojas(grupos)[2];
@@ -1015,17 +1068,20 @@ function adminAnalisis() {
 /* --- Supervisores y claves --- */
 const genClave = () => { const c = "abcdefghjkmnpqrstuvwxyz23456789"; let s = ""; for (let i = 0; i < 6; i++) s += c[Math.floor(Math.random() * c.length)]; return s; };
 function adminSup() {
-  return `<div class="card"><p class="muted" style="margin-top:0">Cada supervisor entra con su propia clave y solo ve sus órdenes. Este es el único lugar donde se crean supervisores: las órdenes solo se pueden cargar o reasignar a supervisores registrados aquí. Los marcados "No registrado" tienen órdenes viejas con un nombre que no existe; ponles clave para registrarlos o reasigna sus órdenes desde Seguimiento.</p>
-    ${S.supervisores.map((s, i) => `<div class="card" style="background:var(--bg)"><div class="row"><b class="grow">${esc(s.Supervisor)}</b>${s.Clave ? "" : '<span class="tag q">No registrado</span>'}</div>
-      <div class="row" style="margin-top:8px"><input data-k="${i}" value="${esc(s.Clave)}" placeholder="Clave (mín. 4)" class="grow"><button class="secondary" data-g="${i}" title="Generar clave">${ico("shuffle", 18)}</button><button class="secondary" data-s="${i}">Guardar</button></div>
-      ${s.Clave ? `<button class="secondary" data-d="${i}" style="margin-top:8px;color:var(--danger);border-color:var(--danger)">Quitar acceso</button>` : ""}</div>`).join("") || '<p class="muted">Aún no hay supervisores. Carga órdenes o agrega uno abajo.</p>'}</div>
+  return `<div class="card">
+    ${S.supervisores.map((s, i) => `<div class="card" style="background:var(--bg)"><div class="row"><span class="avatar" style="width:38px;height:38px;font-size:13px">${esc(iniciales(s.Supervisor))}</span><b class="grow">${esc(s.Supervisor)}</b>${s.Clave ? menu("bin", [{ act: "quitar:" + i, icon: "trash", label: "Quitar acceso", bad: true }]) : '<span class="tag q">No registrado</span>'}</div>
+      <div class="row" style="margin-top:10px"><input data-k="${i}" value="${esc(s.Clave)}" placeholder="Clave" class="grow"><button class="secondary" data-g="${i}" title="Generar clave">${ico("shuffle", 18)}</button><button class="secondary" data-s="${i}">${ico("check", 16)} Guardar</button></div></div>`).join("") || vacio("users", "Sin supervisores")}</div>
     <div class="card"><div class="ct">${ico("plus", 20)}<b>Agregar supervisor</b></div><label>Nombre</label><input id="ns-n"><label>Clave</label><div class="row"><input id="ns-k" class="grow"><button class="secondary" id="ns-g" title="Generar clave">${ico("shuffle", 18)}</button></div><button class="primary" id="ns-go">${ico("plus", 18)} Agregar supervisor</button></div>`;
 }
 function bindSup() {
-  const guardar = async (nombre, clave) => { try { await api({ action: "guardarSupervisor", nombre, clave }); await refreshAdmin(); renderAdmin(okMsg("Clave guardada para " + esc(nombre) + ".")); } catch (e) { renderAdmin(errMsg(e.message)); } };
+  const guardar = async (nombre, clave) => { try { await api({ action: "guardarSupervisor", nombre, clave }); await refreshAdmin(); toast("Guardado: " + nombre, "ok"); renderAdmin(okMsg("Clave guardada para " + esc(nombre))); } catch (e) { renderAdmin(errMsg(e.message)); } };
   document.querySelectorAll("[data-g]").forEach(b => b.onclick = () => { document.querySelector(`[data-k="${b.dataset.g}"]`).value = genClave(); });
   document.querySelectorAll("[data-s]").forEach(b => b.onclick = () => guardar(S.supervisores[+b.dataset.s].Supervisor, document.querySelector(`[data-k="${b.dataset.s}"]`).value));
-  document.querySelectorAll("[data-d]").forEach(b => b.onclick = async () => { const n = S.supervisores[+b.dataset.d].Supervisor; if (!confirm("¿Quitar el acceso de " + n + "?")) return; try { await api({ action: "eliminarSupervisor", nombre: n }); await refreshAdmin(); renderAdmin(okMsg("Acceso quitado.")); } catch (e) { renderAdmin(errMsg(e.message)); } });
+  document.querySelectorAll("[data-act^='quitar:']").forEach(b => b.onclick = async () => {
+    const n = S.supervisores[+b.dataset.act.split(":")[1]].Supervisor;
+    if (!(await confirmar("¿Quitar el acceso de " + n + "?", "", "Quitar"))) return;
+    try { await api({ action: "eliminarSupervisor", nombre: n }); await refreshAdmin(); renderAdmin(okMsg("Acceso quitado")); } catch (e) { renderAdmin(errMsg(e.message)); }
+  });
   $("ns-g").onclick = () => { $("ns-k").value = genClave(); };
   $("ns-go").onclick = () => guardar($("ns-n").value.trim(), $("ns-k").value);
 }
