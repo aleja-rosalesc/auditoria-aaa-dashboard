@@ -172,6 +172,16 @@ function guardar_(req, who) {
   var lock = LockService.getScriptLock(); lock.waitLock(30000);
   try {
     var o = datosOrden_(req.orden);
+    // Auditoría de campo: el supervisor crea su propia orden (cuenta, dirección y medidor obligatorios)
+    if (!o && req.campo && who.role === 'supervisor' && !req.editar) {
+      var c = req.campo, cuenta = String(c.cuenta || '').trim(), dir = String(c.direccion || '').trim(), med = String(c.medidor || '').trim();
+      if (!cuenta || !dir || !med) return { ok: false, error: 'La cuenta, la dirección y el medidor encontrado son obligatorios' };
+      if (rows_(sheet_('AUDITORIAS', AUD_COLS), AUD_COLS).some(function (r) { return r['ID'] === req.id; })) return { ok: true, duplicado: true };
+      var osh = sheet_('ORDENES', ORDEN_COLS), on = osh.getLastRow() + 1;
+      osh.getRange(on, 1, 1, 1).setNumberFormat('@');
+      osh.getRange(on, 1, 1, ORDEN_COLS.length).setValues([[String(req.orden), who.supervisor, dir, 'Auditoría de campo', who.supervisor, '', 'Pendiente', new Date(), JSON.stringify({ 'Cuenta': cuenta, 'Medidor encontrado': med })]]);
+      o = datosOrden_(req.orden);
+    }
     var sup = who.role === 'supervisor' ? who.supervisor : (o ? String(o['Supervisor']).trim() : '');
     if (who.role === 'supervisor' && (!o || String(o['Supervisor']).trim() !== sup)) return { ok: false, error: 'La orden no está asignada a este supervisor' };
     var aud = sheet_('AUDITORIAS', AUD_COLS), previa = null, filas = rows_(aud, AUD_COLS);

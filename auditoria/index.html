@@ -488,6 +488,8 @@ async function loadOrdenes() {
   }
   const pend = await qAll().catch(() => []);
   const enCola = new Set(pend.map(p => String(p.orden)));
+  // Auditorías de campo aún sin enviar: la orden todavía no existe en el servidor
+  pend.filter(p => p.campo && !S.ordenes.some(o => String(o["Orden"]) === String(p.orden))).forEach(p => S.ordenes.push(ordenCampo(p.orden, p.campo)));
   S.ordenes.forEach(o => { if (enCola.has(String(o["Orden"]))) o.Estado = "Por enviar"; });
   renderLista(true);
   updateBanner(); flushQueue();
@@ -507,6 +509,7 @@ function renderLista(anim) {
       <div class="bar"><i style="width:${total ? Math.round(100 * hechas / total) : 0}%"></i></div></div>
     <div class="chips">${filtros.map(f => `<button class="chip ${f === S.filtro ? "on" : ""}" data-f="${f}">${f} (${cnt(f)})</button>`).join("")}</div>
     <div class="searchbox">${ico("search", 18)}<input id="q" type="search" placeholder="Buscar orden o dirección" value="${esc(S.q)}"></div>
+    <button class="secondary" id="nueva" style="width:100%;margin-bottom:12px">${ico("plus", 18)} Nueva auditoría de campo</button>
     <div id="list">${items.length ? items.map(o => `<div class="card ord ${clase(o.Estado)}" data-o="${esc(o["Orden"])}">
       <span class="oi">${ico(icono(o.Estado), 20)}</span>
       <div class="grow"><b>${esc(o["Orden"])}</b><p>${ico("pin", 13)}<span>${esc(o["Dirección"] || "Sin dirección")}${o["Tipo de trabajo"] ? " · " + esc(o["Tipo de trabajo"]) : ""}</span></p></div>
@@ -514,32 +517,43 @@ function renderLista(anim) {
   document.querySelectorAll(".chip").forEach(b => b.onclick = () => { S.filtro = b.dataset.f; vibra(6); renderLista(); });
   $("q").oninput = e => { S.q = e.target.value; const pos = e.target.selectionStart; renderLista(); $("q").focus(); $("q").setSelectionRange(pos, pos); };
   document.querySelectorAll(".ord").forEach(c => c.onclick = () => { vibra(8); renderForm(c.dataset.o); });
+  $("nueva").onclick = () => { vibra(8); renderForm(null, false, true); };
 }
+// Auditoría de campo: el supervisor la crea en terreno; cuenta, dirección y medidor son obligatorios
+const ordenCampo = (id, c) => ({ "Orden": id, "Dirección": c.direccion, "Tipo de trabajo": "Auditoría de campo", "Estado": "Por enviar", "Detalle": JSON.stringify({ "Cuenta": c.cuenta, "Medidor encontrado": c.medidor }) });
+const camposForm = () => (S.campo ? FORM_FIELDS.map(f => (f.id === "observaciones" ? Object.assign({}, f, { required: true }) : f)) : FORM_FIELDS);
 
 /* ---------- Supervisor: formulario de auditoría ---------- */
 const audDe = id => S.auditorias.filter(a => String(a["Orden"]) === String(id)).pop();
-async function renderForm(orden, editar) {
-  const o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
-  const hecha = audDe(orden);
-  const cola = (await qAll().catch(() => [])).find(p => String(p.orden) === String(orden));
+async function renderForm(orden, editar, campo) {
+  const o = campo ? { "Orden": "Nueva", Estado: "Nueva" } : S.ordenes.find(x => String(x["Orden"]) === String(orden));
+  const hecha = campo ? null : audDe(orden);
+  const cola = campo ? null : (await qAll().catch(() => [])).find(p => String(p.orden) === String(orden));
+  S.campo = !!campo || !!(cola && cola.campo && cola.editar !== true && !hecha);
   // Lo ya diligenciado: lo que está en cola (aún sin enviar) o la auditoría guardada en el servidor
   const previo = cola ? { datos: cola.datos || {}, cola: true, id: cola.id, nFotos: (cola.fotos || []).length, firma: !!cola.firma, lat: cola.lat, lng: cola.lng }
     : hecha ? { datos: datosAud(hecha), cola: false, nFotos: fotosAud(hecha).length, fotos: fotosAud(hecha), firma: hecha["Firma"], lat: hecha["Latitud"], lng: hecha["Longitud"], fecha: hecha["Fecha"], editada: hecha["Editada el"] } : null;
   S.fotos = []; S.pos = null; S.edit = null; S.firmaPrev = "";
-  chrome({ sub: "Orden " + orden, back: () => renderLista(true) }); enter();
+  chrome({ sub: campo ? "Auditoría de campo" : "Orden " + orden, back: () => renderLista(true) }); enter();
   let extra = {}; try { extra = JSON.parse(o["Detalle"] || "{}"); } catch (e) {}
   const info = [["Dirección", o["Dirección"]], ["Tipo de trabajo", o["Tipo de trabajo"]], ["Inspector", o["Inspector"]], ["Observación", o["Observación"]]].concat(Object.entries(extra)).filter(x => x[1]);
   const clase = o.Estado === "Auditada" ? "a" : o.Estado === "Por enviar" ? "q" : "p";
   if (previo && !editar) return renderResumen(orden, o, info, previo, clase);
   if (previo) { S.edit = { cola: previo.cola, id: previo.id, editar: cola ? !!cola.editar : true }; if (cola) { S.fotos = (cola.fotos || []).slice(); S.firmaPrev = cola.firma || ""; } if (previo.lat) S.pos = { lat: +previo.lat, lng: +previo.lng }; }
-  const secciones = FORM_FIELDS.filter(f => !/^usuario_/.test(f.id)).map(f => `<div class="card sec">${fieldHtml(f)}</div>`).join("");
-  const usuario = FORM_FIELDS.filter(f => /^usuario_/.test(f.id));
+  const CF = camposForm();
+  const secciones = CF.filter(f => !/^usuario_/.test(f.id)).map(f => `<div class="card sec">${fieldHtml(f)}</div>`).join("");
+  const usuario = CF.filter(f => /^usuario_/.test(f.id));
+  const datosCampo = S.campo ? `<div class="card sec"><div class="ct">${ico("clipboard", 20)}<b>Datos del caso</b></div>
+        <label>Número de cuenta *</label><input name="c_cuenta" type="text" inputmode="numeric" autocomplete="off">
+        <label>Dirección *</label><input name="c_direccion" type="text" autocomplete="off">
+        <label>Medidor encontrado *</label><input name="c_medidor" type="text" autocomplete="off"></div>` : "";
 
   $("app").innerHTML = `
-    <div class="card ordhead"><div class="row"><span class="oi big">${ico("clipboard", 24)}</span><div class="grow"><small>Orden</small><b>${esc(orden)}</b></div><span class="tag ${clase}">${esc(o.Estado)}</span></div>
-      ${info.length ? `<div class="kv">${info.map(([k, v]) => `<div><span>${esc(k)}</span><b>${valHtml(v)}</b></div>`).join("")}</div>` : ""}</div>
+    ${campo ? "" : `<div class="card ordhead"><div class="row"><span class="oi big">${ico("clipboard", 24)}</span><div class="grow"><small>Orden</small><b>${esc(orden)}</b></div><span class="tag ${clase}">${esc(o.Estado)}</span></div>
+      ${info.length ? `<div class="kv">${info.map(([k, v]) => `<div><span>${esc(k)}</span><b>${valHtml(v)}</b></div>`).join("")}</div>` : ""}</div>`}
     ${previo ? `<div class="alert ok">${ico("pen", 18)}<span>Editando auditoría</span></div>` : ""}
     <form id="f" onsubmit="return false">
+      ${datosCampo}
       ${secciones}
       <div class="card sec"><div class="ct">${ico("user", 20)}<b>Usuario que atiende</b><span class="opc">Opcional</span></div>
         ${usuario.map(fieldHtml).join("")}
@@ -563,6 +577,7 @@ async function renderForm(orden, editar) {
   $("gps").onclick = getGps;
   initSig();
   $("save").onclick = () => save(orden);
+  if (S.campo && cola && cola.campo) { document.querySelector('[name="c_cuenta"]').value = cola.campo.cuenta; document.querySelector('[name="c_direccion"]').value = cola.campo.direccion; document.querySelector('[name="c_medidor"]').value = cola.campo.medidor; }
   if (previo) {
     rellenar(previo.datos); renderFotos();
     if (previo.nFotos && !previo.cola) $("ph-n").textContent = previo.nFotos + " guardadas · 0/" + MAX_FOTOS;
@@ -650,20 +665,27 @@ function getGps() {
 }
 async function save(orden) {
   const fd = new FormData($("f")), datos = {}, errs = [];
-  FORM_FIELDS.forEach(f => {
+  camposForm().forEach(f => {
     const v = f.type === "check" ? fd.getAll(f.id) : (fd.get(f.id) || "").toString().trim();
     datos[f.id] = v;
     if (f.required && (Array.isArray(v) ? !v.length : !v)) errs.push("Falta: " + f.label);
   });
+  let campo = null;
+  if (S.campo) {
+    campo = { cuenta: (fd.get("c_cuenta") || "").toString().trim(), direccion: (fd.get("c_direccion") || "").toString().trim(), medidor: (fd.get("c_medidor") || "").toString().trim() };
+    [["cuenta", "Número de cuenta"], ["direccion", "Dirección"], ["medidor", "Medidor encontrado"]].reverse().forEach(([k, n]) => { if (!campo[k]) errs.unshift("Falta: " + n); });
+    if (!orden) orden = "C" + campo.cuenta.replace(/\W+/g, "") + "-" + Date.now().toString(36).slice(-5).toUpperCase();
+  }
   if (S.fotos.length < MIN_FOTOS) errs.push("Adjunta al menos " + MIN_FOTOS + " foto(s)");
   if (errs.length) { $("f-err").innerHTML = `<div class="err">${ico("alert", 18)}<span>${errs.map(esc).join("<br>")}</span></div>`; $("f-err").scrollIntoView({ behavior: "smooth", block: "center" }); vibra(40); return; }
   const ed = S.edit, nuevoId = "a" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
   // editar una auditoría ya enviada la actualiza en el servidor; si aún está en cola, se reemplaza esa cola
-  const payload = { id: ed && ed.cola ? ed.id : nuevoId, editar: !!(ed && ed.editar), orden: String(orden), supervisor: S.supervisor, datos, lat: S.pos && S.pos.lat, lng: S.pos && S.pos.lng, fotos: S.fotos, firma: S.firma ? $("sig").toDataURL("image/png").split(",")[1] : (S.firmaPrev || "") };
+  const payload = { id: ed && ed.cola ? ed.id : nuevoId, editar: !!(ed && ed.editar), campo, orden: String(orden), supervisor: S.supervisor, datos, lat: S.pos && S.pos.lat, lng: S.pos && S.pos.lng, fotos: S.fotos, firma: S.firma ? $("sig").toDataURL("image/png").split(",")[1] : (S.firmaPrev || "") };
   $("save").disabled = true; $("save").innerHTML = '<span class="spin sm"></span> Guardando…';
   try { await qPut(payload); } catch (e) { $("f-err").innerHTML = `<div class="err">${ico("alert", 18)}<span>No se pudo guardar en el teléfono: ${esc(e.message)}</span></div>`; $("save").disabled = false; $("save").innerHTML = ico("check", 20) + (S.edit ? " Guardar cambios" : " Guardar auditoría"); return; }
   // La auditoría ya está a salvo en el teléfono; intenta enviarla
-  const o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
+  let o = S.ordenes.find(x => String(x["Orden"]) === String(orden));
+  if (!o && campo) { o = ordenCampo(String(orden), campo); S.ordenes.unshift(o); }
   try { await api(Object.assign({ action: "guardar" }, payload)); await qDel(payload.id); o.Estado = "Auditada"; }
   catch (e) { o.Estado = "Por enviar"; }
   S.filtro = "Pendiente"; renderLista(true); updateBanner();
